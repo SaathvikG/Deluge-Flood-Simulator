@@ -1,0 +1,756 @@
+/**
+ * OrbitController — damped orbit/pan/zoom camera with fly-to animation, mouse + touch input, terrain
+ * clearance and reversed-Z infinite projection.
+ *
+ * FEEL. Three things make the view read as a camera rather than as a slider:
+ *  • a critically damped SPRING instead of exponential decay. Exponential decay starts at its maximum speed and
+ *    slows from there, so every drag begins with a jerk; a critically damped spring accelerates into the move and
+ *    settles without overshoot, which is what a real head does. `damping` still means the same thing (bigger =
+ *    snappier) and the settle time is matched, so this is a feel change and not a responsiveness change.
+ *  • a QUINTIC fly-to ease. The cubic ease-in-out it replaces is only C1, and its break is in the MIDDLE: its
+ *    acceleration jumps from +12 to -12 at t = 0.5, so halfway through every Try-it beat the camera visibly
+ *    changes its mind. Quintic smootherstep is C2 — acceleration passes through zero smoothly instead of
+ *    flipping sign in one frame. Rotation is also run a little behind translation, so the camera swings onto its
+ *    new heading as it arrives rather than turning and travelling in lockstep: a crane move, not a slider.
+ *  • optional idle SWAY (off by default, see `sway`): a slow two-axis breath that stops the instant anything is
+ *    touched. It is applied to the live pose, so the render pacer keeps drawing while it runs — which is why it is
+ *    opt-in and why screenshots and the visual suite never see it.
+ *
+ * Pose conventions (contracts.ts): yaw 0 looks north (−Z), increasing clockwise toward east (+X);
+ * pitch is the angle below the horizon at which the camera looks down at the target (π/2 = top-down).
+ */
+import type { CameraController, CameraPose } from '../contracts';
+import { clamp, mat4Invert, mat4Multiply, perspectiveReversedInfinite, v3, viewFromBasis, type Mat4, type Vec3 } from './math';
+import { cameraRay, intersectPlaneY, type Ray } from './picking';
+
+export const CAMERA_FOV_Y = (42 * Math.PI) / 180;
+/** Absolute lowest pitch: street-level close-ups of a wall. */
+const MIN_PITCH = 0.035;
+/** Lowest pitch once the camera is far out (≥ half the domain away): anything lower only shows the nearest hill. */
+const FAR_MIN_PITCH = 0.2;
+/** Lowest pitch with the eye well outside the diorama (it would look at the terrain block's side wall). */
+const OUTSIDE_MIN_PITCH = 0.3;
+const MAX_PITCH = Math.PI / 2;
+
+/** Scene information the controller needs (supplied by the renderer). */
+export interface CameraEnvironment {
+  nx: number;
+  ny: number;
+  cellSize: number;
+  exaggeration: number;
+  minElev: number;
+  maxElev: number;
+  /** Rendered terrain elevation (m, unexaggerated) at grid coords, or null without a scene. */
+  heightAt(gx: number, gy: number): number | null;
+  /** Ground size of one aerial-imagery texel (m), or null without imagery: limits how close the camera may get. */
+  imageryMetersPerTexel?: number | null;
+  /** Terrain hit under a CSS pixel for the given camera matrices (zoom-to-cursor). */
+  pickWorld(cssX: number, cssY: number): { gx: number; gy: number; elevation: number } | null;
+}
+
+export interface CameraMatrices {
+  view: Mat4;
+  proj: Mat4;
+  viewProj: Mat4;
+  invViewProj: Mat4;
+  eye: Vec3;
+  forward: Vec3;
+  right: Vec3;
+  up: Vec3;
+  near: number;
+  fovY: number;
+  aspect: number;
+}
+
+const clonePose = (p: CameraPose): CameraPose => ({
+  target: { gx: p.target.gx, gy: p.target.gy, elevation: p.target.elevation },
+  distance: p.distance,
+  yaw: p.yaw,
+  pitch: p.pitch,
+});
+
+const samePose = (a: CameraPose, b: CameraPose) =>
+  a.target.gx === b.target.gx &&
+  a.target.gy === b.target.gy &&
+  a.target.elevation === b.target.elevation &&
+  a.distance === b.distance &&
+  a.yaw === b.yaw &&
+  a.pitch === b.pitch;
+
+const wrapAngle = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
+const smooth = (e0: number, e1: number, x: number) => {
+  const t = clamp((x - e0) / (e1 - e0), 0, 1);
+  return t * t * (3 - 2 * t);
+};
+/**
+ * Quintic smootherstep: C2, so acceleration is continuous through the whole move. The cubic ease this replaces
+ * is C1 — its two halves meet at t = 0.5 with acceleration +12 on one side and -12 on the other, and that
+ * one-frame sign flip is the lurch you see in the middle of a fly-to.
+ */
+const smootherstep = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
+/** How far behind the translation the rotation runs, as a fraction of the flight. */
+const FLY_ROTATION_LAG = 0.12;
+/** Idle time before the breath starts, and how long it takes to reach full amplitude / to stop. */
+const SWAY_DELAY_S = 2.5;
+const SWAY_RAMP_S = 2.0;
+/** Breath periods (s) and amplitudes (radians of yaw/pitch, fraction of distance). */
+const SWAY_YAW = 0.0032;
+const SWAY_PITCH = 0.0021;
+const SWAY_DIST = 0.0026;
+
+function sanitize(p: CameraPose, fallback: CameraPose): CameraPose {
+  const ok = (x: number) => Number.isFinite(x);
+  return {
+    target: {
+      gx: ok(p.target?.gx) ? p.target.gx : fallback.target.gx,
+      gy: ok(p.target?.gy) ? p.target.gy : fallback.target.gy,
+      elevation: ok(p.target?.elevation) ? p.target.elevation : fallback.target.elevation,
+    },
+    distance: ok(p.distance) && p.distance > 0 ? p.distance : fallback.distance,
+    yaw: ok(p.yaw) ? p.yaw : fallback.yaw,
+    pitch: clamp(ok(p.pitch) ? p.pitch : fallback.pitch, MIN_PITCH, MAX_PITCH),
+  };
+}
+
+interface Flight {
+  from: CameraPose;
+  to: CameraPose;
+  t: number;
+  duration: number;
+  arc: number;
+}
+
+interface DragState {
+  mode: 'orbit' | 'pan';
+  pointerId: number;
+  lastX: number;
+  lastY: number;
+  /** Pan: grabbed world point and the pose/matrices at grab time. */
+  grab?: Vec3;
+  grabPose?: CameraPose;
+}
+
+export class OrbitController implements CameraController {
+  leftDragOrbits = true;
+  /**
+   * Damping rate (1/s): higher = snappier. It is the natural frequency of the critically damped spring that
+   * chases the goal pose; 18 settles in about the same time as the exponential decay at 14 it replaces, but
+   * eases into the move instead of starting at full speed.
+   */
+  damping = 18;
+  /** Camera breathing while idle. Off by default: it keeps the render pacer awake and it is not deterministic. */
+  sway = false;
+
+  /** Seconds since the user last touched the view (drag, wheel, pinch, fly-to, programmatic pose). */
+  private idleFor = 0;
+  /** Current sway amplitude, 0..1, ramped so it can never start or stop with a jump. */
+  private swayAmp = 0;
+  private swayPhase = 0;
+  /** The offset the breath added to the live pose last frame; stripped again before this frame integrates. */
+  private swayApplied = { yaw: 0, pitch: 0, distScale: 1 };
+  /** Velocity state of the pose spring (per-component, in each component's own units per second). */
+  private vel = { gx: 0, gy: 0, elevation: 0, logDistance: 0, yaw: 0, pitch: 0 };
+
+  private cur: CameraPose;
+  private goal: CameraPose;
+  private lastCur: CameraPose;
+  private flight: Flight | null = null;
+  private drag: DragState | null = null;
+  private touches = new Map<number, { x: number; y: number }>();
+  private pinch: { dist: number; angle: number; midX: number; midY: number } | null = null;
+  private canvas: HTMLCanvasElement | null = null;
+  private listeners: Array<[EventTarget, string, EventListener, AddEventListenerOptions?]> = [];
+  private viewportCss = { w: 1, h: 1 };
+  private farLimit = { env: null as CameraEnvironment | null, aspect: 0, distance: 0 };
+  /** Viewport aspect (width / height), kept current by the renderer; used by frameAll. */
+  aspect = 1.6;
+
+  constructor(public env: CameraEnvironment) {
+    const d = env.nx * env.cellSize;
+    this.cur = {
+      target: { gx: env.nx / 2, gy: env.ny / 2, elevation: env.minElev },
+      distance: d * 1.2,
+      yaw: 0.3,
+      pitch: 0.6,
+    };
+    this.goal = clonePose(this.cur);
+    this.lastCur = clonePose(this.cur);
+  }
+
+  // ── CameraController ────────────────────────────────────────────────────────────────────
+
+  get pose(): CameraPose {
+    return this.cur;
+  }
+
+  set pose(p: CameraPose) {
+    const s = sanitize(p, this.cur);
+    this.cur = s;
+    this.goal = clonePose(s);
+    this.lastCur = clonePose(s);
+    this.flight = null;
+  }
+
+  flyTo(pose: CameraPose, seconds = 1.4): void {
+    this.adoptExternalEdits();
+    const to = sanitize(pose, this.cur);
+    if (!(seconds > 0.02)) {
+      this.pose = to;
+      return;
+    }
+    const cs = this.env.cellSize;
+    const travel = Math.hypot((to.target.gx - this.cur.target.gx) * cs, (to.target.gy - this.cur.target.gy) * cs);
+    const arc = clamp((travel / Math.max(this.cur.distance, to.distance)) * 0.35, 0, 1.2);
+    this.flight = { from: clonePose(this.cur), to, t: 0, duration: seconds, arc };
+    this.drag = null;
+  }
+
+  frameAll(): void {
+    this.flyTo(this.framingPose(), 1.3);
+  }
+
+  /** Pleasant 3/4 view whose distance is solved so the whole domain box (with relief) fits on screen. */
+  framingPose(yaw = 0.32, pitch = 0.66, margin = 0.94): CameraPose {
+    const e = this.env;
+    const size = Math.max(e.nx, e.ny) * e.cellSize;
+    const hx = (e.nx / 2) * e.cellSize;
+    const hz = (e.ny / 2) * e.cellSize;
+    const y0 = e.minElev * e.exaggeration;
+    const y1 = e.maxElev * e.exaggeration;
+    const corners: Vec3[] = [];
+    for (const x of [-hx, hx]) for (const y of [y0, y1]) for (const z of [-hz, hz]) corners.push([x, y, z]);
+    const pose: CameraPose = { target: { gx: e.nx / 2, gy: e.ny / 2, elevation: (e.minElev + e.maxElev) / 2 }, distance: size, yaw, pitch };
+    const fits = (dist: number) => {
+      pose.distance = dist;
+      const { forward, right, up } = OrbitController.basis(yaw, pitch);
+      const eye = v3.sub(this.worldTarget(pose), v3.scale(forward, dist));
+      const ty = Math.tan(CAMERA_FOV_Y / 2);
+      const tx = ty * Math.max(0.2, this.aspect);
+      for (const c of corners) {
+        const rel = v3.sub(c, eye);
+        const zf = v3.dot(rel, forward);
+        if (zf <= 1) return false;
+        if (Math.abs(v3.dot(rel, right) / (zf * tx)) > margin || Math.abs(v3.dot(rel, up) / (zf * ty)) > margin) return false;
+      }
+      return true;
+    };
+    let lo = size * 0.2;
+    let hi = size * 8;
+    for (let i = 0; i < 40; i++) {
+      const mid = Math.sqrt(lo * hi);
+      if (fits(mid)) hi = mid;
+      else lo = mid;
+    }
+    pose.distance = hi;
+    return pose;
+  }
+
+  topDown(): void {
+    this.adoptExternalEdits();
+    // Mid-flight (a frame-all or the scene intro just started), look down on where the flight is going, not on
+    // the early in-between pose. A target left outside the map by panning is brought back onto its edge.
+    const g = clonePose(this.flight?.to ?? this.goal);
+    const e = this.env;
+    const gx = clamp(g.target.gx, 0, e.nx);
+    const gy = clamp(g.target.gy, 0, e.ny);
+    if (gx !== g.target.gx || gy !== g.target.gy) {
+      g.target = { gx, gy, elevation: e.heightAt(gx, gy) ?? g.target.elevation };
+    }
+    this.flyTo({ ...g, pitch: MAX_PITCH }, 0.9);
+  }
+
+  /** Closest the camera may get to its target (m). */
+  minDistance(): number {
+    return minCameraDistance(this.env.cellSize, this.env.imageryMetersPerTexel);
+  }
+
+  /**
+   * Farthest the camera may get (m): twice the distance that frames the whole map, where it already fills about half
+   * the screen. Farther out it is only a small tile floating in the sky.
+   */
+  maxDistance(): number {
+    const c = this.farLimit;
+    if (c.env !== this.env || Math.abs(c.aspect - this.aspect) > 1e-3) {
+      c.env = this.env;
+      c.aspect = this.aspect;
+      c.distance = Math.max(this.framingPose().distance * 2, this.minDistance() * 2);
+    }
+    return c.distance;
+  }
+
+  // ── Scene / matrices ───────────────────────────────────────────────────────────────────
+
+  setEnvironment(env: CameraEnvironment): void {
+    this.env = env;
+  }
+
+  worldTarget(p: CameraPose = this.cur): Vec3 {
+    const e = this.env;
+    return [(p.target.gx - e.nx / 2) * e.cellSize, p.target.elevation * e.exaggeration, (p.target.gy - e.ny / 2) * e.cellSize];
+  }
+
+  static basis(yaw: number, pitch: number): { forward: Vec3; right: Vec3; up: Vec3; back: Vec3 } {
+    const cp = Math.cos(pitch);
+    const forward: Vec3 = [cp * Math.sin(yaw), -Math.sin(pitch), -cp * Math.cos(yaw)];
+    const right: Vec3 = [Math.cos(yaw), 0, Math.sin(yaw)];
+    const back: Vec3 = [-forward[0], -forward[1], -forward[2]];
+    const up = v3.norm(v3.cross(back, right));
+    return { forward, right, up, back };
+  }
+
+  eyeFor(p: CameraPose): Vec3 {
+    const { forward } = OrbitController.basis(p.yaw, p.pitch);
+    return v3.sub(this.worldTarget(p), v3.scale(forward, p.distance));
+  }
+
+  matrices(aspect: number, p: CameraPose = this.cur): CameraMatrices {
+    const { forward, right, up, back } = OrbitController.basis(p.yaw, p.pitch);
+    const eye = v3.sub(this.worldTarget(p), v3.scale(forward, p.distance));
+    const e = this.env;
+    // Near plane from clearance above the terrain: reversed-Z float depth tolerates a tiny near plane.
+    const gx = eye[0] / e.cellSize + e.nx / 2;
+    const gy = eye[2] / e.cellSize + e.ny / 2;
+    const ground = e.heightAt(gx, gy);
+    const clearance = ground === null ? p.distance : eye[1] - ground * e.exaggeration;
+    const near = clamp(Math.min(Math.max(clearance, 1) * 0.3, p.distance * 0.05), 0.2, 50);
+    const view = viewFromBasis(eye, right, up, back);
+    const proj = perspectiveReversedInfinite(CAMERA_FOV_Y, aspect, near);
+    const viewProj = mat4Multiply(proj, view);
+    const invViewProj = mat4Invert(viewProj);
+    return { view, proj, viewProj, invViewProj, eye, forward, right, up, near, fovY: CAMERA_FOV_Y, aspect };
+  }
+
+  /** Advance damping / flight / breathing. Call once per frame before computing matrices. */
+  update(dt: number): void {
+    dt = clamp(Number.isFinite(dt) ? dt : 0, 0, 0.25);
+    // Take last frame's breath back out before anything looks at the pose, from the live pose AND from the copy
+    // adoptExternalEdits compares against — otherwise the breath itself would read as an external edit.
+    this.stripSway();
+    this.adoptExternalEdits();
+    let settled = false;
+    if (this.flight) {
+      const f = this.flight;
+      f.t += dt;
+      const u = clamp(f.t / f.duration, 0, 1);
+      const k = smootherstep(u);
+      // Rotation trails the translation slightly, so the camera swings onto its new heading as it arrives rather
+      // than turning and moving in lockstep. Re-normalised so it still lands exactly on the target at u = 1.
+      const kr = smootherstep(clamp((u - FLY_ROTATION_LAG) / (1 - FLY_ROTATION_LAG), 0, 1));
+      const a = f.from;
+      const b = f.to;
+      const p: CameraPose = {
+        target: {
+          gx: a.target.gx + (b.target.gx - a.target.gx) * k,
+          gy: a.target.gy + (b.target.gy - a.target.gy) * k,
+          elevation: a.target.elevation + (b.target.elevation - a.target.elevation) * k,
+        },
+        distance: Math.exp(Math.log(a.distance) + (Math.log(b.distance) - Math.log(a.distance)) * k) * (1 + f.arc * Math.sin(Math.PI * k)),
+        yaw: a.yaw + wrapAngle(b.yaw - a.yaw) * kr,
+        pitch: a.pitch + (b.pitch - a.pitch) * kr,
+      };
+      this.cur = p;
+      this.goal = clonePose(p);
+      this.zeroVelocity();
+      this.idleFor = 0;
+      if (u >= 1) {
+        this.cur = clonePose(b);
+        this.goal = clonePose(b);
+        this.flight = null;
+      }
+    } else {
+      const c = this.cur;
+      const g = this.goal;
+      const v = this.vel;
+      const spring = (cur: number, goal: number, vk: keyof typeof v): number => {
+        // Semi-implicit critically damped spring: stable at any dt, never overshoots.
+        const w = this.damping;
+        const d = 1 + w * dt;
+        v[vk] = (v[vk] + w * w * dt * (goal - cur)) / (d * d);
+        return cur + v[vk] * dt;
+      };
+      c.target.gx = spring(c.target.gx, g.target.gx, 'gx');
+      c.target.gy = spring(c.target.gy, g.target.gy, 'gy');
+      c.target.elevation = spring(c.target.elevation, g.target.elevation, 'elevation');
+      // Distance springs in log space: zooming a factor of two feels the same from 500 m and from 5 km.
+      c.distance = Math.exp(spring(Math.log(c.distance), Math.log(g.distance), 'logDistance'));
+      c.yaw = spring(c.yaw, c.yaw + wrapAngle(g.yaw - c.yaw), 'yaw');
+      c.pitch = spring(c.pitch, g.pitch, 'pitch');
+      // Snap when converged so poses are stable (and screenshots deterministic).
+      if (
+        Math.abs(g.distance - c.distance) < 1e-4 * g.distance &&
+        Math.abs(wrapAngle(g.yaw - c.yaw)) < 1e-5 &&
+        Math.abs(g.pitch - c.pitch) < 1e-5 &&
+        Math.abs(g.target.gx - c.target.gx) < 1e-4 &&
+        Math.abs(g.target.gy - c.target.gy) < 1e-4 &&
+        Math.abs(g.target.elevation - c.target.elevation) < 1e-3
+      ) {
+        this.cur = clonePose(g);
+        this.zeroVelocity();
+        settled = true;
+      }
+    }
+    this.enforceClearance(this.cur);
+    this.enforceClearance(this.goal);
+    this.advanceSway(dt, settled);
+    this.lastCur = clonePose(this.cur);
+  }
+
+  private stripSway(): void {
+    const a = this.swayApplied;
+    if (a.yaw === 0 && a.pitch === 0 && a.distScale === 1) return;
+    for (const p of [this.cur, this.lastCur]) {
+      p.yaw -= a.yaw;
+      p.pitch -= a.pitch;
+      p.distance /= a.distScale;
+    }
+    a.yaw = 0;
+    a.pitch = 0;
+    a.distScale = 1;
+  }
+
+  private zeroVelocity(): void {
+    const v = this.vel;
+    v.gx = v.gy = v.elevation = v.logDistance = v.yaw = v.pitch = 0;
+  }
+
+  /**
+   * Idle breathing. Two incommensurable periods on yaw and pitch (plus a slower one on distance) so the motion
+   * never repeats visibly, ramped in and out so it cannot start or stop with a step. It is deliberately applied to
+   * the live pose and not to the goal, so releasing a drag does not snap the view back.
+   */
+  private advanceSway(dt: number, settled: boolean): void {
+    const want = this.sway && settled && !this.drag && !this.pinch && !this.flight;
+    this.idleFor = want ? this.idleFor + dt : 0;
+    const target = want && this.idleFor > SWAY_DELAY_S ? 1 : 0;
+    // Ramps up over SWAY_RAMP_S, but falls to zero in a quarter of that: the moment a hand touches it, it stops.
+    const rate = target > this.swayAmp ? 1 / SWAY_RAMP_S : 4 / SWAY_RAMP_S;
+    this.swayAmp = clamp(this.swayAmp + Math.sign(target - this.swayAmp) * rate * dt, 0, 1);
+    if (this.swayAmp <= 0) {
+      this.swayPhase = 0;
+      return;
+    }
+    this.swayPhase += dt;
+    const t = this.swayPhase;
+    const a = this.swayAmp * this.swayAmp * (3 - 2 * this.swayAmp);
+    const c = this.cur;
+    const o = this.swayApplied;
+    o.yaw = a * SWAY_YAW * Math.sin(t * 0.211);
+    o.pitch = a * SWAY_PITCH * Math.sin(t * 0.137 + 1.7);
+    o.distScale = 1 + a * SWAY_DIST * Math.sin(t * 0.091 + 0.6);
+    c.yaw += o.yaw;
+    c.pitch = clamp(c.pitch + o.pitch, MIN_PITCH, MAX_PITCH);
+    c.distance *= o.distScale;
+  }
+
+  /**
+   * Whether the view is moving right now: a drag or pinch in progress, a fly-to running, or the spring still
+   * catching up with its goal. Hero-shot post (depth of field) reads this and steps aside while it is true, so
+   * the blur only ever appears on a settled frame — no host wiring required.
+   */
+  get moving(): boolean {
+    if (this.drag || this.pinch || this.flight) return true;
+    const v = this.vel;
+    return (
+      Math.abs(v.yaw) > 1e-4 ||
+      Math.abs(v.pitch) > 1e-4 ||
+      Math.abs(v.logDistance) > 1e-4 ||
+      Math.abs(v.gx) > 1e-3 ||
+      Math.abs(v.gy) > 1e-3 ||
+      Math.abs(v.elevation) > 1e-2
+    );
+  }
+
+  /** The user touched the view: stop breathing at once and restart the idle clock. */
+  noteInteraction(): void {
+    this.stripSway();
+    this.idleFor = 0;
+    this.swayAmp = 0;
+    this.swayPhase = 0;
+  }
+
+  /**
+   * Lowest pitch allowed for a pose. Grazing views are for close-ups: from far away they show only the nearest
+   * hillside (the flood hides behind it), and with the eye outside the terrain footprint the frame fills with the
+   * diorama's side wall. So the floor rises with distance (relative to the domain) and with how far the eye's
+   * ground position lies outside the footprint. It is smooth in distance, target and yaw, so orbiting never pops.
+   */
+  minPitchFor(p: CameraPose): number {
+    const e = this.env;
+    const size = Math.max(e.nx, e.ny) * e.cellSize;
+    const byDistance = MIN_PITCH + (FAR_MIN_PITCH - MIN_PITCH) * smooth(0.06 * size, 0.5 * size, p.distance);
+    // The eye's horizontal offset shrinks as the pitch rises, so the smallest pitch that satisfies the outside
+    // floor is found by bisection (the floor only rises as the eye moves out, so there is one crossing).
+    const need = (pitch: number) => {
+      const cp = Math.cos(pitch);
+      const ex = (p.target.gx - e.nx / 2) * e.cellSize - Math.sin(p.yaw) * cp * p.distance;
+      const ez = (p.target.gy - e.ny / 2) * e.cellSize + Math.cos(p.yaw) * cp * p.distance;
+      const ox = Math.max(0, Math.abs(ex) - (e.nx / 2) * e.cellSize);
+      const oz = Math.max(0, Math.abs(ez) - (e.ny / 2) * e.cellSize);
+      const outside = Math.hypot(ox, oz);
+      return Math.max(byDistance, MIN_PITCH + (OUTSIDE_MIN_PITCH - MIN_PITCH) * smooth(0, 0.25 * size, outside));
+    };
+    let lo = byDistance;
+    let hi = MAX_PITCH;
+    if (need(lo) <= lo) return lo;
+    for (let i = 0; i < 24; i++) {
+      const mid = 0.5 * (lo + hi);
+      if (need(mid) <= mid) hi = mid;
+      else lo = mid;
+    }
+    return hi;
+  }
+
+  /** Keep the eye above the terrain surface (and above the pitch floor) by raising the pitch if needed. */
+  private enforceClearance(p: CameraPose): void {
+    const e = this.env;
+    const x = p.target;
+    x.gx = clamp(x.gx, -0.25 * e.nx, 1.25 * e.nx);
+    x.gy = clamp(x.gy, -0.25 * e.ny, 1.25 * e.ny);
+    p.distance = clamp(p.distance, this.minDistance(), this.maxDistance());
+    p.pitch = clamp(p.pitch, this.minPitchFor(p), MAX_PITCH);
+    for (let iter = 0; iter < 3; iter++) {
+      const eye = this.eyeFor(p);
+      const h = e.heightAt(eye[0] / e.cellSize + e.nx / 2, eye[2] / e.cellSize + e.ny / 2);
+      if (h === null) return;
+      const minY = h * e.exaggeration + Math.max(3, p.distance * 0.03);
+      if (eye[1] >= minY) return;
+      const ty = x.elevation * e.exaggeration;
+      const s = clamp((minY - ty) / p.distance, -1, 1);
+      const need = Math.asin(s);
+      if (need <= p.pitch + 1e-6) {
+        // Target itself is buried or the geometry doesn't converge: lift the target instead.
+        x.elevation += (minY - eye[1]) / e.exaggeration;
+        return;
+      }
+      p.pitch = clamp(need + 0.002, MIN_PITCH, MAX_PITCH);
+    }
+  }
+
+  private adoptExternalEdits(): void {
+    if (!samePose(this.cur, this.lastCur)) {
+      const s = sanitize(this.cur, this.lastCur);
+      this.cur = s;
+      this.goal = clonePose(s);
+      this.lastCur = clonePose(s);
+      this.flight = null;
+    }
+  }
+
+  // ── Input ──────────────────────────────────────────────────────────────────────────────
+
+  attach(canvas: HTMLCanvasElement): void {
+    this.detach();
+    this.canvas = canvas;
+    canvas.style.touchAction = 'none';
+    const on = (t: EventTarget, type: string, fn: (ev: any) => void, opts?: AddEventListenerOptions) => {
+      t.addEventListener(type, fn as EventListener, opts);
+      this.listeners.push([t, type, fn as EventListener, opts]);
+    };
+    on(canvas, 'pointerdown', (e: PointerEvent) => this.onPointerDown(e));
+    on(canvas, 'pointermove', (e: PointerEvent) => this.onPointerMove(e));
+    on(canvas, 'pointerup', (e: PointerEvent) => this.onPointerUp(e));
+    on(canvas, 'pointercancel', (e: PointerEvent) => this.onPointerUp(e));
+    on(canvas, 'lostpointercapture', (e: PointerEvent) => this.onPointerUp(e));
+    on(canvas, 'wheel', (e: WheelEvent) => this.onWheel(e), { passive: false });
+    on(canvas, 'contextmenu', (e: Event) => e.preventDefault());
+  }
+
+  detach(): void {
+    for (const [t, type, fn, opts] of this.listeners) t.removeEventListener(type, fn, opts);
+    this.listeners = [];
+    this.canvas = null;
+    this.drag = null;
+    this.touches.clear();
+    this.pinch = null;
+  }
+
+  private local(e: { clientX: number; clientY: number }): { x: number; y: number } {
+    const r = this.canvas!.getBoundingClientRect();
+    this.viewportCss = { w: Math.max(1, r.width), h: Math.max(1, r.height) };
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+
+  private rayFor(pose: CameraPose, x: number, y: number): Ray {
+    const m = this.matrices(this.viewportCss.w / this.viewportCss.h, pose);
+    return cameraRay(m, x, y, this.viewportCss.w, this.viewportCss.h);
+  }
+
+  private beginInteraction(): void {
+    this.noteInteraction();
+    this.adoptExternalEdits();
+    if (this.flight) {
+      this.flight = null;
+      this.goal = clonePose(this.cur);
+    }
+  }
+
+  private onPointerDown(e: PointerEvent): void {
+    if (!this.canvas) return;
+    const p = this.local(e);
+    if (e.pointerType === 'touch') {
+      this.touches.set(e.pointerId, p);
+      if (this.touches.size === 2) {
+        this.drag = null;
+        this.beginInteraction();
+        this.pinch = this.pinchState();
+        this.capture(e);
+      } else if (this.touches.size === 1 && this.leftDragOrbits) {
+        this.beginInteraction();
+        this.drag = { mode: 'orbit', pointerId: e.pointerId, lastX: p.x, lastY: p.y };
+        this.capture(e);
+      }
+      return;
+    }
+    let mode: 'orbit' | 'pan' | null = null;
+    if (e.button === 0 && this.leftDragOrbits) mode = e.shiftKey || e.ctrlKey || e.metaKey ? 'pan' : 'orbit';
+    else if (e.button === 1 || e.button === 2) mode = 'pan';
+    if (!mode) return;
+    if (e.button === 1) e.preventDefault();
+    this.beginInteraction();
+    this.drag = { mode, pointerId: e.pointerId, lastX: p.x, lastY: p.y };
+    if (mode === 'pan') this.startPan(this.drag, p.x, p.y);
+    this.capture(e);
+  }
+
+  private capture(e: PointerEvent): void {
+    try {
+      this.canvas?.setPointerCapture(e.pointerId);
+    } catch {
+      /* capture is best-effort (synthetic events) */
+    }
+  }
+
+  private startPan(d: DragState, x: number, y: number): void {
+    const pose = clonePose(this.goal);
+    const ray = this.rayFor(pose, x, y);
+    const ty = this.worldTarget(pose)[1];
+    d.grab = intersectPlaneY(ray, ty) ?? undefined;
+    d.grabPose = pose;
+  }
+
+  private onPointerMove(e: PointerEvent): void {
+    if (!this.canvas) return;
+    if (e.pointerType === 'touch' && this.touches.has(e.pointerId)) {
+      this.touches.set(e.pointerId, this.local(e));
+      if (this.touches.size >= 2 && this.pinch) {
+        this.applyPinch();
+        return;
+      }
+    }
+    const d = this.drag;
+    if (!d || d.pointerId !== e.pointerId) return;
+    const p = this.local(e);
+    const dx = p.x - d.lastX;
+    const dy = p.y - d.lastY;
+    d.lastX = p.x;
+    d.lastY = p.y;
+    if (d.mode === 'orbit') {
+      const k = (2.6 * Math.PI) / Math.max(400, this.viewportCss.w);
+      this.goal.yaw += dx * k;
+      this.goal.pitch = clamp(this.goal.pitch + dy * k * 0.8, MIN_PITCH, MAX_PITCH);
+    } else if (d.grab && d.grabPose) {
+      const ray = this.rayFor(d.grabPose, p.x, p.y);
+      const ty = this.worldTarget(d.grabPose)[1];
+      let hit = intersectPlaneY(ray, ty);
+      const size = Math.max(this.env.nx, this.env.ny) * this.env.cellSize;
+      if (!hit || v3.len(v3.sub(hit, ray.origin)) > size * 3) {
+        // Near the horizon: clamp to a far point along the ray's horizontal direction.
+        const hd = v3.norm([ray.dir[0], 0, ray.dir[2]]);
+        hit = v3.add([ray.origin[0], ty, ray.origin[2]], v3.scale(hd, size * 3));
+      }
+      const delta = v3.sub(d.grab, hit);
+      const cs = this.env.cellSize;
+      this.goal.target.gx = d.grabPose.target.gx + delta[0] / cs;
+      this.goal.target.gy = d.grabPose.target.gy + delta[2] / cs;
+    }
+  }
+
+  private onPointerUp(e: PointerEvent): void {
+    if (e.pointerType === 'touch') {
+      this.touches.delete(e.pointerId);
+      if (this.touches.size < 2) this.pinch = null;
+      if (this.touches.size === 0) this.settleTargetElevation();
+    }
+    if (this.drag && this.drag.pointerId === e.pointerId) {
+      if (this.drag.mode === 'pan') this.settleTargetElevation();
+      this.drag = null;
+    }
+  }
+
+  /** After panning, glide the orbit pivot onto the terrain under it. */
+  private settleTargetElevation(): void {
+    const h = this.env.heightAt(this.goal.target.gx, this.goal.target.gy);
+    if (h === null) return;
+    // Keep the eye where it is while re-centering the pivot vertically: adjust distance along the ray.
+    this.goal.target.elevation = h;
+  }
+
+  private pinchState() {
+    const pts = [...this.touches.values()].slice(0, 2);
+    const dx = pts[1].x - pts[0].x;
+    const dy = pts[1].y - pts[0].y;
+    return {
+      dist: Math.max(1, Math.hypot(dx, dy)),
+      angle: Math.atan2(dy, dx),
+      midX: (pts[0].x + pts[1].x) / 2,
+      midY: (pts[0].y + pts[1].y) / 2,
+    };
+  }
+
+  private applyPinch(): void {
+    const prev = this.pinch!;
+    const now = this.pinchState();
+    // Pan by midpoint movement on the pivot plane.
+    const pose = clonePose(this.goal);
+    const ty = this.worldTarget(pose)[1];
+    const a = intersectPlaneY(this.rayFor(pose, prev.midX, prev.midY), ty);
+    const b = intersectPlaneY(this.rayFor(pose, now.midX, now.midY), ty);
+    if (a && b) {
+      this.goal.target.gx += (a[0] - b[0]) / this.env.cellSize;
+      this.goal.target.gy += (a[2] - b[2]) / this.env.cellSize;
+    }
+    this.zoomAt(now.midX, now.midY, prev.dist / now.dist);
+    this.goal.yaw -= wrapAngle(now.angle - prev.angle);
+    this.pinch = now;
+  }
+
+  private onWheel(e: WheelEvent): void {
+    if (!this.canvas) return;
+    e.preventDefault();
+    this.beginInteraction();
+    const p = this.local(e);
+    let dy = e.deltaY;
+    if (e.deltaMode === 1) dy *= 16;
+    else if (e.deltaMode === 2) dy *= this.viewportCss.h;
+    // Trackpad pinch arrives as ctrl+wheel with small deltas; make it a bit more sensitive.
+    const k = e.ctrlKey ? 0.01 : 0.0015;
+    this.zoomAt(p.x, p.y, Math.exp(clamp(dy, -400, 400) * k));
+  }
+
+  /** Scale the camera about the terrain point under (x, y): that point stays under the cursor. */
+  zoomAt(x: number, y: number, factor: number): void {
+    const e = this.env;
+    const g = this.goal;
+    const newD = clamp(g.distance * factor, this.minDistance(), this.maxDistance());
+    const s = newD / g.distance;
+    if (Math.abs(s - 1) < 1e-6) return;
+    const hit = e.pickWorld(x, y);
+    if (hit) {
+      g.target.gx = hit.gx + (g.target.gx - hit.gx) * s;
+      g.target.gy = hit.gy + (g.target.gy - hit.gy) * s;
+      g.target.elevation = hit.elevation + (g.target.elevation - hit.elevation) * s;
+    }
+    g.distance = newD;
+  }
+}
+
+/**
+ * Closest the orbit camera may get, m. Terrain has one vertex per cell and the aerial imagery is 1.2–2 m per texel
+ * (baked presets: 4096² over 5–8 km), so much closer only magnifies texels into blurry blocks and cells into flat
+ * facets. At the limit a texel still spans ~10 CSS px and a cell ~40, close enough to inspect a wall or a route along
+ * a street; coarse grids and coarse imagery stop proportionally farther away.
+ */
+export function minCameraDistance(cellSize: number, imageryMetersPerTexel?: number | null): number {
+  const texel = imageryMetersPerTexel != null && Number.isFinite(imageryMetersPerTexel) && imageryMetersPerTexel > 0 ? imageryMetersPerTexel : 0;
+  return Math.max(120, cellSize * 16, texel * 100);
+}
