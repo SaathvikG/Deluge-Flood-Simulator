@@ -1,0 +1,56 @@
+{
+  "name": "deluge",
+  "private": true,
+  "version": "0.1.0",
+  "main": "electron/main.js",
+  "bin": {
+    "deluge": "bin/deluge.mjs"
+  },
+  "type": "module",
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test --test-concurrency=1 tests/*/*.test.ts",
+    "test:unit": "node --import tsx --test --test-concurrency=1 tests/hazard/*.test.ts tests/climate/*.test.ts tests/data/*.test.ts tests/routing/*.test.ts tests/app/*.test.ts tests/ui/*.test.ts tests/loss/*.test.ts tests/render/picking.test.ts tests/render/quality.test.ts tests/render/tonemap.test.ts tests/render/wallField.test.ts tests/cli/parity.test.ts tests/cli/server.test.ts tests/validation/*.test.ts tests/project/*.test.ts tests/dams/*.test.ts tests/surge/*.test.ts",
+    "demo": "vite build && vite preview --port 4173 --strictPort",
+    "e2e": "node scripts/e2e.mjs",
+    "deluge": "node bin/deluge.mjs",
+    "bench": "node scripts/bench.mjs",
+    "test:perf": "node scripts/perf.mjs",
+    "test:visual": "node scripts/visual.mjs",
+    "test:security": "node scripts/security-test.mjs",
+    "test:suites": "node scripts/security-test.mjs --quick && node scripts/visual.mjs --quick && node scripts/perf.mjs --quick",
+    "test:all": "npm run typecheck && npm test && node scripts/security-test.mjs && node scripts/visual.mjs && node scripts/perf.mjs",
+    "app:dev": "vite build && env -u ELECTRON_RUN_AS_NODE electron electron/main.js",
+    "app:build": "node --import tsx electron/check-endpoints.mjs && tsc --noEmit && vite build && node electron/package.mjs",
+    "app:icon": "node electron/make-icon.mjs",
+    "app:verify": "node electron/package.mjs --name='Deluge Verify' --out=artifacts/electron",
+    "app:check": "node electron/verify-renderer.mjs && node electron/verify-packaged.mjs"
+  },
+  "devDependencies": {
+    "@electron/fuses": "2.1.3",
+    "@electron/packager": "20.3.0",
+    "@types/leaflet": "^1.9.22",
+    "@types/node": "^22.20.3",
+    "@webgpu/types": "^0.1.72",
+    "electron": "44.4.1",
+    "playwright": "^1.63.0",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.0",
+    "webgpu": "^0.6.1"
+  },
+  "dependencies": {
+    "geotiff": "^3.0.5",
+    "leaflet": "^1.9.4"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "webgpu@0.6.1": true
+  }
+}

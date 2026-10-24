@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!--
+      The production build also injects a Content-Security-Policy meta right here (vite.config.ts → src/data/csp.ts).
+      Referrer: third parties (Nominatim, Esri, USGS, TIGER) see only the origin, never the path or query — so a
+      shared ?live=…&name=… link never leaks to them. strict-origin-when-cross-origin rather than no-referrer because
+      Nominatim's usage policy asks for an identifying Referer and browsers cannot set a User-Agent. FINDINGS SEC-02.
+    -->
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Deluge — real-time flood simulation</title>
+    <meta
+      name="description"
+      content="Deluge simulates floods in real time on real USGS terrain: shallow-water equations solved on your GPU with WebGPU compute shaders. Raise the rivers, crank the rain, build levees and watch evacuation routes re-plan."
+    />
+    <meta name="theme-color" content="#05070d" />
+    <meta name="color-scheme" content="dark" />
+    <!-- Inline favicon: no extra request, works offline. -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Cdefs%3E%3ClinearGradient id=%22bg%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%230d1a2e%22/%3E%3Cstop offset=%221%22 stop-color=%22%2305070d%22/%3E%3C/linearGradient%3E%3ClinearGradient id=%22drop%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%237fd4ff%22/%3E%3Cstop offset=%221%22 stop-color=%22%231f7fe0%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22url(%23bg)%22/%3E%3Cpath d=%22M32 7C23 20 14 30.5 14 40.5a18 18 0 0 0 36 0C50 30.5 41 20 32 7z%22 fill=%22url(%23drop)%22/%3E%3Cpath d=%22M19 41.5c4.3-3 8.7-3 13 0s8.7 3 13 0%22 stroke=%22%23eaf8ff%22 stroke-width=%223.6%22 fill=%22none%22 stroke-linecap=%22round%22/%3E%3Cpath d=%22M21.5 49c3.5-2.3 7-2.3 10.5 0s7 2.3 10.5 0%22 stroke=%22%23eaf8ff%22 stroke-opacity=%220.6%22 stroke-width=%223%22 fill=%22none%22 stroke-linecap=%22round%22/%3E%3C/svg%3E" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #05070d;
+        color: #dce6f5;
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -webkit-tap-highlight-color: transparent;
+      }
+      #deluge-canvas {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        touch-action: none;
+        outline: none;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      /*
+       * Defaults only (zero specificity via :where, so src/ui/styles.css always wins): the UI positions its
+       * own panels, and the root itself never covers — or blocks pointer input to — the canvas.
+       */
+      :where(#ui-root) {
+        position: relative;
+        z-index: 10;
+      }
+      /* Shown until the UI mounts (or a fallback screen replaces it). */
+      #boot {
+        position: fixed;
+        inset: 0;
+        z-index: 5;
+        display: grid;
+        place-items: center;
+        pointer-events: none;
+        background: radial-gradient(1000px 600px at 50% 120%, rgba(30, 110, 200, 0.25), transparent 70%), #05070d;
+      }
+      #boot .mark {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 22px;
+        font-weight: 650;
+        letter-spacing: 0.04em;
+        color: #cfe9ff;
+        animation: boot-pulse 1.6s ease-in-out infinite;
+      }
+      @keyframes boot-pulse {
+        0%, 100% { opacity: 0.55; }
+        50% { opacity: 1; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #boot .mark { animation: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="deluge-canvas" tabindex="0" aria-label="3D flood simulation view"></canvas>
+    <div id="ui-root"></div>
+    <div id="boot" aria-hidden="true">
+      <div class="mark">
+        <svg width="34" height="34" viewBox="0 0 64 64">
+          <path d="M32 7C23 20 14 30.5 14 40.5a18 18 0 0 0 36 0C50 30.5 41 20 32 7z" fill="#3aa0ff" />
+          <path d="M19 41.5c4.3-3 8.7-3 13 0s8.7 3 13 0" stroke="#eaf8ff" stroke-width="3.6" fill="none" stroke-linecap="round" />
+        </svg>
+        Deluge
+      </div>
+    </div>
+    <noscript>
+      <p style="position: fixed; inset: 0; display: grid; place-items: center; margin: 0">
+        Deluge needs JavaScript and WebGPU to run.
+      </p>
+    </noscript>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

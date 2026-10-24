@@ -1,0 +1,27 @@
+node_modules
+dist
+artifacts
+.DS_Store
+*.log
+test-results
+playwright-report
+.vite
+release
+
+# large raw screenshot captures (curated gallery is committed)
+submission/raw-*/
+
+# raw video frames (the encoded film is committed, the frames are not)
+submission/video/work/
+
+# 4K master exceeds GitHub 100 MB limit; 1080p version is committed
+submission/video/deluge-demo-4k*.mp4
+submission/video/poster-4k.jpg
+.vercel
+.env*
+
+# Claude Code local worktrees
+.claude/
+
+# CLI and `deluge serve` output (default --out / --data-dir)
+/results/
