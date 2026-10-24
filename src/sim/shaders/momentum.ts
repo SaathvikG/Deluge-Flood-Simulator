@@ -1,0 +1,351 @@
+/**
+ * Pass A — momentum. For every cell (i, j) compute the new unit discharge through its EAST face (qx) and its
+ * SOUTH face (qy) from the old state. Output: rg32float flux texture (r = qx*, g = qy*), not yet limited.
+ *
+ *   q_new = ( q̃ − dt·A − g·hf·dt·S ) / ( 1 + g·dt·n²·|q| / hf^{7/3} )
+ *
+ *   q̃   grid-scale smoothing, q̃ = q + (1−θ)/2 · minmod(L, G)   (see SMOOTHING below).
+ *   A    convective acceleration ∂(q·u)/∂x + ∂(q·v)/∂y, first-order upwind in conservative (momentum-flux)
+ *        form, on faces whose whole stencil is wet (see ADVECTION below). Without it (the pure Bates 2010
+ *        "local inertial" model) a frictionless dam break advances at only ~50 % of the true speed; with it
+ *        the scheme reproduces the Ritter solution.
+ *   S    water-surface slope (η_R − η_L)/dx. Written ((z_R − z_L) + (h_R − h_L))/dx so a lake at rest has
+ *        S = 0 to rounding: the scheme is WELL-BALANCED (still water on steep terrain stays still).
+ *   denominator: friction treated SEMI-IMPLICITLY. An explicit Manning term −dt·g·n²·q|q|/h^{7/3} is
+ *        a stiff decay with rate ∝ 1/h^{4/3} → it overshoots and flips sign on thin films for any practical
+ *        dt. Dividing instead can only shrink |q| toward 0, unconditionally stable.
+ *   cap  robust mode clamps |q| ≤ hf·min(uMax, FrMax·√(g·hf)) — a last line of defence on thin films.
+ *
+ * SMOOTHING. A staggered explicit scheme is non-dissipative for gravity waves, so at low friction it keeps
+ * grid-scale (2Δx) sloshing forever. de Almeida et al. (2012) damp it with θ-smoothing along each face's normal,
+ * q̃ = q + (1−θ)/2·L with the 1-D Laplacian L = w_up·(q_up − q) + w_down·(q_down − q). On its own L is also a
+ * strong artificial viscosity (≈ 0.1·dx²/dt ≈ 10 m²/s on a 7 m grid) acting on EVERY grid-scale pattern,
+ * including the zig-zag a river MUST follow to run diagonally across a raster (it turns 90° at every stair step
+ * of its banks): channels not aligned with the grid ran 3–5× deeper than Manning's normal depth. So L is
+ * limited by the divergence-damping increment G = D_R − D_L, where D is the discrete divergence (net outflow) of
+ * the two cells sharing the face, the same operator the continuity pass uses:
+ *     L, G same sign → the one closer to 0;   opposite signs → 0          (minmod).
+ *  • gravity-wave noise is DIVERGENT: L and G agree (G = L plus transverse terms of the same sign), the damping
+ *    is de Almeida's. The 2-D checkerboard is damped exactly as before, so the stability limit Cr ≤ √θ
+ *    (Solver.computeDt) is unchanged; for any other Fourier mode the damping lies between 0 and de Almeida's,
+ *    which only relaxes the limit.
+ *  • flow turning around a stair step is DIVERGENCE-FREE (G = 0): not damped at all.
+ *  • a wet/dry front or flow into a dead end is 1-D and divergent (G = L): damped as before. A dry face stores
+ *    q = 0, which is simply its value in L; no wet/dry switch is needed.
+ *  • uniform flow: L = G = 0, preserved exactly; still water: q = 0 stays 0 (well-balanced).
+ *  w = min(1, K·hf/hf_neighbour) (K = smoothingDepthRatio): a neighbour more than K× deeper counts less, so a deep
+ *  channel's discharge is not poured into a thin shoreline film; |minmod(L, G)| ≤ |L| inherits that protection.
+ *
+ * ADVECTION next to dry or blocked faces. The upwind momentum fluxes of a face use its 4 neighbouring faces of the
+ * same orientation. Where one of them is dry or blocked — every stair step of a bank not aligned with the grid —
+ * the first-order upwind flux is dominated by the stair steps, not by resolved flow: a dry neighbour counted as
+ * u = 0 acts as a no-slip wall, and even with free slip (a dry neighbour takes this face's velocity, velN) the
+ * upwind dissipation of the 90° turns kept a 30° channel 21 % too deep. Such faces therefore keep only a
+ * fraction wallAdvection (SolverOptions, 0.1) of the free-slip advection (advWeight), i.e. they are close to the
+ * local-inertial balance (Bates et al. 2010, as LISFLOOD-FP uses everywhere). Not zero: without any advection at
+ * those faces nothing dissipates grid-scale circulations along banks, and a rough-terrain lake at n = 0.01 spun up
+ * 10 m/s jets (0.05 already suppresses them). Interior faces — where fronts are carried and the Ritter speed comes
+ * from — keep full advection. tests/sim/channel.test.ts pins Manning normal depth in walled channels at 0–60°.
+ *
+ * LOCAL COURANT GUARD (robust mode). dt comes from maxima read back asynchronously, so it can be stale: a dam
+ * break piling water against a wall deepens it faster than the CPU learns about it. For each face we compute
+ * its own Courant number Cr_f = √2·(√(g·hf) + |u_f|)·dt/dx. If Cr_f exceeds the stability limit Cr_max we
+ * advance THIS face's momentum with dt_m = dt·(Cr_max/Cr_f)². The gravity-wave stability condition of the
+ * forward–backward scheme involves the product dt_m·dt_continuity, so the face is exactly back at Cr_max.
+ * The water still moves (continuity uses the full dt), mass is still exactly conserved, still water still
+ * stays still (S = 0 ⇒ q = 0), and whenever the global CFL estimate is valid the guard is inactive (dt_m = dt).
+ *
+ * RHEOLOGY (robust mode, sim.rheoKind ≠ 0: a debris flood or debris flow, FloodSolver.setRheology; coefficients in
+ * src/sim/rheology.ts). The Manning term is replaced by the scenario's friction law, split by how it can be integrated
+ * stably (research spec docs/research/glacier-hazard-chain.md §D.2):
+ *
+ *   q* = q̃ − dt·A − g·hf·dt·S                                    explicit predictor, no resistance
+ *   τ  = dt·( τ_y/ρ + μ·g·hf·cosθ )                               yield + Coulomb impulse, cosθ from the face's bed slope
+ *   q' = 0 if |q*|_vec ≤ τ, else q*·(1 − τ/|q*|_vec)              stop-or-reduce, |q*|_vec = √(q*² + qPerp²)
+ *   q_new = q' / ( 1 + dt·( ν/max(hf, h_v)² + (g·n_td²/hf^{7/3} + (g/ξ)/hf²)·|q| ) )      semi-implicit, ≥ 1
+ *
+ * The projection is the standard treatment of plastic friction: it brings a face to exact rest (a deposit forms when
+ * g·hf·|S| < τ_y/ρ + μ·g·hf·cosθ) and can never push the flow backwards, whatever dt. rheoKind 0 skips all of it:
+ * water runs the Manning code above unchanged.
+ *
+ * 'naive' mode (the textbook reference scheme) uses explicit friction, no smoothing, no guard and no cap, and ignores
+ * the rheology (it is water only).
+ *
+ * ROUGHNESS MAP (the ROUGHNESS_MAP pipeline variant; FloodSolver.setLandSurface, src/data/landcover.ts). Each cell carries a
+ * roughness factor r = n_cell / manningN_ref (surfTex.r); a face uses n_f = manningN · (r_L + r_R)/2, so the global
+ * slider stays a multiplier over the land-cover map. n² enters as sim.n2 · r_f², which is sim.n2 exactly when r = 1:
+ * a uniform map is the uniform solver bit for bit. In the default pipeline the code is not compiled. The map applies to
+ * water (Manning) only; a debris rheology keeps its own uniform coefficients.
+ *
+ * POROSITY (the POROSITY pipeline variant; LandSurface.porosity, src/data/porosity.ts; POROSITY_WGSL in common.ts). The
+ * state then holds the water volume per unit cell area V and the discharge per unit cell width. Every texel this pass
+ * reads goes through stm(): depth V/φ (the water depth in the open part of the cell) and discharge q/ψ (per unit open
+ * width of the face), so the equations above are solved in the open part unchanged — face depth, surface slope,
+ * friction, smoothing, advection — and the result is stored back as ψ·q. A closed face (ψ = 0) stores 0. The
+ * open-boundary rule reads raw texels, which is why the edge band is never porous (POROSITY_EDGE_BAND).
+ */
+import { HELPERS_WGSL, POROSITY_WGSL, SIM_WGSL, SURFACE_WGSL } from './common';
+
+export const momentumWGSL = /* wgsl */ `
+${SIM_WGSL}
+@group(0) @binding(0) var<uniform> sim: Sim;
+@group(0) @binding(1) var stateTex: texture_2d<f32>;
+@group(0) @binding(2) var fluxOut: texture_storage_2d<rg32float, write>;
+@group(0) @binding(3) var surfTex: texture_2d<f32>;
+// Pipeline variant: the land-cover roughness map on (see ROUGHNESS MAP in the header). False in the default pipeline.
+override ROUGHNESS_MAP: bool = false;
+@group(0) @binding(4) var porTex: texture_2d<f32>;
+// Pipeline variant: building porosity on (see POROSITY in the header). False in the default pipeline.
+override POROSITY: bool = false;
+${HELPERS_WGSL}
+${SURFACE_WGSL}
+${POROSITY_WGSL}
+
+// The state this pass works with: the raw state, or with porosity on the open part of the cell (true depth, discharge
+// per unit open width; see POROSITY in the header).
+fn stm(i: i32, j: i32) -> vec4f {
+  let s = st(i, j);
+  if (POROSITY) { return openState(s, por(i, j)); }
+  return s;
+}
+
+// n² of the face between cells with roughness factors rL and rR (see ROUGHNESS MAP in the header).
+fn faceN2(rL: f32, rR: f32) -> f32 {
+  let rf = 0.5 * (rL + rR);
+  return sim.n2 * rf * rf;
+}
+
+// Velocity of a WET face for the advection term (bounded in robust mode).
+fn vel(q: f32, hf: f32) -> f32 {
+  let u = q / hf;
+  if (sim.robust != 0) { return clamp(u, -sim.uMax, sim.uMax); }
+  return u;
+}
+
+fn isWet(hf: f32) -> bool {
+  return hf >= sim.hMin;
+}
+
+// Wet/dry weight of a neighbouring face with flow depth hfN seen from a wet face of depth hf: 0 when the neighbour
+// is dry or blocked (hfN < hMin), 1 once it holds max(hMin, 1 % of hf) more (a neighbour 100× shallower than this
+// face is still "dry" here). A threshold, but a CONTINUOUS one: a film hovering at the wet/dry threshold cannot
+// switch terms of a deep face on and off, and neither can rounding (Metal compiles with fast-math, so a film's face
+// depth max(η) − max(z) carries the Float32 rounding of the bed elevation: ~1e-6 m at 10 m above the datum).
+fn wetRamp(hfN: f32, hf: f32) -> f32 {
+  return clamp((hfN - sim.hMin) / max(sim.hMin, 0.01 * hf), 0.0, 1.0);
+}
+
+// Velocity of a neighbouring face for the advection stencil: its own velocity when wet, this face's velocity uC
+// when dry or blocked (free slip; a dry face's u = 0 would act as a no-slip wall). Blended over hMin..2·hMin only
+// for continuity: a film's own velocity, however noisy, must stay in the upwind stencil — replacing it by uC up
+// to 1 % of hf (as wetRamp would) removed enough dissipation to let a low-friction lake spin up again.
+fn velN(q: f32, hfN: f32, uC: f32) -> f32 {
+  let w = clamp(hfN / sim.hMin - 1.0, 0.0, 1.0);
+  if (w <= 0.0) { return uC; }
+  return mix(uC, vel(q, hfN), w);
+}
+
+// Advection weight of a face with depth hf from the depths of its 4 neighbouring parallel faces: 1 when all are
+// wet, sim.wallAdv when any is dry or blocked (see header).
+fn advWeight(hf: f32, hfA: f32, hfB: f32, hfC: f32, hfD: f32) -> f32 {
+  return mix(sim.wallAdv, 1.0, wetRamp(min(min(hfA, hfB), min(hfC, hfD)), hf));
+}
+
+// Laplacian weight of a neighbouring parallel face with flow depth hfN: 1, or less if the neighbour is more than
+// K× deeper (see header). No wet/dry switch: a dry face stores q = 0, which is simply its value.
+fn smoothW(hf: f32, hfN: f32) -> f32 {
+  return min(1.0, sim.smoothRatio * hf / max(hfN, sim.hMin));
+}
+
+fn minmod(a: f32, b: f32) -> f32 {
+  if (!(a * b > 0.0)) { return 0.0; }
+  return select(max(a, b), min(a, b), a > 0.0);
+}
+
+// Smoothing increment minmod(L, G) (see header). qc: this face; qUp/qDn + hfUp/hfDn: the parallel neighbours
+// along the face normal; divJump: D_R − D_L of the two cells sharing the face.
+fn smoothIncrement(hf: f32, qc: f32, qUp: f32, hfUp: f32, qDn: f32, hfDn: f32, divJump: f32) -> f32 {
+  let lap = smoothW(hf, hfUp) * (qUp - qc) + smoothW(hf, hfDn) * (qDn - qc);
+  return minmod(lap, divJump);
+}
+
+// Debris-flow rheology (sim.rheoKind ≠ 0, robust mode; see RHEOLOGY in the header). qt: smoothed old flux, dz: bed
+// rise z_R − z_L across the face, qmag: |q| of the old state (as Manning uses), dtm: the guarded timestep.
+fn rheoMomentum(hf: f32, hf73: f32, slope: f32, dz: f32, qt: f32, qmag: f32, qPerp: f32, adv: f32, dtm: f32) -> f32 {
+  // 1. Explicit predictor without resistance.
+  let qStar = qt - dtm * adv - sim.g * hf * dtm * slope;
+  // 2. Rate-independent resistance (yield stress, Coulomb), as a discharge per unit width removed this step:
+  //    stop-or-reduce. A face whose driving impulse cannot overcome it stops exactly; otherwise |q| shrinks by it
+  //    along the flow vector (qStar, qPerp). Never reverses the flow, for any dt.
+  let bedS = dz / sim.dx;
+  let cosT = inverseSqrt(1.0 + bedS * bedS);
+  let stopQ = dtm * (sim.rheoTau + sim.rheoMu * sim.g * hf * cosT);
+  let qsMag = sqrt(qStar * qStar + qPerp * qPerp);
+  var q = 0.0;
+  if (qsMag > stopQ) { q = qStar * (1.0 - stopQ / qsMag); }
+  // 3. Rate-dependent resistance (laminar viscosity, turbulent Manning n_td² or Voellmy g/ξ), semi-implicit: the
+  //    denominator is ≥ 1, so it can only slow the flow.
+  let hv = max(hf, sim.rheoHVisc);
+  let lin = sim.rheoVisc / (hv * hv);
+  let quad = (sim.g * sim.rheoN2 / hf73 + sim.rheoGXi / (hf * hf)) * qmag;
+  return q / (1.0 + dtm * (lin + quad));
+}
+
+// hf: face depth (≥ hMin), slope: (η_R − η_L)/dx, dz: bed rise z_R − z_L, qc: old flux, dq: smoothing increment,
+// qPerp: mean of the 4 surrounding perpendicular faces, adv: convective acceleration, n2: the face's Manning n².
+fn momentum(hf: f32, slope: f32, dz: f32, qc: f32, dq: f32, qPerp: f32, adv: f32, n2: f32) -> f32 {
+  let qmag = sqrt(qc * qc + qPerp * qPerp);
+  // hf ≥ hMin (1e-4) here, so hf^{7/3} ≥ 4.6e-10: no underflow / division by zero in Float32.
+  let hf73 = pow(hf, 7.0 / 3.0);
+  if (sim.robust != 0) {
+    // Local Courant guard (see header).
+    let uf = min(qmag / hf, sim.uMax);
+    let cr = 1.41421356 * (sqrt(sim.g * hf) + uf) * sim.dt / sim.dx;
+    let ratio = min(1.0, sim.crGuard / max(cr, 1e-6));
+    let dtm = sim.dt * ratio * ratio;
+    let qt = qc + 0.5 * (1.0 - sim.theta) * dq;
+    var q: f32;
+    if (sim.rheoKind != 0) {
+      q = rheoMomentum(hf, hf73, slope, dz, qt, qmag, qPerp, adv, dtm);
+    } else {
+      let fric = sim.g * dtm * n2 * qmag / hf73;
+      q = (qt - dtm * adv - sim.g * hf * dtm * slope) / (1.0 + fric);
+    }
+    let cap = hf * min(sim.uMax, sim.frMax * sqrt(sim.g * hf));
+    return clamp(q, -cap, cap);
+  }
+  let fric = sim.g * sim.dt * n2 * qmag / hf73;
+  return qc - sim.dt * adv - sim.g * hf * sim.dt * slope - fric * qc;
+}
+
+@compute @workgroup_size(16, 16)
+fn main(@builtin(global_invocation_id) id: vec3u) {
+  let i = i32(id.x);
+  let j = i32(id.y);
+  if (i >= sim.nx || j >= sim.ny) { return; }
+
+  // C, E and S alone decide whether either face is wet. Most cells of a real map are dry, so the other
+  // texels are fetched only when there is flow to compute (≈15–20 % faster on the Pittsburgh preset).
+  let c = stm(i, j);
+  let e = stm(i + 1, j);
+  let s = stm(i, j + 1);
+  var hfx = 0.0;
+  var hfy = 0.0;
+  if (i < sim.nx - 1) { hfx = faceDepth(c.r, c.a, e.r, e.a); }
+  if (j < sim.ny - 1) { hfy = faceDepth(c.r, c.a, s.r, s.a); }
+  if (!isWet(hfx) && !isWet(hfy)) {
+    // Both faces dry (east/south domain-edge faces are boundary faces, handled in pass B).
+    textureStore(fluxOut, vec2i(i, j), vec4f(0.0));
+    return;
+  }
+  let w  = stm(i - 1, j);
+  let n  = stm(i, j - 1);
+  let ne = stm(i + 1, j - 1);
+  let sw = stm(i - 1, j + 1);
+  let se = stm(i + 1, j + 1);
+
+  // Net outflow (m²/s) of this cell, for the smoothing limiter. The stored qx/qy of the last column/row are the
+  // east/south boundary fluxes; west/north domain-edge fluxes are not stored, so evaluate the boundary rule.
+  var qWc = w.g;
+  var qNc = n.b;
+  if (i == 0) { qWc = -bflux(c.r, i, j, 1, 0); }
+  if (j == 0) { qNc = -bflux(c.r, i, j, 0, 1); }
+  let divC = (c.g - qWc) + (c.b - qNc);
+
+  var qxNew = 0.0;
+  var qyNew = 0.0;
+
+  // Manning n² of the two faces: uniform, or from the land-cover roughness map (see ROUGHNESS MAP in the header).
+  var n2x = sim.n2;
+  var n2y = sim.n2;
+  if (ROUGHNESS_MAP) {
+    let rc = surf(i, j).r;
+    n2x = faceN2(rc, surf(i + 1, j).r);
+    n2y = faceN2(rc, surf(i, j + 1).r);
+  }
+
+  // ── x-face between (i, j) and (i+1, j). The east edge face is a boundary face (handled in pass B). ──
+  if (i < sim.nx - 1) {
+    let hf = hfx;
+    if (isWet(hf)) {
+      let ee = stm(i + 2, j);
+      let slope = ((e.a - c.a) + (e.r - c.r)) / sim.dx;
+      let qPerp = 0.25 * (c.b + e.b + n.b + ne.b);
+      // Depths of the neighbouring x-faces: i−½, i+3/2 (along x) and the faces south/north of this one.
+      let hfW = faceDepth(w.r, w.a, c.r, c.a);
+      let hfE = faceDepth(e.r, e.a, ee.r, ee.a);
+      let hfS = faceDepth(s.r, s.a, se.r, se.a);
+      let hfN = faceDepth(n.r, n.a, ne.r, ne.a);
+      var adv = 0.0;
+      if (sim.advection != 0) {
+        let uC = vel(c.g, hf);
+        let uW = velN(w.g, hfW, uC);
+        let uE = velN(e.g, hfE, uC);
+        // x-flux of x-momentum at the cell centres left/right of the face.
+        let qbL = 0.5 * (w.g + c.g);
+        let qbR = 0.5 * (c.g + e.g);
+        let mL = qbL * select(uC, uW, qbL >= 0.0);
+        let mR = qbR * select(uE, uC, qbR >= 0.0);
+        // y-flux of x-momentum at the corners south/north of the face.
+        let vS = 0.5 * (c.b + e.b);
+        let vN = 0.5 * (n.b + ne.b);
+        let uS = velN(s.g, hfS, uC);
+        let uN = velN(n.g, hfN, uC);
+        let gS = vS * select(uS, uC, vS >= 0.0);
+        let gN = vN * select(uC, uN, vN >= 0.0);
+        adv = advWeight(hf, hfW, hfE, hfS, hfN) * ((mR - mL) + (gS - gN)) / sim.dx;
+      }
+      var qNe = ne.b;
+      if (j == 0) { qNe = -bflux(e.r, i + 1, j, 0, 1); }
+      let divE = (e.g - c.g) + (e.b - qNe);
+      let dq = smoothIncrement(hf, c.g, w.g, hfW, e.g, hfE, divE - divC);
+      qxNew = momentum(hf, slope, e.a - c.a, c.g, dq, qPerp, adv, n2x);
+    }
+  }
+
+  // ── y-face between (i, j) and (i, j+1). ──
+  if (j < sim.ny - 1) {
+    let hf = hfy;
+    if (isWet(hf)) {
+      let ss = stm(i, j + 2);
+      let slope = ((s.a - c.a) + (s.r - c.r)) / sim.dx;
+      let qPerp = 0.25 * (c.g + w.g + s.g + sw.g);
+      // Depths of the neighbouring y-faces: j−½, j+3/2 (along y) and the faces east/west of this one.
+      let hfN = faceDepth(n.r, n.a, c.r, c.a);
+      let hfS = faceDepth(s.r, s.a, ss.r, ss.a);
+      let hfE = faceDepth(e.r, e.a, se.r, se.a);
+      let hfW = faceDepth(w.r, w.a, sw.r, sw.a);
+      var adv = 0.0;
+      if (sim.advection != 0) {
+        let vC = vel(c.b, hf);
+        let vN = velN(n.b, hfN, vC);
+        let vS = velN(s.b, hfS, vC);
+        let qbU = 0.5 * (n.b + c.b);
+        let qbD = 0.5 * (c.b + s.b);
+        let mU = qbU * select(vC, vN, qbU >= 0.0);
+        let mD = qbD * select(vS, vC, qbD >= 0.0);
+        let uE = 0.5 * (c.g + s.g);
+        let uW = 0.5 * (w.g + sw.g);
+        let vE = velN(e.b, hfE, vC);
+        let vW = velN(w.b, hfW, vC);
+        let gE = uE * select(vE, vC, uE >= 0.0);
+        let gW = uW * select(vC, vW, uW >= 0.0);
+        adv = advWeight(hf, hfN, hfS, hfE, hfW) * ((mD - mU) + (gE - gW)) / sim.dx;
+      }
+      var qSw = sw.g;
+      if (i == 0) { qSw = -bflux(s.r, i, j + 1, 1, 0); }
+      let divS = (s.g - qSw) + (s.b - c.b);
+      let dq = smoothIncrement(hf, c.b, n.b, hfN, s.b, hfS, divS - divC);
+      qyNew = momentum(hf, slope, s.a - c.a, c.b, dq, qPerp, adv, n2y);
+    }
+  }
+
+  if (POROSITY) {
+    // Back to discharge per unit cell width: what crosses the face is ψ × the open-width discharge.
+    let pc = por(i, j);
+    qxNew = qxNew * pc.g;
+    qyNew = qyNew * pc.b;
+  }
+  textureStore(fluxOut, vec2i(i, j), vec4f(qxNew, qyNew, 0.0, 0.0));
+}
+`;
