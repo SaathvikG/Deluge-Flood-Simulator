@@ -1,0 +1,217 @@
+{
+ "version": 1,
+ "preset": "chungthang",
+ "profile": "chain.json",
+ "clockZero": "2023-10-03T22:13:20+05:30",
+ "generated": "2026-10-13",
+ "generator": "scripts/bake-chain-result.ts",
+ "provenance": "modelled",
+ "label": "Hazard chain, modelled: the ensemble's median member (volume ×1.3, breach 100 m/h, source Cv 0.4) routed down South Lhonak → Lhonak Chu → Lachen Chu → Teesta",
+ "run": {
+  "routeDx": 100,
+  "memberDx": 100,
+  "members": 27,
+  "ms": 18173,
+  "member": {
+   "volumeFactor": 1.25,
+   "erosionRate": 100,
+   "cv": 0.4
+  },
+  "note": "27 members (17262 ms), median member re-run to the end of its recession; the mass reaches the lake 0.2 min after the collapse (0.5 km at 50 m/s); impulse wave solitary: H 14.5 m, crest 8.1 m at the dam 1.33 km away (flume value 46.6 m; spreading β 90°, γ′ 77°); P = 2.00: overtops by 7.1 m, 3.57 Mm³ pulse, breach at 100 m/h"
+ },
+ "source": {
+  "trigger": "massIntoLake",
+  "volume": 43878744,
+  "peak": 119779,
+  "tPeak": 20,
+  "cv": 0.4,
+  "notes": [
+   "the mass reaches the lake 0.2 min after the collapse (0.5 km at 50 m/s)",
+   "impulse wave solitary: H 14.5 m, crest 8.1 m at the dam 1.33 km away (flume value 46.6 m; spreading β 90°, γ′ 77°)",
+   "P = 2.00: overtops by 7.1 m, 3.57 Mm³ pulse, breach at 100 m/h"
+  ]
+ },
+ "stations": [
+  {
+   "name": "South Lhonak Lake",
+   "s": 0,
+   "kind": "lake",
+   "tFront": 15,
+   "tPeak": 52,
+   "qPeak": 64860,
+   "stageMax": 5219.17,
+   "rise": 28.08,
+   "band": {
+    "tFront": [
+     15,
+     15,
+     15
+    ],
+    "qPeak": [
+     67162,
+     73522,
+     81612
+    ]
+   },
+   "observed": [
+    {
+     "tFront": 0,
+     "note": "14.7 Mm³ of frozen moraine failed into the lake at 22:13:20 IST; displacement wave ~20 m; ~50 Mm³ (about half the lake) released; peak flow height ~11 m about 1 km downstream.",
+     "source": "Sattar et al. 2025, Science, doi:10.1126/science.ads2659 (via Eos / The Landslide Blog)"
+    }
+   ]
+  },
+  {
+   "name": "Lachen",
+   "s": 49663,
+   "kind": "town",
+   "tFront": 5453,
+   "tPeak": 5758,
+   "qPeak": 6552,
+   "stageMax": 2531.48,
+   "rise": 5.85,
+   "band": {
+    "tFront": [
+     4938,
+     5883,
+     6577
+    ],
+    "qPeak": [
+     4033,
+     6508,
+     10299
+    ]
+   }
+  },
+  {
+   "name": "Chungthang 2-D domain (north edge)",
+   "s": 63300,
+   "kind": "domainEdge",
+   "tFront": 6727,
+   "tPeak": 7364,
+   "qPeak": 5520,
+   "stageMax": 1869.31,
+   "rise": 6.65,
+   "band": {
+    "tFront": [
+     6084,
+     7275,
+     8509
+    ],
+    "qPeak": [
+     3899,
+     5520,
+     9099
+    ]
+   }
+  },
+  {
+   "name": "Chungthang",
+   "s": 69200,
+   "kind": "town",
+   "tFront": 7278,
+   "tPeak": 7846,
+   "qPeak": 5663,
+   "stageMax": 1597.51,
+   "rise": 4.79,
+   "band": {
+    "tFront": [
+     6584,
+     7798,
+     9331
+    ],
+    "qPeak": [
+     3935,
+     5649,
+     9109
+    ]
+   },
+   "observed": [
+    {
+     "tFront": 8500,
+     "note": "The flood reached Chungthang about 00:35 on 4 Oct (≈ 2 h 22 min after the failure) — the \"reported arrival time\" Sattar et al. compare their model with; how it was recorded is not stated. The often-quoted 00:30 is THEIR HEC-RAS result (water only, n = 0.05), not an observation. The 60 m Teesta-III dam was destroyed.",
+     "source": "Sattar et al. 2025, Science, doi:10.1126/science.ads2659 (accepted manuscript, eprints.whiterose.ac.uk/224098)"
+    },
+    {
+     "qPeak": 5340,
+     "note": "MODELLED peak in Sattar et al. 2025 (HEC-RAS, water phase): 5,340 m³/s within ~6 min of the first arrival, 9 m deep, 9 m/s — a fourth reconstruction beside 7,355 and 10,282–14,673.",
+     "source": "Sattar et al. 2025, Science (accepted manuscript)"
+    },
+    {
+     "qPeak": 7355,
+     "note": "MODELLED peak (HEC-HMS/HEC-RAS reconstruction calibrated to the gauged peak at Gazoldoba); other studies give 10,282–14,673 m³/s here. No gauge measured it.",
+     "source": "Natural Hazards 121 (2025), doi:10.1007/s11069-025-07350-9; research spec §G.3"
+    }
+   ]
+  },
+  {
+   "name": "Chungthang bridge (North Sikkim Highway)",
+   "s": 69369,
+   "kind": "bridge",
+   "tFront": 7294,
+   "tPeak": 7401,
+   "qPeak": 6230,
+   "stageMax": 1597.47,
+   "rise": 4.74,
+   "band": {
+    "tFront": [
+     6599,
+     7813,
+     9347
+    ],
+    "qPeak": [
+     3931,
+     6197,
+     9695
+    ]
+   }
+  },
+  {
+   "name": "Teesta-III dam",
+   "s": 70081,
+   "kind": "hydro",
+   "tFront": 7364,
+   "tPeak": 8597,
+   "qPeak": 4974,
+   "stageMax": 1539.99,
+   "rise": 7.13,
+   "band": {
+    "tFront": [
+     6663,
+     7881,
+     9446
+    ],
+    "qPeak": [
+     3919,
+     5502,
+     8396
+    ]
+   }
+  }
+ ],
+ "entry": {
+  "s": 63300,
+  "tFront": 6727,
+  "qPeak": 5520,
+  "volume": 26484220,
+  "baseflow": 20,
+  "band": {
+   "tFront": [
+    6084,
+    7275,
+    8509
+   ],
+   "qPeak": [
+    3899,
+    5520,
+    9099
+   ]
+  }
+ },
+ "domain": {
+  "offset": 6427,
+  "sourceId": "lachen-chu-inflow",
+  "inflowVolume": 27007285,
+  "inflowPeak": 5520
+ }
+}

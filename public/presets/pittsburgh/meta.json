@@ -1,0 +1,501 @@
+{
+ "version": 1,
+ "id": "pittsburgh",
+ "name": "Pittsburgh — Three Rivers",
+ "subtitle": "1936 St. Patrick's Day flood — raise the rivers",
+ "nx": 1024,
+ "ny": 1024,
+ "cellSize": 7.8125,
+ "bounds": {
+  "west": -80.03721511910139,
+  "south": 40.40805778501479,
+  "east": -79.9427848808986,
+  "north": 40.479923006456275
+ },
+ "attribution": "Elevation: USGS 3DEP · Imagery: USDA NAIP via USGS The National Map · Roads: U.S. Census Bureau TIGER/Line · Buildings © OpenStreetMap contributors (ODbL) · Land cover: NLCD 2021 (USGS / MRLC)",
+ "scenario": {
+  "description": "Downtown Pittsburgh sits on the Point, where the Allegheny and Monongahela rivers meet to form the Ohio. Normal pool here is about 16.0 ft on the Point gauge; flood stage is 22 ft, and by 25 ft the Parkway \"bathtub\" through downtown is closed by flooding. On March 18, 1936 — the St. Patrick's Day flood — snowmelt and heavy rain drove the river to a record 46 ft and flooded most of the Golden Triangle. The remnants of Agnes crested at 35.8 ft in June 1972 and Hurricane Ivan at 31 ft in September 2004. Raise the river stage to replay those crests and watch the Strip District, the North Shore stadiums and downtown go under — then try a levee.",
+  "sources": [
+   {
+    "id": "allegheny-stage",
+    "type": "stage",
+    "gx": 831.5,
+    "gy": -27.89,
+    "radius": 60.63,
+    "level": 216.375,
+    "offsetScale": 1.01369,
+    "label": "Allegheny River"
+   },
+   {
+    "id": "monongahela-stage",
+    "type": "stage",
+    "gx": 918,
+    "gy": 1024,
+    "radius": 23.01,
+    "level": 216.375,
+    "offsetScale": 1.01369,
+    "label": "Monongahela River"
+   },
+   {
+    "id": "ohio-stage",
+    "type": "stage",
+    "gx": -275.13,
+    "gy": 276,
+    "radius": 308.08,
+    "level": 216.225,
+    "offsetScale": 0.98631,
+    "label": "Ohio River"
+   }
+  ],
+  "storms": [],
+  "shelters": [
+   {
+    "name": "Cathedral of Learning (Pitt, Oakland)",
+    "gx": 903.03,
+    "gy": 497.59
+   },
+   {
+    "name": "Mount Washington — Grandview Ave",
+    "gx": 274.6,
+    "gy": 642.01
+   },
+   {
+    "name": "Hill District high ground",
+    "gx": 672.39,
+    "gy": 487.24
+   },
+   {
+    "name": "Fineview hilltop (North Side)",
+    "gx": 367.05,
+    "gy": 225.14
+   },
+   {
+    "name": "South Side Slopes",
+    "gx": 645.34,
+    "gy": 804.6
+   }
+  ],
+  "rainRate": 0,
+  "stage": {
+   "label": "Ohio River at Pittsburgh (Point gauge, USGS 03085152)",
+   "gaugeDatum": 211.409,
+   "normalLevel": 216.3,
+   "floodStageFt": 22,
+   "marks": [
+    {
+     "label": "2004 Ivan",
+     "ft": 31
+    },
+    {
+     "label": "1972 Agnes",
+     "ft": 35.8
+    },
+    {
+     "label": "1936 record",
+     "ft": 46
+    }
+   ],
+   "maxOffset": 12
+  },
+  "initialFill": [
+   {
+    "seeds": [
+     {
+      "gx": 796.5,
+      "gy": 10.5
+     },
+     {
+      "gx": 741.5,
+      "gy": 91.5
+     },
+     {
+      "gx": 705.5,
+      "gy": 171.5
+     },
+     {
+      "gx": 658.5,
+      "gy": 251.5
+     },
+     {
+      "gx": 596.5,
+      "gy": 313.5
+     },
+     {
+      "gx": 527.5,
+      "gy": 379.5
+     },
+     {
+      "gx": 447.5,
+      "gy": 452.5
+     },
+     {
+      "gx": 368.5,
+      "gy": 491.5
+     },
+     {
+      "gx": 919.5,
+      "gy": 1023.5
+     },
+     {
+      "gx": 909.5,
+      "gy": 939.5
+     },
+     {
+      "gx": 909.5,
+      "gy": 863.5
+     },
+     {
+      "gx": 874.5,
+      "gy": 786.5
+     },
+     {
+      "gx": 803.5,
+      "gy": 712.5
+     },
+     {
+      "gx": 725.5,
+      "gy": 675.5
+     },
+     {
+      "gx": 634.5,
+      "gy": 656.5
+     },
+     {
+      "gx": 566.5,
+      "gy": 667.5
+     },
+     {
+      "gx": 477.5,
+      "gy": 668.5
+     },
+     {
+      "gx": 416.5,
+      "gy": 661.5
+     },
+     {
+      "gx": 344.5,
+      "gy": 619.5
+     },
+     {
+      "gx": 244.5,
+      "gy": 529.5
+     },
+     {
+      "gx": 174.5,
+      "gy": 507.5
+     },
+     {
+      "gx": 87.5,
+      "gy": 456.5
+     },
+     {
+      "gx": 26.5,
+      "gy": 376.5
+     }
+    ],
+    "level": 216.3
+   }
+  ],
+  "camera": {
+   "target": {
+    "gx": 398.1,
+    "gy": 543.3,
+    "elevation": 224.9
+   },
+   "distance": 4300,
+   "yaw": 0.62,
+   "pitch": 0.52
+  },
+  "levee": {
+   "name": "the North Shore",
+   "crest": 226.5,
+   "points": [
+    {
+     "gx": 185.1,
+     "gy": 440
+    },
+    {
+     "gx": 185.1,
+     "gy": 482.9
+    },
+    {
+     "gx": 205,
+     "gy": 489.8
+    },
+    {
+     "gx": 225,
+     "gy": 495.2
+    },
+    {
+     "gx": 245,
+     "gy": 497.2
+    },
+    {
+     "gx": 265,
+     "gy": 494.9
+    },
+    {
+     "gx": 285,
+     "gy": 492.5
+    },
+    {
+     "gx": 305,
+     "gy": 487.8
+    },
+    {
+     "gx": 325,
+     "gy": 484.4
+    },
+    {
+     "gx": 345,
+     "gy": 479.1
+    },
+    {
+     "gx": 365,
+     "gy": 469.5
+    },
+    {
+     "gx": 385,
+     "gy": 460.8
+    },
+    {
+     "gx": 405,
+     "gy": 452.6
+    },
+    {
+     "gx": 414.9,
+     "gy": 417
+    }
+   ],
+   "camera": {
+    "target": {
+     "gx": 300,
+     "gy": 470,
+     "elevation": 222.9
+    },
+    "distance": 2600,
+    "yaw": 0.1,
+    "pitch": 0.68
+   }
+  },
+  "evacStart": {
+   "gx": 423.5,
+   "gy": 557.6,
+   "label": "Smithfield St at Oliver Ave, downtown Pittsburgh"
+  },
+  "evacCutOff": {
+   "gx": 371.7,
+   "gy": 569.2,
+   "label": "Market Square, downtown Pittsburgh"
+  }
+ },
+ "files": {
+  "elevation": "elevation.f32",
+  "imagery": "imagery.jpg",
+  "roads": "roads.json",
+  "buildings": "buildings.json",
+  "imageryDetail": "imagery-detail.jpg",
+  "landcover": "landcover.u8"
+ },
+ "bake": {
+  "bakedAt": "2026-09-17T10:58:49.521Z",
+  "demSource": "usgs3dep",
+  "demRepairedCells": 0,
+  "center": {
+   "lat": 40.444,
+   "lon": -79.99
+  },
+  "sizeMeters": 8000,
+  "burnedCells": 71323,
+  "rivers": [
+   {
+    "name": "Allegheny River",
+    "cells": 24429,
+    "depth": 6,
+    "surfaceMax": 216.3,
+    "surfaceMin": 216.3
+   },
+   {
+    "name": "Monongahela River",
+    "cells": 29871,
+    "depth": 6,
+    "surfaceMax": 216.3,
+    "surfaceMin": 216.3
+   },
+   {
+    "name": "Ohio River",
+    "cells": 17023,
+    "depth": 6,
+    "surfaceMax": 216.3,
+    "surfaceMin": 216.3
+   }
+  ],
+  "initialWetCells": 71323,
+  "roads": {
+   "nodes": 7455,
+   "edges": 11053,
+   "km": 1058.6547925808013,
+   "byClass": {
+    "highway": 331,
+    "major": 319,
+    "minor": 423,
+    "local": 9980
+   }
+  },
+  "buildings": {
+   "bakedAt": "2026-09-19T21:07:16.590Z",
+   "source": "OpenStreetMap API 0.6 /map (ODbL 1.0)",
+   "tiles": 20,
+   "microsoftFootprintsAdded": 0,
+   "lidar": {
+    "source": "USGS 3DEP via AWS Open Data s3://usgs-lidar-public (EPT), PA_WesternPA_1_2019 + PA_WesternPA_2_2019",
+    "licence": "public domain (USGS)",
+    "acquired": "2019-11-26/2020-02-23 (GpsTime range), leaf-off",
+    "estimator": "median of DSM within 5 m of the footprint p99 where that plane covers >=10 cells, else the footprint p85; eroded by one 0.977 m cell",
+    "groundResidualVsDemM": {
+     "median": -0.03,
+     "mad": 0.32
+    },
+    "measured": 41527,
+    "keptOsmBecause": {
+     "not sampled (too few DSM pixels)": 41,
+     "footprint mostly without returns (water)": 1,
+     "height implausible (<2 m or >300 m)": 737,
+     "canopy: measured surface is penetrable": 2772,
+     "setback tower: surveyed OSM height wins": 6
+    },
+    "rejectedOnApply": 0
+   },
+   "parsed": 48408,
+   "kept": 45084,
+   "droppedTiny": 2697,
+   "droppedOutside": 12,
+   "droppedInWater": 12,
+   "duplicates": 603,
+   "measured": 65,
+   "levels": 64,
+   "estimated": 3428,
+   "remote": 41527,
+   "vertices": 233479,
+   "tallest": [
+    {
+     "name": "U.S. Steel Tower",
+     "height": 256.8,
+     "source": "remote"
+    },
+    {
+     "name": "BNY Mellon Center",
+     "height": 225.3,
+     "source": "remote"
+    },
+    {
+     "name": "Fifth Avenue Place",
+     "height": 206,
+     "source": "measured"
+    },
+    {
+     "name": "One PPG Place",
+     "height": 193.5,
+     "source": "remote"
+    },
+    {
+     "name": "One Oxford Center",
+     "height": 184.6,
+     "source": "remote"
+    },
+    {
+     "name": "Gulf Tower",
+     "height": 178.4,
+     "source": "remote"
+    },
+    {
+     "name": "PPG Place Wintergarden",
+     "height": 171.9,
+     "source": "remote"
+    },
+    {
+     "name": "William Penn Place",
+     "height": 165.8,
+     "source": "remote"
+    },
+    {
+     "name": "Tower at PNC Plaza",
+     "height": 163.6,
+     "source": "remote"
+    },
+    {
+     "name": "Mellon National Bank Building",
+     "height": 160.8,
+     "source": "remote"
+    },
+    {
+     "name": "Cathedral of Learning",
+     "height": 158.3,
+     "source": "remote"
+    },
+    {
+     "name": "K&L Gates Center",
+     "height": 156.5,
+     "source": "remote"
+    },
+    {
+     "name": "Koppers Tower",
+     "height": 144.9,
+     "source": "remote"
+    },
+    {
+     "name": "Grant Building",
+     "height": 137,
+     "source": "remote"
+    },
+    {
+     "name": "One PNC Plaza",
+     "height": 134.1,
+     "source": "remote"
+    }
+   ],
+   "medianHeight": 8.9,
+   "maxHeight": 256.8,
+   "bytes": 2096944,
+   "cellsBuiltOn": 143606
+  },
+  "imageryDetail": {
+   "sizeMeters": 3000,
+   "texels": 4096,
+   "metersPerTexel": 0.732
+  },
+  "landcover": {
+   "bakedAt": "2026-10-13T03:07:28.623Z",
+   "waterShare": 0.823
+  }
+ },
+ "imageryDetail": {
+  "x0": 157,
+  "y0": 348,
+  "x1": 541,
+  "y1": 732
+ },
+ "landcover": {
+  "scheme": "nlcd",
+  "year": 2021,
+  "width": 256,
+  "height": 256,
+  "designRainMmHr": 30,
+  "designRainSource": "NOAA Atlas 14 Volume 2 Version 3, 2-year 60-minute intensity (partial-duration series) at 40.444, -79.990",
+  "classCounts": {
+   "11": 3809,
+   "21": 7607,
+   "22": 8909,
+   "23": 18784,
+   "24": 21029,
+   "31": 49,
+   "41": 4217,
+   "42": 2,
+   "43": 983,
+   "52": 43,
+   "71": 39,
+   "81": 64,
+   "95": 1
+  }
+ }
+}

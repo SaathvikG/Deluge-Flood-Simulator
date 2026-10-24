@@ -1,0 +1,810 @@
+{
+ "version": 1,
+ "id": "ellicott",
+ "name": "Ellicott City — Main Street",
+ "subtitle": "Flash floods of 2016 & 2018 — a storm over the Tiber branch",
+ "nx": 1024,
+ "ny": 1024,
+ "cellSize": 4.8828125,
+ "bounds": {
+  "west": -76.8340089148327,
+  "south": 39.24753851947914,
+  "east": -76.77599108516732,
+  "north": 39.29245428330387
+ },
+ "attribution": "Elevation: USGS 3DEP · Imagery: USDA NAIP via USGS The National Map · Roads: U.S. Census Bureau TIGER/Line · Buildings © OpenStreetMap contributors (ODbL) · Land cover: NLCD 2021 (USGS / MRLC)",
+ "scenario": {
+  "description": "Historic Ellicott City sits at the bottom of a hill where the Hudson, Tiber and New Cut branches converge and empty into the Patapsco River — and Main Street is the overflow channel when they flash. On July 30, 2016, 6.6 inches of rain fell in three hours (nearly 6 in two); the branches tore down Main Street, the Patapsco rose over the lower town, and two people died. On May 27, 2018 almost the same rain fell again (6.56 inches in three hours at the gauge, heavier just to the south) and one man died — two roughly 1-in-1,000-year storms in 22 months. Here a storm cell peaking at 110 mm/hr parks over the 3.7 mi² watershed of the three branches and soaks it at about 3 inches an hour, the 2016 storm's rate over its two worst hours, while the Patapsco runs at its 2016 peak of 22,800 ft³/s. Try walls or a detention pond upstream.",
+  "sources": [
+   {
+    "id": "patapsco-inflow",
+    "type": "inflow",
+    "gx": 866.5,
+    "gy": 11.5,
+    "radius": 4,
+    "discharge": 646,
+    "label": "Patapsco River — July 30, 2016 peak (22,800 ft³/s at Hollofield)"
+   }
+  ],
+  "storms": [
+   {
+    "id": "tiber-hudson",
+    "gx": 402.9,
+    "gy": 617.1,
+    "radius": 499.7,
+    "intensity": 110
+   }
+  ],
+  "shelters": [
+   {
+    "name": "Patapsco Female Institute (Church Rd)",
+    "gx": 643.17,
+    "gy": 491.14
+   },
+   {
+    "name": "Howard County Courthouse (Court Ave)",
+    "gx": 632.46,
+    "gy": 535.25
+   },
+   {
+    "name": "Fire Station 2 (Montgomery Rd)",
+    "gx": 247.8,
+    "gy": 835.82
+   },
+   {
+    "name": "Oella (east bank ridge)",
+    "gx": 839.77,
+    "gy": 404.32
+   }
+  ],
+  "rainRate": 0,
+  "stage": null,
+  "initialFill": [
+   {
+    "seeds": [
+     {
+      "gx": 864.5,
+      "gy": 16.5,
+      "level": 49.05
+     },
+     {
+      "gx": 862.5,
+      "gy": 21.5,
+      "level": 48.89
+     },
+     {
+      "gx": 860.5,
+      "gy": 30.5,
+      "level": 48.68
+     },
+     {
+      "gx": 861.5,
+      "gy": 38.5,
+      "level": 48.53
+     },
+     {
+      "gx": 861.5,
+      "gy": 48.5,
+      "level": 48.4
+     },
+     {
+      "gx": 862.5,
+      "gy": 57.5,
+      "level": 48.16
+     },
+     {
+      "gx": 862.5,
+      "gy": 63.5,
+      "level": 47.94
+     },
+     {
+      "gx": 863.5,
+      "gy": 69.5,
+      "level": 47.71
+     },
+     {
+      "gx": 863.5,
+      "gy": 77.5,
+      "level": 47.4
+     },
+     {
+      "gx": 863.5,
+      "gy": 78.5,
+      "level": 47.4
+     },
+     {
+      "gx": 862.5,
+      "gy": 86.5,
+      "level": 47.23
+     },
+     {
+      "gx": 862.5,
+      "gy": 97.5,
+      "level": 47.02
+     },
+     {
+      "gx": 862.5,
+      "gy": 98.5,
+      "level": 46.95
+     },
+     {
+      "gx": 863.5,
+      "gy": 103.5,
+      "level": 46.75
+     },
+     {
+      "gx": 865.5,
+      "gy": 113.5,
+      "level": 46.24
+     },
+     {
+      "gx": 865.5,
+      "gy": 117.5,
+      "level": 46.19
+     },
+     {
+      "gx": 865.5,
+      "gy": 130.5,
+      "level": 46.06
+     },
+     {
+      "gx": 864.5,
+      "gy": 136.5,
+      "level": 45.83
+     },
+     {
+      "gx": 863.5,
+      "gy": 142.5,
+      "level": 45.6
+     },
+     {
+      "gx": 862.5,
+      "gy": 150.5,
+      "level": 45.31
+     },
+     {
+      "gx": 862.5,
+      "gy": 157.5,
+      "level": 45.3
+     },
+     {
+      "gx": 862.5,
+      "gy": 167.5,
+      "level": 45.3
+     },
+     {
+      "gx": 862.5,
+      "gy": 177.5,
+      "level": 45.28
+     },
+     {
+      "gx": 862.5,
+      "gy": 183.5,
+      "level": 45.27
+     },
+     {
+      "gx": 862.5,
+      "gy": 199.5,
+      "level": 45.27
+     },
+     {
+      "gx": 862.5,
+      "gy": 201.5,
+      "level": 45.27
+     },
+     {
+      "gx": 861.5,
+      "gy": 216.5,
+      "level": 45.27
+     },
+     {
+      "gx": 860.5,
+      "gy": 221.5,
+      "level": 45.25
+     },
+     {
+      "gx": 852.5,
+      "gy": 234.5,
+      "level": 44.9
+     },
+     {
+      "gx": 851.5,
+      "gy": 237.5,
+      "level": 44.75
+     },
+     {
+      "gx": 844.5,
+      "gy": 253.5,
+      "level": 44.56
+     },
+     {
+      "gx": 841.5,
+      "gy": 259.5,
+      "level": 44.5
+     },
+     {
+      "gx": 834.5,
+      "gy": 274.5,
+      "level": 44.31
+     },
+     {
+      "gx": 832.5,
+      "gy": 277.5,
+      "level": 44.09
+     },
+     {
+      "gx": 829.5,
+      "gy": 287.5,
+      "level": 43.9
+     },
+     {
+      "gx": 827.5,
+      "gy": 295.5,
+      "level": 43.76
+     },
+     {
+      "gx": 822.5,
+      "gy": 306.5,
+      "level": 43.59
+     },
+     {
+      "gx": 820.5,
+      "gy": 310.5,
+      "level": 43.47
+     },
+     {
+      "gx": 813.5,
+      "gy": 325.5,
+      "level": 43.29
+     },
+     {
+      "gx": 810.5,
+      "gy": 330.5,
+      "level": 43.07
+     },
+     {
+      "gx": 801.5,
+      "gy": 341.5,
+      "level": 42.91
+     },
+     {
+      "gx": 799.5,
+      "gy": 345.5,
+      "level": 42.82
+     },
+     {
+      "gx": 797.5,
+      "gy": 357.5,
+      "level": 42.56
+     },
+     {
+      "gx": 798.5,
+      "gy": 363.5,
+      "level": 42.33
+     },
+     {
+      "gx": 798.5,
+      "gy": 371.5,
+      "level": 42.1
+     },
+     {
+      "gx": 798.5,
+      "gy": 375.5,
+      "level": 41.97
+     },
+     {
+      "gx": 798.5,
+      "gy": 380.5,
+      "level": 41.71
+     },
+     {
+      "gx": 797.5,
+      "gy": 385.5,
+      "level": 41.43
+     },
+     {
+      "gx": 796.5,
+      "gy": 392.5,
+      "level": 41.15
+     },
+     {
+      "gx": 796.5,
+      "gy": 394.5,
+      "level": 40.82
+     },
+     {
+      "gx": 794.5,
+      "gy": 399.5,
+      "level": 40.21
+     },
+     {
+      "gx": 789.5,
+      "gy": 414.5,
+      "level": 40.08
+     },
+     {
+      "gx": 787.5,
+      "gy": 420.5,
+      "level": 40.08
+     },
+     {
+      "gx": 775.5,
+      "gy": 433.5,
+      "level": 39.94
+     },
+     {
+      "gx": 767.5,
+      "gy": 444.5,
+      "level": 39.44
+     },
+     {
+      "gx": 765.5,
+      "gy": 456.5,
+      "level": 39.54
+     },
+     {
+      "gx": 758.5,
+      "gy": 463.5,
+      "level": 39.54
+     },
+     {
+      "gx": 752.5,
+      "gy": 469.5,
+      "level": 37.96
+     },
+     {
+      "gx": 749.5,
+      "gy": 472.5,
+      "level": 37.47
+     },
+     {
+      "gx": 742.5,
+      "gy": 477.5,
+      "level": 37.13
+     },
+     {
+      "gx": 741.5,
+      "gy": 478.5,
+      "level": 36.92
+     },
+     {
+      "gx": 739.5,
+      "gy": 479.5,
+      "level": 36.4
+     },
+     {
+      "gx": 731.5,
+      "gy": 484.5,
+      "level": 36.13
+     },
+     {
+      "gx": 728.5,
+      "gy": 486.5,
+      "level": 35.61
+     },
+     {
+      "gx": 715.5,
+      "gy": 493.5,
+      "level": 35.61
+     },
+     {
+      "gx": 709.5,
+      "gy": 498.5,
+      "level": 35.61
+     },
+     {
+      "gx": 699.5,
+      "gy": 508.5,
+      "level": 35.61
+     },
+     {
+      "gx": 696.5,
+      "gy": 518.5,
+      "level": 35.32
+     },
+     {
+      "gx": 700.5,
+      "gy": 531.5,
+      "level": 35.17
+     },
+     {
+      "gx": 701.5,
+      "gy": 538.5,
+      "level": 35.17
+     },
+     {
+      "gx": 703.5,
+      "gy": 553.5,
+      "level": 35.03
+     },
+     {
+      "gx": 703.5,
+      "gy": 558.5,
+      "level": 34.88
+     },
+     {
+      "gx": 700.5,
+      "gy": 566.5,
+      "level": 34.84
+     },
+     {
+      "gx": 699.5,
+      "gy": 569.5,
+      "level": 34.52
+     },
+     {
+      "gx": 698.5,
+      "gy": 577.5,
+      "level": 33.86
+     },
+     {
+      "gx": 699.5,
+      "gy": 587.5,
+      "level": 32.83
+     },
+     {
+      "gx": 703.5,
+      "gy": 598.5,
+      "level": 32.81
+     },
+     {
+      "gx": 710.5,
+      "gy": 604.5,
+      "level": 32.57
+     },
+     {
+      "gx": 722.5,
+      "gy": 608.5,
+      "level": 32.57
+     },
+     {
+      "gx": 725.5,
+      "gy": 610.5,
+      "level": 32.28
+     },
+     {
+      "gx": 727.5,
+      "gy": 611.5,
+      "level": 32.06
+     },
+     {
+      "gx": 731.5,
+      "gy": 611.5,
+      "level": 31.77
+     },
+     {
+      "gx": 744.5,
+      "gy": 618.5,
+      "level": 31.66
+     },
+     {
+      "gx": 748.5,
+      "gy": 620.5,
+      "level": 31.36
+     },
+     {
+      "gx": 753.5,
+      "gy": 623.5,
+      "level": 31.24
+     },
+     {
+      "gx": 761.5,
+      "gy": 628.5,
+      "level": 30.65
+     },
+     {
+      "gx": 769.5,
+      "gy": 633.5,
+      "level": 30.53
+     },
+     {
+      "gx": 782.5,
+      "gy": 641.5,
+      "level": 30.3
+     },
+     {
+      "gx": 786.5,
+      "gy": 643.5,
+      "level": 30.07
+     },
+     {
+      "gx": 794.5,
+      "gy": 648.5,
+      "level": 29.81
+     },
+     {
+      "gx": 806.5,
+      "gy": 663.5,
+      "level": 29.69
+     },
+     {
+      "gx": 810.5,
+      "gy": 668.5,
+      "level": 29.53
+     },
+     {
+      "gx": 822.5,
+      "gy": 682.5,
+      "level": 29.53
+     },
+     {
+      "gx": 830.5,
+      "gy": 691.5,
+      "level": 29.53
+     },
+     {
+      "gx": 842.5,
+      "gy": 698.5,
+      "level": 29.53
+     },
+     {
+      "gx": 857.5,
+      "gy": 708.5,
+      "level": 29.37
+     },
+     {
+      "gx": 869.5,
+      "gy": 718.5,
+      "level": 29.35
+     },
+     {
+      "gx": 875.5,
+      "gy": 724.5,
+      "level": 29.35
+     },
+     {
+      "gx": 886.5,
+      "gy": 734.5,
+      "level": 29.1
+     },
+     {
+      "gx": 900.5,
+      "gy": 747.5,
+      "level": 29.1
+     },
+     {
+      "gx": 903.5,
+      "gy": 750.5,
+      "level": 29.12
+     },
+     {
+      "gx": 913.5,
+      "gy": 765.5,
+      "level": 28.52
+     },
+     {
+      "gx": 917.5,
+      "gy": 771.5,
+      "level": 28.52
+     },
+     {
+      "gx": 926.5,
+      "gy": 782.5,
+      "level": 28.52
+     },
+     {
+      "gx": 938.5,
+      "gy": 795.5,
+      "level": 28.52
+     },
+     {
+      "gx": 943.5,
+      "gy": 800.5,
+      "level": 28.52
+     },
+     {
+      "gx": 956.5,
+      "gy": 808.5,
+      "level": 28.52
+     },
+     {
+      "gx": 972.5,
+      "gy": 812.5,
+      "level": 28.47
+     },
+     {
+      "gx": 981.5,
+      "gy": 814.5,
+      "level": 28.43
+     },
+     {
+      "gx": 985.5,
+      "gy": 815.5,
+      "level": 28.38
+     },
+     {
+      "gx": 995.5,
+      "gy": 815.5,
+      "level": 28.3
+     },
+     {
+      "gx": 1009.5,
+      "gy": 815.5,
+      "level": 28.3
+     },
+     {
+      "gx": 1012.5,
+      "gy": 815.5,
+      "level": 28.3
+     }
+    ],
+    "level": 28.3
+   }
+  ],
+  "camera": {
+   "target": {
+    "gx": 640,
+    "gy": 561.9,
+    "elevation": 55.6
+   },
+   "distance": 1100,
+   "yaw": -1.571,
+   "pitch": 0.8
+  }
+ },
+ "files": {
+  "elevation": "elevation.f32",
+  "imagery": "imagery.jpg",
+  "roads": "roads.json",
+  "buildings": "buildings.json",
+  "landcover": "landcover.u8"
+ },
+ "bake": {
+  "bakedAt": "2026-09-17T09:53:05.590Z",
+  "demSource": "usgs3dep",
+  "demRepairedCells": 36,
+  "center": {
+   "lat": 39.27,
+   "lon": -76.805
+  },
+  "sizeMeters": 5000,
+  "burnedCells": 8494,
+  "rivers": [
+   {
+    "name": "Patapsco River",
+    "cells": 8494,
+    "depth": 2,
+    "surfaceMax": 49.15,
+    "surfaceMin": 28.3
+   }
+  ],
+  "initialWetCells": 8409,
+  "roads": {
+   "nodes": 1031,
+   "edges": 1224,
+   "km": 190.46069280814027,
+   "byClass": {
+    "highway": 33,
+    "major": 76,
+    "minor": 36,
+    "local": 1079
+   }
+  },
+  "buildings": {
+   "bakedAt": "2026-09-19T15:38:28.448Z",
+   "source": "OpenStreetMap API 0.6 /map (ODbL 1.0)",
+   "tiles": 9,
+   "microsoftFootprintsAdded": 0,
+   "parsed": 7240,
+   "kept": 6923,
+   "droppedTiny": 219,
+   "droppedOutside": 8,
+   "droppedInWater": 0,
+   "duplicates": 90,
+   "measured": 2,
+   "levels": 2395,
+   "estimated": 4526,
+   "remote": 0,
+   "vertices": 40012,
+   "tallest": [
+    {
+     "name": "(unnamed other)",
+     "height": 28.9,
+     "source": "levels"
+    },
+    {
+     "name": "(unnamed other)",
+     "height": 28.9,
+     "source": "levels"
+    },
+    {
+     "name": "(unnamed office)",
+     "height": 26,
+     "source": "estimated"
+    },
+    {
+     "name": "(unnamed apartments)",
+     "height": 21,
+     "source": "levels"
+    },
+    {
+     "name": "(unnamed apartments)",
+     "height": 21,
+     "source": "levels"
+    },
+    {
+     "name": "(unnamed apartments)",
+     "height": 21,
+     "source": "levels"
+    },
+    {
+     "name": "(unnamed apartments)",
+     "height": 21,
+     "source": "levels"
+    },
+    {
+     "name": "Building 10",
+     "height": 21,
+     "source": "levels"
+    },
+    {
+     "name": "(unnamed apartments)",
+     "height": 21,
+     "source": "levels"
+    },
+    {
+     "name": "(unnamed apartments)",
+     "height": 21,
+     "source": "levels"
+    },
+    {
+     "name": "(unnamed apartments)",
+     "height": 21,
+     "source": "levels"
+    },
+    {
+     "name": "(unnamed apartments)",
+     "height": 21,
+     "source": "levels"
+    },
+    {
+     "name": "(unnamed apartments)",
+     "height": 21,
+     "source": "levels"
+    },
+    {
+     "name": "Howard House",
+     "height": 21,
+     "source": "levels"
+    },
+    {
+     "name": "The Forget-Me-Not Factory",
+     "height": 21,
+     "source": "levels"
+    }
+   ],
+   "medianHeight": 8.5,
+   "maxHeight": 28.9,
+   "bytes": 365246,
+   "cellsBuiltOn": 63350
+  },
+  "landcover": {
+   "bakedAt": "2026-10-13T03:07:26.830Z",
+   "waterShare": 0.127
+  }
+ },
+ "landcover": {
+  "scheme": "nlcd",
+  "year": 2021,
+  "width": 256,
+  "height": 256,
+  "designRainMmHr": 36,
+  "designRainSource": "NOAA Atlas 14 Volume 2 Version 3, 2-year 60-minute intensity (partial-duration series) at 39.270, -76.805",
+  "classCounts": {
+   "11": 99,
+   "21": 18090,
+   "22": 13131,
+   "23": 7180,
+   "24": 2216,
+   "31": 35,
+   "41": 21268,
+   "42": 11,
+   "43": 1518,
+   "52": 267,
+   "71": 182,
+   "81": 1147,
+   "90": 344,
+   "95": 48
+  }
+ }
+}
