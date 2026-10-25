@@ -290,7 +290,7 @@ export class FrameDriver {
     this.blowupNotified = true;
     const speed = Number.isFinite(stats.maxSpeed) ? `${stats.maxSpeed.toExponential(1)} m/s` : String(stats.maxSpeed);
     console.info(
-      `[torrent] the solver produced non-physical values at sim t=${stats.simTime.toFixed(1)} s ` +
+      `[deluge] the solver produced non-physical values at sim t=${stats.simTime.toFixed(1)} s ` +
         `(max speed ${speed}); resetting the water rewrites every state texture.`,
     );
   }

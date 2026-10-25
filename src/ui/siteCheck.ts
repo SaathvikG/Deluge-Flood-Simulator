@@ -314,7 +314,7 @@ export function createSiteSection(ctx: UIContext): SiteSection {
     getCamera: () => bridge.scene?.getCamera?.() ?? null,
     getTerrain,
     getExaggeration: () => store.get().render.verticalExaggeration,
-    getCanvas: () => (typeof document !== 'undefined' ? (document.getElementById('torrent-canvas') as HTMLCanvasElement | null) : null),
+    getCanvas: () => (typeof document !== 'undefined' ? (document.getElementById('deluge-canvas') as HTMLCanvasElement | null) : null),
     onSelect: (id) => registry.select(id),
   });
   ctx.own(() => overlay.destroy());
@@ -1082,8 +1082,8 @@ export function createSiteSection(ctx: UIContext): SiteSection {
   function exportHtml() {
     const i = reportInput();
     if (!i) return;
-    const name = safeFilename(`torrent-site-assessment-${store.get().presetId ?? 'area'}`);
-    downloadText(reportHtmlDocument(buildSiteReport(i), `Torrent site assessment — ${store.get().terrainName}`, SITE_REPORT_CSS), `${name}.html`, 'text/html');
+    const name = safeFilename(`deluge-site-assessment-${store.get().presetId ?? 'area'}`);
+    downloadText(reportHtmlDocument(buildSiteReport(i), `Deluge site assessment — ${store.get().terrainName}`, SITE_REPORT_CSS), `${name}.html`, 'text/html');
   }
 
   // ─── Wiring ─────────────────────────────────────────────────────────────────────────────────────────────────

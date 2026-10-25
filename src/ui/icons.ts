@@ -88,7 +88,7 @@ export function icon(name: IconName, size = 20, extraClass = ''): SVGSVGElement 
 }
 
 let logoSeq = 0;
-/** The Torrent wave mark: rounded square with a water gradient and two crisp wave crests. */
+/** The Deluge wave mark: rounded square with a water gradient and two crisp wave crests. */
 export function logoMark(size = 28): SVGSVGElement {
   const id = `dl-logo-grad-${logoSeq++}`;
   return trustedMarkup<SVGSVGElement>(`

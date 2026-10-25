@@ -26,7 +26,7 @@ export function downloadText(text: string, filename: string, mime: string): bool
 /** Letters, digits, dot, dash and underscore only; never empty. */
 export function safeFilename(name: string): string {
   const s = name.normalize('NFKD').replace(/[^A-Za-z0-9._-]+/g, '-').replace(/-+/g, '-').replace(/^[-.]+|[-.]+$/g, '');
-  return (s || 'torrent-export').slice(0, 96);
+  return (s || 'deluge-export').slice(0, 96);
 }
 
 /** True inside the desktop wrapper, where downloads are blocked. */

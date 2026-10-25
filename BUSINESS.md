@@ -1,8 +1,8 @@
-# Torrent for business
+# Deluge for business
 
 *For the owner and for prospective customers.*
 
-Torrent is a flood simulator that runs in a browser tab: real USGS terrain, real buildings and streets, and the 2-D
+Deluge is a flood simulator that runs in a browser tab: real USGS terrain, real buildings and streets, and the 2-D
 shallow-water equations solved on the GPU fast enough to change something and watch the flood again. This document
 is the business case for it: who should pay, for which question, what it answers that the incumbents do not, and how
 far its numbers can be trusted.
@@ -30,7 +30,7 @@ demo data that ships with it, and can be reproduced from the links given there.
   [§8](#8-honest-limitations) states what the model leaves out before a customer finds it.
 
 **Contents:** [1 The problem](#1-the-problem) · [2 Who buys, and why](#2-who-buys-and-why) ·
-[3 What Torrent does that incumbents don't](#3-what-torrent-does-that-incumbents-dont) ·
+[3 What Deluge does that incumbents don't](#3-what-deluge-does-that-incumbents-dont) ·
 [4 Worked stories](#4-six-worked-stories-with-the-apps-own-numbers) · [5 Pricing](#5-pricing-hypotheses) ·
 [6 Go-to-market](#6-go-to-market) · [7 Roadmap](#7-roadmap) · [8 Limitations](#8-honest-limitations) ·
 [9 Try it](#9-try-it)
@@ -63,13 +63,13 @@ vendor. If they want to know what changes when the floor goes up 1 m, when a wal
 
 Ranked by fit with what the product does today, and by how directly the question turns into money.
 
-| # | Segment | The job | What Torrent gives them today | Fit |
+| # | Segment | The job | What Deluge gives them today | Fit |
 |---|---|---|---|---|
 | 1 | **Developers, site-selection and corporate real estate** (and the lenders who finance them) | Acquisition due diligence: depth at the planned floor, egress, a defensible floor level, what protection costs | **Site check**: a parcel swept through NWS / FEMA / historic levels — or, at any US address, NOAA Atlas 14 rain return periods — → depth, arrival, egress closure, loss, EAL, indicative finished floor, mitigation BCR, printable assessment | **5** |
 | 2 | **Lenders, insurers, MGAs, asset managers** | Portfolio exposure, accumulation, event response; the lender's or insurer's question about one asset | **Impact & loss** with a portfolio CSV: per-asset depth, speed, hazard class, loss range, business interruption, insured loss after deductible and limit | 3–4 (they own cat models; they buy event views, new regions and explainability) |
 | 3 | **Hydropower and mountain infrastructure** (owners, IFC PS4 lenders, insurers with GLOF sub-limits) | How much warning each plant gets; where a sensor pays; what the headworks see | **Hazard chain + Early warning**: a lake outburst or avalanche routed down the valley, front times at each plant, lead time per sensor design, best sensor site, ensemble p10 | **5 — the wedge**: no mainstream vendor offers interactive GLOF routing |
 | 4 | **Municipalities, counties and their engineers** | A benefit–cost analysis for a FEMA HMA / BRIC / FMA application; visuals for a public meeting | Before/after loss with a drawn wall, wall cost, BCR with its uncertainty range at 7 % (FEMA's default) and 3.1 %, a break-even cost and a FEMA BCA Toolkit appendix, who gets wetter | 4–5 (BRIC was court-restored; a $1 B NOFO closed July 2026 [S]) |
-| 5 | **Dam owners and their dam-safety engineers; emergency managers below them** | Breach inundation maps for an Emergency Action Plan (FEMA P-946; state dam-safety rules, which require EAPs for high-hazard dams), the first screen before a consultant's study, and the tabletop exercise | **Dam-breach inundation**: any of ~55,000 NID dams, sunny-day or flood-induced, eight published breach relations as a low / central / high band, the wave on the real valley, arrival times and depths downstream, then Site check / Impact & loss on what it reaches | 4 (a screen, not the stamped EAP map; the owner of a high-hazard dam still needs the engineer — Torrent makes that study's scope and the tabletop exercise cheaper) |
+| 5 | **Dam owners and their dam-safety engineers; emergency managers below them** | Breach inundation maps for an Emergency Action Plan (FEMA P-946; state dam-safety rules, which require EAPs for high-hazard dams), the first screen before a consultant's study, and the tabletop exercise | **Dam-breach inundation**: any of ~55,000 NID dams, sunny-day or flood-induced, eight published breach relations as a low / central / high band, the wave on the real valley, arrival times and depths downstream, then Site check / Impact & loss on what it reaches | 4 (a screen, not the stamped EAP map; the owner of a high-hazard dam still needs the engineer — Deluge makes that study's scope and the tabletop exercise cheaper) |
 | 6 | **Coastal developers, lenders and insurers** | How often the sea reaches this parcel, today and in 2050 | **Coastal surge exposure**: the nearest NOAA tide gauge's 1- to 100-year still-water levels on the site, egress, EAL, and the same ladder with NOAA 2022 sea-level rise | 4 (still water at one gauge, no waves: a screen next to the FIRM's VE/AE zones, not instead of them) |
 
 Why lead with segment 1: the decision is concrete and near-term (buy the parcel or not, set the floor height), a
@@ -80,11 +80,11 @@ Regulation is a weak lever in the US (the SEC climate rule is dead, California S
 abroad (ISSB / IFRS S2 in 35 jurisdictions, CSRD narrowed) [S]; sell on avoided loss, lender and insurer questions
 and grant money, not compliance ([business-case.md §A.3](docs/research/business-case.md#a3-regulatory-status-as-of-2026-state-it-accurately-in-sales-material)).
 
-## 3. What Torrent does that incumbents don't
+## 3. What Deluge does that incumbents don't
 
 The incumbents (Fathom/Swiss Re, First Street, Jupiter, ICEYE, Moody's RMS, Verisk, KatRisk, JBA, Floodbase, XDI,
 ClimateCheck; [business-case.md §B](docs/research/business-case.md#b-competitors-and-positioning)) sell precomputed
-hazard layers, scores, catastrophe models or observed footprints. Torrent is not trying to replace a catastrophe
+hazard layers, scores, catastrophe models or observed footprints. Deluge is not trying to replace a catastrophe
 model. It sits at the moment *before* the decision, when someone needs to try options:
 
 1. **Interactive what-if.** Raise the river, add rain, move a wall, and the flood is solved again in seconds on the
@@ -127,7 +127,7 @@ model. It sits at the moment *before* the decision, when someone needs to try op
 
 All six are set up by the in-app **Use cases** dialog or a `?usecase=` link (see [§9](#9-try-it)), on bundled demo
 data. They were run on this branch on a Windows desktop GPU, through the dev harness
-(`window.__torrent`) and the app's own panels and exports; the scripts that drove them are summarised in each story.
+(`window.__deluge`) and the app's own panels and exports; the scripts that drove them are summarised in each story.
 Re-running moves the last digit or two, and §4.1 notes one place where it moves much more.
 
 ### 4.1 Developer: two candidate parcels in Pittsburgh (`?usecase=site`)
@@ -288,7 +288,7 @@ pluvial screen that ships an EAL anywhere in the US, not a substitute for the FI
 The National Inventory of Dams lists 92,625 dams, 16,972 of them high-hazard — a failure would probably cost a life
 (the 2026 national export; the baked index keeps 12,786 of those among its 55,276 dams above the size
 threshold). Their owners need breach inundation maps for an Emergency Action Plan, and the emergency
-managers below them need arrival times. Today that is a consultant's HEC-RAS study per dam. Torrent gives the screen
+managers below them need arrival times. Today that is a consultant's HEC-RAS study per dam. Deluge gives the screen
 in a minute: pick the dam, pick sunny-day or flood-induced, and the breach runs on the real valley.
 
 Edenville Dam (Michigan, NID MI00549, failed 19 May 2020 [S]), flood-induced, run on this branch against the real
@@ -299,7 +299,7 @@ measured peaks (every one within a factor of two). The low and high cases are on
 Froehlich 2008 breach (11,700 m³/s, the earlier default), the 12 km valley loaded in 11–16 s, 90 simulated minutes
 took 16 s, and the wave reached 0.5, 1, 2, 3, 5 and 8 km below the dam at **3, 6, 13, 25, 56 and 76 minutes**, 9.0 to
 3.9 m deep in the channel. The arrivals readout gives each time's spread across the band, labelled as an estimate.
-The same relations run offline from the CLI: `torrent dam --nid MI00549 --breach flood`.
+The same relations run offline from the CLI: `deluge dam --nid MI00549 --breach flood`.
 
 *What this is not:* an EAP inundation map. The reservoir is two NID numbers, not a survey; there are no spillways,
 gates or downstream dams (Sanford Dam, below Edenville, also failed in 2020); published breach relations for one dam
@@ -344,7 +344,7 @@ value rather than by compute.
    lenders who finance them, in cities with baked scenes (Pittsburgh, Houston, Nashville, Asheville, Fort Myers …) and
    anywhere in the US through live areas. The deliverable is the printable Site assessment; the hook is the
    two-parcel comparison and the egress line, which no score gives.
-2. **Engineers as the channel.** Consultants run 100 what-ifs in Torrent before they open HEC-RAS, then hand the
+2. **Engineers as the channel.** Consultants run 100 what-ifs in Deluge before they open HEC-RAS, then hand the
    client the scenario and the report. Price Pro for them; let the client view for free.
 3. **Event-driven content.** Within days of a major flood, publish a replay scene and a Site-check / portfolio view
    of it (the Nepal 2026 preset is the model). That is the moment buyers are asking.
@@ -358,14 +358,14 @@ value rather than by compute.
 ### 6.1 How a customer integrates: the CLI and an HTTP API
 
 An underwriter, a lender's collateral team or a REIT does not want a browser tab per asset; they want a job that
-reads their asset file and writes numbers into their own systems. Today that is the **`torrent` CLI**
+reads their asset file and writes numbers into their own systems. Today that is the **`deluge` CLI**
 ([README → Batch / API](README.md#batch--api)), which runs on any machine with a GPU (a workstation, a cloud GPU VM, the
 customer's own server — Windows, macOS or Linux), offline, with nothing leaving the box:
 
 ```bash
-npx torrent portfolio --preset houston --csv book-2026Q3.csv --minutes 60 --members 12 --out exposure.csv --summary run.json
-npx torrent site --preset pittsburgh --at 40.4425,-80.0085 --use office --floors 3 --sweep --out lot-4.json
-npx torrent run --preset houston --climate 2050:ssp585 --out maps/houston-2050      # GeoTIFFs for the GIS team
+npx deluge portfolio --preset houston --csv book-2026Q3.csv --minutes 60 --members 12 --out exposure.csv --summary run.json
+npx deluge site --preset pittsburgh --at 40.4425,-80.0085 --use office --floors 3 --sweep --out lot-4.json
+npx deluge run --preset houston --climate 2050:ssp585 --out maps/houston-2050      # GeoTIFFs for the GIS team
 ```
 
 * **Input** is the portfolio CSV the app already reads (asset id, coordinates or a WKT outline, values, floors,
@@ -382,7 +382,7 @@ npx torrent run --preset houston --climate 2050:ssp585 --out maps/houston-2050  
   ensemble is a few minutes. A portfolio across several cities is one job per preset, scriptable from cron, Airflow or
   a CI pipeline; exit codes and machine-readable outputs make failures visible.
 
-**And an HTTP API:** `torrent serve` wraps the same commands as asynchronous jobs — `POST /v1/portfolio-assessments`
+**And an HTTP API:** `deluge serve` wraps the same commands as asynchronous jobs — `POST /v1/portfolio-assessments`
 with the CSV, `POST /v1/site-checks`, `POST /v1/runs`; poll the job, then download the CSV, report or GeoTIFFs
 ([docs/api.md](docs/api.md)). It adds queueing, auth, idempotency keys and retention around the CLI, not new physics:
 a request runs the CLI's own command handler, so an API raster is the CLI's byte for byte. Each result records the
@@ -401,8 +401,8 @@ metering for the *API / ensemble compute* tier in §5 are next.
 * **Benefit–cost from hazard runs per design:** the FEMA BCA Toolkit appendix is in (damages before and after per
   recurrence interval, useful life, 7 %, cost, maintenance, analysis year; stated as not a FEMA-accepted BCA). Next:
   run the ensemble per design and level so the BCR band comes from hazard runs rather than a ratio, and a
-  `torrent compare` command on the same `src/loss/bca.ts`.
-* **Headless batch / API:** the batch CLI and its HTTP job API (`torrent serve`) are in ([§6.1](#61-how-a-customer-integrates-the-cli-and-an-http-api));
+  `deluge compare` command on the same `src/loss/bca.ts`.
+* **Headless batch / API:** the batch CLI and its HTTP job API (`deluge serve`) are in ([§6.1](#61-how-a-customer-integrates-the-cli-and-an-http-api));
   next, webhooks, per-key metering and GPU workers behind a shared queue for portfolios of thousands, and parametric
   trigger design on top (what fraction of insured sites is wet when the gauge reads X; basis risk).
 * **Watch mode:** ingest forecasts (NWS, GloFAS), re-run, and tell asset owners their lead time.
@@ -426,7 +426,7 @@ Say these before a customer finds them; the app says them in its panels and repo
   flooding only: rain on the map, rivers held level, no surge, no drains by default (an optional drain layer exists), a stationary climate (§4.4); and none in
   western Washington and Oregon, which Atlas 14 does not cover.
 * **Dam breaches are screening regressions.** Eight published relations on a reservoir described by two NID numbers,
-  no hydraulic structures, the wave entering at the toe. The relations disagree 2–5× for one dam, so Torrent shows the
+  no hydraulic structures, the wave entering at the toe. The relations disagree 2–5× for one dam, so Deluge shows the
   band and picks the central case on evidence (Froehlich 1995: all 21 documented failures within ×2, in-sample). It
   was a third low on Teton 1976, and the band misses 4 of the 21 observed peaks. Arrival spreads are rescaled, not
   simulated (§4.5). Not an EAP inundation map.
@@ -444,7 +444,7 @@ Say these before a customer finds them; the app says them in its panels and repo
   model front is 22–32 minutes later than the official account (§4.3). The routing already runs at published
   debris-flow speeds, so the residual sits in the source or the reported times, and it is not a knob to tune.
 * **A river-stage scene explains only the river's share of a flood.** Against Metro Nashville's survey of the
-  buildings damaged in May 2010, Torrent with the Cumberland at its gauged crest reaches 98 % of the damaged buildings
+  buildings damaged in May 2010, Deluge with the Cumberland at its gauged crest reaches 98 % of the damaged buildings
   the river could reach, and 14 % of the buildings it floods were not recorded. But 70 % of the recorded damage was
   out of the river's reach: creeks, rain and drains that the scene does not run.
 * **Egress is a road graph and a queue.** Census centre-lines; a road counts as cut at 0.3 m of water. Departures
@@ -461,7 +461,7 @@ The full list, with numbers, is in [README.md → Known limitations](README.md#k
 ## 9. Try it
 
 In the app: **Use cases** in the top bar (or *For business* in the Try-it strip) opens the six set-ups and the
-one-page *What Torrent answers for your business* brief, which prints. Or link straight to one:
+one-page *What Deluge answers for your business* brief, which prints. Or link straight to one:
 
 * `?usecase=site` — Pittsburgh with the two demo parcels in Site check (they are handed over as a `?sites=` value and
   read by the same strict decoder as any shared link; your own `?sites=` link takes precedence)

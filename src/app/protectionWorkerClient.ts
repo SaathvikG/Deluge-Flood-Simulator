@@ -11,9 +11,9 @@ export function createProtectionWorker(): ProtectionBackend | null {
   if (typeof Worker !== 'function') return null;
   let worker: Worker;
   try {
-    worker = new Worker(new URL('./protectionWorker.ts', import.meta.url), { type: 'module', name: 'torrent-protection' });
+    worker = new Worker(new URL('./protectionWorker.ts', import.meta.url), { type: 'module', name: 'deluge-protection' });
   } catch (e) {
-    console.warn('[torrent] protected-land worker unavailable, analysing on the main thread:', e);
+    console.warn('[deluge] protected-land worker unavailable, analysing on the main thread:', e);
     return null;
   }
   type Waiter = { resolve(v: { result: ProtectionResult; ms: number }): void; reject(e: Error): void };

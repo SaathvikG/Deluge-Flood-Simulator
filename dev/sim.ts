@@ -15,7 +15,7 @@
  * Automation: window.__sim = { ready, solver, errors, runFor(simSeconds), stats(), setParams(p), frameMs() }.
  */
 import type { SimParams, SimStats, WaterSource } from '../src/contracts';
-import { createTorrentDevice } from '../src/gpu';
+import { createDelugeDevice } from '../src/gpu';
 import { createSolver, type GpuFloodSolver } from '../src/sim';
 
 const q = new URLSearchParams(location.search);
@@ -179,7 +179,7 @@ fn speedColor(s: f32) -> vec3f {
 
 async function main() {
   if (!('gpu' in navigator)) throw new Error('WebGPU not available');
-  const { device, description, timestampQuery } = await createTorrentDevice(navigator.gpu);
+  const { device, description, timestampQuery } = await createDelugeDevice(navigator.gpu);
   device.onuncapturederror = (ev) => {
     const msg = (ev as GPUUncapturedErrorEvent).error.message;
     errors.push(msg);

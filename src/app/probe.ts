@@ -82,7 +82,7 @@ export class ProbeSampler {
       .catch((err: unknown) => {
         // Device loss / destroyed buffer: already reported elsewhere; just stop sampling this buffer.
         if (this.buffer === buffer) this.buffer = null;
-        if (epoch === this.epoch) console.warn('[torrent] probe sample failed', err);
+        if (epoch === this.epoch) console.warn('[deluge] probe sample failed', err);
       })
       .finally(() => {
         this.pending = false;

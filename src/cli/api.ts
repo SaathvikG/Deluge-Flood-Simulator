@@ -1,7 +1,7 @@
 /**
  * The HTTP API's requests (docs/api.md) → the CLI's options, and every check that can run before a job is queued.
  *
- * A request body is turned into exactly the options its CLI command takes (`POST /v1/runs` → `torrent run …`), so the
+ * A request body is turned into exactly the options its CLI command takes (`POST /v1/runs` → `deluge run …`), so the
  * job runs the command handler unchanged (src/cli/commands.ts) and an API number is a CLI number. The checks are the
  * CLI's own functions (requirePreset, minutesOf, parseClimate, resolveForcing, siteFromOptions, planSite,
  * parsePortfolio) run one stage at a time, so a bad preset, level, stage, climate, site or CSV is a 400 before the
@@ -157,7 +157,7 @@ function start(body: unknown, command: JobSpec['command'], keys: readonly string
   return { b, o, argv, request };
 }
 
-/** `POST /v1/runs` → `torrent run`. Results: summary.json and (unless rasters: false) the four GeoTIFFs. */
+/** `POST /v1/runs` → `deluge run`. Results: summary.json and (unless rasters: false) the four GeoTIFFs. */
 export function runRequest(body: unknown): JobSpec {
   const { b, o, argv, request } = start(body, 'run', ['preset', 'scenario', 'rasters']);
   o.out = '.';
@@ -171,7 +171,7 @@ export function runRequest(body: unknown): JobSpec {
   return { kind: 'run', command: 'run', options: o, argv, request, csv: null };
 }
 
-/** `POST /v1/portfolio-assessments` → `torrent portfolio`. Results: results.csv and summary.json. */
+/** `POST /v1/portfolio-assessments` → `deluge portfolio`. Results: results.csv and summary.json. */
 export function portfolioRequest(body: unknown): JobSpec {
   const { b, o, argv, request } = start(body, 'portfolio', ['preset', 'scenario', 'assetsCsv', 'ensemble']);
   if (!has(b, 'assetsCsv') || typeof b.assetsCsv !== 'string') throw invalid('assetsCsv is required: the portfolio CSV as one JSON string.');
@@ -200,7 +200,7 @@ export function portfolioRequest(body: unknown): JobSpec {
   return { kind: 'portfolio', command: 'portfolio', options: o, argv, request, csv };
 }
 
-/** `POST /v1/site-checks` → `torrent site`. Result: report.json. */
+/** `POST /v1/site-checks` → `deluge site`. Result: report.json. */
 export function siteRequest(body: unknown): JobSpec {
   const { b, o, argv, request } = start(body, 'site', ['preset', 'scenario', 'site', 'sweep', 'egress']);
   o.out = 'report.json';
@@ -248,7 +248,7 @@ export function siteRequest(body: unknown): JobSpec {
   if (use) argv.push('--use', use);
   request.site = site;
   if (has(b, 'egress')) {
-    // Leaving by road: the same options and limits as `torrent site` (commands.ts egressOptions).
+    // Leaving by road: the same options and limits as `deluge site` (commands.ts egressOptions).
     const e = object(b.egress, 'egress');
     onlyKeys(e, ['occupants', 'alertMin', 'departure', 'personsPerCar', 'exitLanes'], 'egress');
     const egress: Obj = {};

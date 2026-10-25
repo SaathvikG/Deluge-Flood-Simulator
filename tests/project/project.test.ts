@@ -185,10 +185,10 @@ const corrupt = (mutate: (o: Record<string, any>) => void): string => {
 
 test('hostile files are refused with fixed sentences', () => {
   const cases: Array<[string, string, string]> = [
-    ['__proto__ at the top', '{"format":"torrent-project","version":1,"__proto__":{"polluted":1}}', PROJECT_ERRORS.forbiddenKey],
+    ['__proto__ at the top', '{"format":"deluge-project","version":1,"__proto__":{"polluted":1}}', PROJECT_ERRORS.forbiddenKey],
     ['__proto__ nested', corrupt((o) => (o.scenario.sim = JSON.parse('{"__proto__":{"polluted":1}}'))).replace('"sim":{}', '"sim":{"__proto__":{"polluted":1}}'), PROJECT_ERRORS.forbiddenKey],
     ['constructor key', corrupt((o) => (o.view.constructor = { prototype: { polluted: 1 } })), PROJECT_ERRORS.forbiddenKey],
-    ['deep nesting', `{"format":"torrent-project","version":1,"x":${'['.repeat(5000)}${']'.repeat(5000)}}`, PROJECT_ERRORS.tooDeep],
+    ['deep nesting', `{"format":"deluge-project","version":1,"x":${'['.repeat(5000)}${']'.repeat(5000)}}`, PROJECT_ERRORS.tooDeep],
     ['too large', 'x'.repeat(PROJECT_LIMITS.maxFileChars + 1), PROJECT_ERRORS.tooLarge],
     ['not JSON', '<img src=x onerror=alert(1)>', PROJECT_ERRORS.notJson],
     ['not a project', '{"format":"something-else","version":1}', PROJECT_ERRORS.notProject],
@@ -354,10 +354,10 @@ test('hostile links are refused: format, length, alphabet, gzip bomb, non-UTF-8,
     ['no prefix', 'abc', LINK_ERRORS.format],
     ['bad alphabet', `${LINK_PREFIX}<script>alert(1)</script>`, LINK_ERRORS.format],
     ['too long', `${LINK_PREFIX}${'A'.repeat(LINK_BUDGET)}`, LINK_ERRORS.tooLong],
-    ['not gzip', b64(new TextEncoder().encode('{"format":"torrent-project","version":1, "padding": 1}')), LINK_ERRORS.inflate],
+    ['not gzip', b64(new TextEncoder().encode('{"format":"deluge-project","version":1, "padding": 1}')), LINK_ERRORS.inflate],
     ['gzip bomb', bomb, LINK_ERRORS.inflate],
     ['not UTF-8', b64(gzipSync(Buffer.from([0xff, 0xfe, 0xfd, 0x80, 0x80]))), LINK_ERRORS.inflate],
-    ['__proto__ inside', b64(gzipSync(Buffer.from('{"format":"torrent-project","version":1,"__proto__":{"polluted":1}}'))), PROJECT_ERRORS.forbiddenKey],
+    ['__proto__ inside', b64(gzipSync(Buffer.from('{"format":"deluge-project","version":1,"__proto__":{"polluted":1}}'))), PROJECT_ERRORS.forbiddenKey],
   ];
   for (const [what, raw, err] of cases) {
     const r = await decodeProjectLink(raw);

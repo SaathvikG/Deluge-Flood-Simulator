@@ -125,10 +125,10 @@ test('warning wording: no alert set (≤ 0) is never "issued at T+00:00:00"; pan
 });
 
 test('export file names are tame', () => {
-  assert.equal(safeFilename('torrent-impact-pittsburgh-T30min.csv'), 'torrent-impact-pittsburgh-T30min.csv');
+  assert.equal(safeFilename('deluge-impact-pittsburgh-T30min.csv'), 'deluge-impact-pittsburgh-T30min.csv');
   assert.equal(safeFilename('../../etc/passwd'), 'etc-passwd');
   assert.equal(safeFilename('‮evil<>:"|?*.csv'), 'evil-.csv');
-  assert.equal(safeFilename(''), 'torrent-export');
+  assert.equal(safeFilename(''), 'deluge-export');
 });
 
 test('the methods text quotes the constants it describes and every source has a title', () => {

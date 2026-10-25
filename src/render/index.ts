@@ -1,5 +1,5 @@
 /**
- * Torrent WebGPU renderer (ARCHITECTURE.md §6).
+ * Deluge WebGPU renderer (ARCHITECTURE.md §6).
  *
  * Frame outline:
  *   compute  prep: solver bed/barrier/state → derived vertex + filterable surface textures
@@ -100,9 +100,9 @@ export interface CinematicSettings {
   sway: boolean;
   /**
    * Presentation mode: hide the UI chrome for clean hero images. The renderer stores it, sets
-   * `data-torrent-presentation="on"` on the document element, and notifies onPresentationChange subscribers; the
+   * `data-deluge-presentation="on"` on the document element, and notifies onPresentationChange subscribers; the
    * keybinding and the rule that actually hides the panels belong to the UI/app layer, which needs only:
-   *   html[data-torrent-presentation] .dl-panel, ... { display: none }
+   *   html[data-deluge-presentation] .dl-panel, ... { display: none }
    */
   presentation: boolean;
 }
@@ -150,7 +150,7 @@ export interface RendererStats {
 }
 
 /** FloodRenderer plus the (non-contract) quality knob and statistics. */
-export interface TorrentRendererAPI extends FloodRenderer {
+export interface DelugeRendererAPI extends FloodRenderer {
   readonly camera: OrbitController;
   readonly quality: RendererQuality;
   setQuality(quality: RendererQuality): void;
@@ -218,9 +218,9 @@ export async function createRenderer(
   canvas: HTMLCanvasElement,
   format: GPUTextureFormat,
   options: RendererOptions = {},
-): Promise<TorrentRendererAPI> {
+): Promise<DelugeRendererAPI> {
   const pipelines = await createPipelines(device, format);
-  return new TorrentRenderer(device, canvas, format, pipelines, options);
+  return new DelugeRenderer(device, canvas, format, pipelines, options);
 }
 
 /** Growable GPU buffer. */
@@ -320,7 +320,7 @@ interface MeshBuffers {
   skirtCount: number;
 }
 
-class TorrentRenderer implements TorrentRendererAPI {
+class DelugeRenderer implements DelugeRendererAPI {
   readonly camera: OrbitController;
   readonly stats: RendererStats = {
     gpuMs: 0,
@@ -1247,8 +1247,8 @@ class TorrentRenderer implements TorrentRendererAPI {
       // Published two ways because the UI is not this module's business: a subscription for code that wants to
       // react, and a data attribute on <html> so hiding the chrome can be one CSS rule and nothing else.
       if (typeof document !== 'undefined' && document.documentElement) {
-        if (next.presentation) document.documentElement.dataset.torrentPresentation = 'on';
-        else delete document.documentElement.dataset.torrentPresentation;
+        if (next.presentation) document.documentElement.dataset.delugePresentation = 'on';
+        else delete document.documentElement.dataset.delugePresentation;
       }
       for (const fn of this.presentationSubs) fn(next.presentation);
     }

@@ -1,7 +1,7 @@
 /**
  * Optional autosave of the current project to this browser's localStorage — OFF by default.
  *
- * Torrent stores nothing unless the user turns this on (README "Security"). When on, the project (without the
+ * Deluge stores nothing unless the user turns this on (README "Security"). When on, the project (without the
  * portfolio: it may be sensitive) is written under one key after changes; turning it off deletes that copy (and the
  * backup below). Every storage call is wrapped: private windows, blocked storage and quota errors simply mean "no
  * autosave", never a failure. The desktop wrapper clears storage each time it starts (electron/main.js), so there an
@@ -12,10 +12,10 @@
  * autosave on; and its first write keeps the copy it replaces under a second key, one step back, which the panel
  * offers to restore.
  */
-export const AUTOSAVE_KEY = 'torrent.project.autosave.v1';
-export const AUTOSAVE_ON_KEY = 'torrent.project.autosave.on';
+export const AUTOSAVE_KEY = 'deluge.project.autosave.v1';
+export const AUTOSAVE_ON_KEY = 'deluge.project.autosave.on';
 /** The copy a session's first write replaced (one-step backup). */
-export const AUTOSAVE_BACKUP_KEY = 'torrent.project.autosave.v1.previous';
+export const AUTOSAVE_BACKUP_KEY = 'deluge.project.autosave.v1.previous';
 /** Largest project text autosaved, characters (localStorage quotas are ~5 MB per origin). */
 export const AUTOSAVE_MAX_CHARS = 1_000_000;
 

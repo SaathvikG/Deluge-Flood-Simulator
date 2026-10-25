@@ -190,9 +190,9 @@ test('hostile surge tables: wrong shape refused, bad stations dropped, text clea
   const ok = encodeSurgeTable({ generated: '2026-10-13', stations: [good()] });
   assert.equal(parseSurgeTable(ok).stations.length, 1);
   assert.throws(() => parseSurgeTable('x'.repeat(SURGE_LIMITS.maxBytes + 1)), /too large/);
-  assert.throws(() => parseSurgeTable('{"format": "torrent-ewl-1", '), /not JSON/);
+  assert.throws(() => parseSurgeTable('{"format": "deluge-ewl-1", '), /not JSON/);
   assert.throws(() => parseSurgeTable(new Uint8Array([0x7b, 0xff, 0x7d])), /not UTF-8/);
-  assert.throws(() => parseSurgeTable(ok.replace('torrent-ewl-1', 'other')), /unknown format/);
+  assert.throws(() => parseSurgeTable(ok.replace('deluge-ewl-1', 'other')), /unknown format/);
   assert.throws(() => parseSurgeTable(ok.replace('"aeps": [0.99,', '"aeps": [0.9,')), /probabilities/);
   assert.throws(() => parseSurgeTable('[]'), /not an object/);
   const bad = [

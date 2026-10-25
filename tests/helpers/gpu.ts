@@ -7,13 +7,13 @@
  *   after(finishGpuTests);   // lets queued GPU work finish; the process then exits on its own
  */
 import { create, globals } from 'webgpu';
-import { createTorrentDevice, type TorrentGPU } from '../../src/gpu';
+import { createDelugeDevice, type DelugeGPU } from '../../src/gpu';
 import type { SimParams, SimSnapshot } from '../../src/contracts';
 import { createSolver, type GpuFloodSolver, type SolverOptions } from '../../src/sim';
 
 Object.assign(globalThis, globals);
 
-let gpuPromise: Promise<TorrentGPU> | null = null;
+let gpuPromise: Promise<DelugeGPU> | null = null;
 /**
  * The Dawn GPU instance MUST stay referenced for the life of the process: if it is garbage-collected, Dawn
  * tears down its instance and the next async callback (mapAsync, onSubmittedWorkDone, ...) segfaults.
@@ -22,11 +22,11 @@ let gpuInstance: GPU | null = null;
 const errors: string[] = [];
 
 /** Shared device for the whole test file (created on first use). Validation errors are collected. */
-export function getGpu(): Promise<TorrentGPU> {
+export function getGpu(): Promise<DelugeGPU> {
   if (!gpuPromise) {
     gpuPromise = (async () => {
       gpuInstance = create([]);
-      const d = await createTorrentDevice(gpuInstance);
+      const d = await createDelugeDevice(gpuInstance);
       d.device.onuncapturederror = (ev) => {
         const msg = (ev as GPUUncapturedErrorEvent).error?.message ?? String(ev);
         errors.push(msg);

@@ -466,7 +466,7 @@ export class ProtectionController {
           this.lastInput = null;
           this.pending = true;
           this.lastRun = -Infinity;
-          console.warn('[torrent] protected-land worker failed, analysing on the main thread:', err);
+          console.warn('[deluge] protected-land worker failed, analysing on the main thread:', err);
         },
       );
       return;

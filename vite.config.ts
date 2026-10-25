@@ -11,12 +11,12 @@ const CHARSET_META = '<meta charset="UTF-8" />';
  */
 function cspMeta(): Plugin {
   return {
-    name: 'torrent-csp',
+    name: 'deluge-csp',
     apply: 'build',
     transformIndexHtml: {
       order: 'post',
       handler(html) {
-        if (!html.includes(CHARSET_META)) throw new Error(`torrent-csp: ${CHARSET_META} not found in index.html`);
+        if (!html.includes(CHARSET_META)) throw new Error(`deluge-csp: ${CHARSET_META} not found in index.html`);
         const meta = `<meta http-equiv="Content-Security-Policy" content="${contentSecurityPolicy()}" />`;
         return html.replace(CHARSET_META, `${CHARSET_META}\n    ${meta}`);
       },
@@ -29,10 +29,10 @@ export default defineConfig({
   // (GitHub Pages serves a project at /<repo>/), with no server rewrites. Presets are fetched from BASE_URL.
   base: './',
   plugins: [cspMeta()],
-  // Build-time gate for the automation surfaces (window.__torrent, #ui-root.__torrentUI). Off unless TORRENT_DEBUG_API=1,
+  // Build-time gate for the automation surfaces (window.__deluge, #ui-root.__delugeUI). Off unless DELUGE_DEBUG_API=1,
   // so a released build contains none of that code; `npm run dev` keeps it via import.meta.env.DEV, and
   // scripts/e2e.mjs sets the variable before it builds. See src/env.d.ts and FINDINGS.json SEC-07.
-  define: { __TORRENT_DEBUG_API__: JSON.stringify(process.env.TORRENT_DEBUG_API === '1') },
+  define: { __DELUGE_DEBUG_API__: JSON.stringify(process.env.DELUGE_DEBUG_API === '1') },
   server: { port: 5173, strictPort: false },
   build: { target: 'es2022', chunkSizeWarningLimit: 2000 },
 });

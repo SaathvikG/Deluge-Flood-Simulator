@@ -176,7 +176,7 @@ export function decodeNidIndex(buf: ArrayBuffer | Uint8Array): NidIndex {
   const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
   if (bytes.byteLength > NID_LIMITS.maxBytes) throw new Error('Dam index: file too large');
   if (bytes.byteLength < HEADER_BYTES) throw new Error('Dam index: file too short');
-  for (let i = 0; i < 8; i++) if (bytes[i] !== NID_MAGIC.charCodeAt(i)) throw new Error('Dam index: not a Torrent dam index');
+  for (let i = 0; i < 8; i++) if (bytes[i] !== NID_MAGIC.charCodeAt(i)) throw new Error('Dam index: not a Deluge dam index');
   const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const n = dv.getUint32(8, true);
   const nameBytes = dv.getUint32(12, true);

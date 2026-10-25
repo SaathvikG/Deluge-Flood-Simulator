@@ -1,7 +1,7 @@
-# Torrent HTTP API
+# Deluge HTTP API
 
-*Status: **built** — `torrent serve` ([`src/cli/server.ts`](../src/cli/server.ts),
-[`src/cli/api.ts`](../src/cli/api.ts)) serves the `torrent` CLI ([README → Batch / API](../README.md#batch--api)) as an
+*Status: **built** — `deluge serve` ([`src/cli/server.ts`](../src/cli/server.ts),
+[`src/cli/api.ts`](../src/cli/api.ts)) serves the `deluge` CLI ([README → Batch / API](../README.md#batch--api)) as an
 HTTP job API on one machine's GPU. The sections marked **Not built yet** at the end are still a design.*
 
 **Contents:** [Quick start](#quick-start) · [Principles](#principles) · [Running it](#running-it) ·
@@ -10,7 +10,7 @@ HTTP job API on one machine's GPU. The sections marked **Not built yet** at the 
 
 ## Quick start
 
-1. Start the server on this machine (no token needed on loopback): `npx torrent serve`.
+1. Start the server on this machine (no token needed on loopback): `npx deluge serve`.
 2. Submit a job: `POST /v1/runs`, `/v1/portfolio-assessments` or `/v1/site-checks` with a JSON body. The answer is
    `202` and a job id.
 3. Poll `GET /v1/jobs/{id}` until `status` is `succeeded`, then download its files from
@@ -21,8 +21,8 @@ A worked request and response are under [Example](#example).
 ## Principles
 
 * **The CLI is the engine.** Every simulation endpoint is one CLI command with the same options and the same outputs
-  ([`src/cli/commands.ts`](../src/cli/commands.ts)): `POST /v1/runs` is `torrent run`, `POST /v1/portfolio-assessments`
-  is `torrent portfolio`, `POST /v1/site-checks` is `torrent site`. A request is turned into exactly the options that
+  ([`src/cli/commands.ts`](../src/cli/commands.ts)): `POST /v1/runs` is `deluge run`, `POST /v1/portfolio-assessments`
+  is `deluge portfolio`, `POST /v1/site-checks` is `deluge site`. A request is turned into exactly the options that
   command's parser would produce (each job records the equivalent command line, `command`), and the server runs the
   command handler in-process with an environment whose writes land in the job's directory. It adds queueing, auth,
   storage and retention; it adds no physics and no loss arithmetic, so an API number equals a CLI number equals the
@@ -50,17 +50,17 @@ A worked request and response are under [Example](#example).
 ## Running it
 
 ```bash
-npx torrent serve                                   # http://127.0.0.1:8787, this machine only, no token
-npx torrent serve --port 0 --data-dir /srv/torrent   # any free port (printed on start)
-TORRENT_API_TOKEN=$(openssl rand -hex 24) npx torrent serve --host 0.0.0.0 --retention-hours 168
-npx torrent serve --host 0.0.0.0 --token-file /etc/torrent/token
+npx deluge serve                                   # http://127.0.0.1:8787, this machine only, no token
+npx deluge serve --port 0 --data-dir /srv/deluge   # any free port (printed on start)
+DELUGE_API_TOKEN=$(openssl rand -hex 24) npx deluge serve --host 0.0.0.0 --retention-hours 168
+npx deluge serve --host 0.0.0.0 --token-file /etc/deluge/token
 ```
 
 | Option | Default | |
 | --- | --- | --- |
 | `--host` | `127.0.0.1` | Any non-loopback address requires a token, or the server refuses to start (exit 2). |
 | `--port` | `8787` | `0` = any free port. |
-| `--token-file` / `TORRENT_API_TOKEN` | none | Bearer token, at least 16 printable characters. Kept off the command line so it does not show in a process list. |
+| `--token-file` / `DELUGE_API_TOKEN` | none | Bearer token, at least 16 printable characters. Kept off the command line so it does not show in a process list. |
 | `--data-dir` | `results/api` | Job records and files: `<dir>/jobs/<id>/job.json` and the result files. Survives a restart. |
 | `--retention-hours` | `720` | A finished job and its files are deleted this long after it ends (checked every few minutes). |
 | `--max-queue` | `32` | Jobs waiting for the GPU at most; more are refused with `503`. |
@@ -74,10 +74,10 @@ job between frames and stops.
 | Method and path | CLI equivalent | Returns |
 | --- | --- | --- |
 | `GET /v1/health` | — | `{"status":"ok"}` — the only endpoint without auth |
-| `GET /v1/presets` | `torrent presets --json --levels` | The scenarios, their forcing, bounds and Site check ladder levels |
-| `POST /v1/runs` | `torrent run` | `202` + job; files: `summary.json` + four GeoTIFFs (`rasters: false` = summary only) |
-| `POST /v1/portfolio-assessments` | `torrent portfolio` | `202` + job; files: `results.csv` (the in-app export's columns, `ens_*` with an ensemble) + `summary.json` |
-| `POST /v1/site-checks` | `torrent site` | `202` + job; file: `report.json` (the Site check report) |
+| `GET /v1/presets` | `deluge presets --json --levels` | The scenarios, their forcing, bounds and Site check ladder levels |
+| `POST /v1/runs` | `deluge run` | `202` + job; files: `summary.json` + four GeoTIFFs (`rasters: false` = summary only) |
+| `POST /v1/portfolio-assessments` | `deluge portfolio` | `202` + job; files: `results.csv` (the in-app export's columns, `ens_*` with an ensemble) + `summary.json` |
+| `POST /v1/site-checks` | `deluge site` | `202` + job; file: `report.json` (the Site check report) |
 | `GET /v1/jobs` | — | The jobs held, newest first (id, kind, status, times) |
 | `GET /v1/jobs/{id}` | — | The job: status, progress, engine, request, command, files, error |
 | `GET /v1/jobs/{id}/results/{file}` | the files the CLI writes | The file, as an attachment (`…/files/{file}` is an alias) |
@@ -122,7 +122,7 @@ the CLI). The shared `scenario` object is the CLI's scenario options:
   "expiresAt": "<ISO 8601 time>",
   "engine": { "version": "0.1.0", "commit": "afb11f7deff1", "gpu": "nvidia turing nvidia-geforce-gtx-1660-ti D3D12 …" },
   "request": { "preset": "pittsburgh", "scenario": { "minutes": 10, "stageFt": 46 }, "rasters": true },
-  "command": ["torrent", "run", "--preset", "pittsburgh", "--quiet", "--minutes", "10", "--stage-ft", "46", "--out", "."],
+  "command": ["deluge", "run", "--preset", "pittsburgh", "--quiet", "--minutes", "10", "--stage-ft", "46", "--out", "."],
   "files": [
     { "name": "max_depth_m.tif", "url": "/v1/jobs/job_849ae4d402ac878e51d53626/results/max_depth_m.tif", "contentType": "image/tiff", "bytes": 4195304 },
     { "name": "summary.json", "url": "/v1/jobs/job_849ae4d402ac878e51d53626/results/summary.json", "contentType": "application/json", "bytes": 4299 }
@@ -164,7 +164,7 @@ never passed through.)
 
 ## Security
 
-* **Bind.** `127.0.0.1` by default. Any other address needs a token; without one `torrent serve` exits with code 2.
+* **Bind.** `127.0.0.1` by default. Any other address needs a token; without one `deluge serve` exits with code 2.
 * **Auth.** With a token, every endpoint but `/v1/health` needs `Authorization: Bearer <token>`, compared in constant
   time (SHA-256 of both sides, `timingSafeEqual`). One token, one tenant: there are no per-key quotas yet.
 * **Browsers.** On a loopback bind the `Host` header must be `localhost`, `127.x.x.x` or `[::1]`, so a web page that
@@ -185,7 +185,7 @@ never passed through.)
 * **Retention.** Finished jobs and their files are deleted after `--retention-hours`; a portfolio's CSV as soon as its
   job ends; a cancelled or failed job's partial files at once.
 
-`npm run test:security` runs these as its `API-*` cases against a real `torrent serve` process (bind, auth, Host / CORS
+`npm run test:security` runs these as its `API-*` cases against a real `deluge serve` process (bind, auth, Host / CORS
 / content type, 16 traversal paths, declared and chunked body caps and the row cap, hostile requests that must not be
 echoed); `tests/cli/server.test.ts` covers the same rules, the job lifecycle, retention and restart without a GPU.
 
@@ -201,7 +201,7 @@ $ curl -s -O localhost:8787/v1/jobs/job_849ae4d402ac878e51d53626/results/max_dep
 $ curl -s -X DELETE localhost:8787/v1/jobs/job_849ae4d402ac878e51d53626   # 204: job and files gone
 ```
 
-The `max_depth_m.tif` downloaded here has the same SHA-256 as the one `torrent run --preset pittsburgh --stage-ft 46
+The `max_depth_m.tif` downloaded here has the same SHA-256 as the one `deluge run --preset pittsburgh --stage-ft 46
 --minutes 10` writes. A site check:
 
 ```http
@@ -215,7 +215,7 @@ Idempotency-Key: 2f6c…
   "sweep": {} }
 ```
 
-→ `202`, and when it ends `GET /v1/jobs/job_…/results/report.json` is what `torrent site --preset pittsburgh --at
+→ `202`, and when it ends `GET /v1/jobs/job_…/results/report.json` is what `deluge site --preset pittsburgh --at
 40.4425,-80.0085 --name "North Shore lot" --use office --floors 3 --sweep` writes: per level the depth, speed, AIDR
 class, arrival, egress, damage and loss; then `eal`, `exceedanceCurve`, `ffe`, `mitigation` and `verdict`.
 
@@ -224,11 +224,11 @@ class, arrival, egress, damage and loss; then `eal`, `exceedanceCurve`, `ffe`, `
 ```yaml
 openapi: 3.1.0
 info:
-  title: Torrent flood simulation API
+  title: Deluge flood simulation API
   version: 0.1.0
   description: >
-    Headless runs of the Torrent GPU flood simulator (`torrent serve`). Each simulation endpoint queues a job that runs
-    the `torrent` CLI command of the same name. Screening estimates, not engineering advice.
+    Headless runs of the Deluge GPU flood simulator (`deluge serve`). Each simulation endpoint queues a job that runs
+    the `deluge` CLI command of the same name. Screening estimates, not engineering advice.
 servers:
   - url: http://127.0.0.1:8787/v1
 security:
@@ -341,7 +341,7 @@ components:
         cancelRequested: { type: boolean }
         engine: { type: object, properties: { version: { type: string }, commit: { type: [string, 'null'] }, gpu: { type: [string, 'null'] } } }
         request: { type: object, description: The request as validated (a portfolio's CSV replaced by rows / usable / skippedRows / sha256) }
-        command: { type: array, items: { type: string }, description: The equivalent torrent command line }
+        command: { type: array, items: { type: string }, description: The equivalent deluge command line }
         files:
           type: array
           items: { type: object, properties: { name: { type: string }, url: { type: string }, contentType: { type: string }, bytes: { type: integer } } }

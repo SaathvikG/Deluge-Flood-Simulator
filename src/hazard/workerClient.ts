@@ -54,9 +54,9 @@ export function createHazardWorker(): HazardChainBackend {
   if (typeof Worker !== 'function') return inlineBackend();
   let worker: Worker;
   try {
-    worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module', name: 'torrent-hazard-chain' });
+    worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module', name: 'deluge-hazard-chain' });
   } catch (e) {
-    console.warn('[torrent] hazard-chain worker unavailable, running on the main thread:', e);
+    console.warn('[deluge] hazard-chain worker unavailable, running on the main thread:', e);
     return inlineBackend();
   }
   type Waiter = { resolve(m: HazardWorkerResponse): void; reject(e: Error): void; onProgress?: (done: number, total: number) => void };

@@ -1,5 +1,5 @@
 /**
- * GpuFloodSolver — the WebGPU shallow-water solver behind Torrent.
+ * GpuFloodSolver — the WebGPU shallow-water solver behind Deluge.
  *
  * ── Per substep (all substeps of a frame go into ONE compute pass / command buffer) ──────────────────────
  *   Pass A  momentum      state[p] ──▶ flux          (face discharges: pressure/bed slope, advection,
@@ -24,7 +24,7 @@
  *   Budget   the frame's compute pass carries timestamp queries; measured GPU ms/substep caps the substeps per
  *            frame so solver work stays within options.gpuBudgetMs (8 ms by default; budget.ts) — sim speed
  *            degrades, frame rate does not. gpuBudgetMs = Infinity switches the budget (and its GPU timestamp
- *            readbacks) off, for hosts that pace the solver themselves (the Torrent app: src/app/governor.ts).
+ *            readbacks) off, for hosts that pace the solver themselves (the Deluge app: src/app/governor.ts).
  *            While the budget cannot bind (it allows ≥ 2× maxSubstepsPerFrame) it is re-measured only every
  *            PROBE_IDLE_MS instead of every frame.
  *

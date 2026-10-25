@@ -99,7 +99,7 @@ export const NEPAL_STORY: Story = {
     },
     {
       id: 'end',
-      kicker: 'Torrent',
+      kicker: 'Deluge',
       caption:
         'The valley routing and the 2-D flood both ran in this browser tab, offline, with no AI model in it. Place your own sensor under Hazard chain → Early warning.',
       source: 'README.md',

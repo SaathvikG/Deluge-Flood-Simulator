@@ -70,7 +70,7 @@ export const USE_CASES: readonly UseCaseDef[] = [
     preset: null,
     title: 'Check any US address',
     who: 'Developers, lenders, site selection',
-    blurb: 'Type an address: Torrent loads 5 km of terrain, imagery and roads around it, drops a site there and sweeps it through NOAA Atlas 14 rain return periods to an expected annual loss.',
+    blurb: 'Type an address: Deluge loads 5 km of terrain, imagery and roads around it, drops a site there and sweeps it through NOAA Atlas 14 rain return periods to an expected annual loss.',
     howTo: 'The site is in Site check with the NOAA Atlas 14 rain ladder ticked (2- to 500-year, 1-hour storm). Press Run sweep for depth, egress and expected annual loss.',
   },
   {
@@ -78,7 +78,7 @@ export const USE_CASES: readonly UseCaseDef[] = [
     preset: null,
     title: 'Dam-breach inundation',
     who: 'Dam owners, emergency managers, downstream owners',
-    blurb: 'Pick any of ~55,000 U.S. dams from the National Inventory of Dams: Torrent breaches it (sunny-day or flood-induced, Froehlich 2008), loads the valley below and shows when the wave arrives and how deep it gets.',
+    blurb: 'Pick any of ~55,000 U.S. dams from the National Inventory of Dams: Deluge breaches it (sunny-day or flood-induced, Froehlich 2008), loads the valley below and shows when the wave arrives and how deep it gets.',
     howTo: 'The breach wave enters at the toe of the dam. Watch the Arrival view (minutes until the water came), press Read arrivals in the Dams dialog for times along the valley, or use Site check and Impact & loss as usual.',
   },
   {
@@ -86,7 +86,7 @@ export const USE_CASES: readonly UseCaseDef[] = [
     preset: null,
     title: 'Coastal surge exposure',
     who: 'Coastal developers, lenders, insurers',
-    blurb: 'Pick a place on the U.S. coast: Torrent loads 8 km around it, holds the sea at NOAA’s 1- to 100-year still-water levels from the nearest tide gauge, and sweeps the site to an expected annual loss — today and with NOAA’s 2022 sea-level rise.',
+    blurb: 'Pick a place on the U.S. coast: Deluge loads 8 km around it, holds the sea at NOAA’s 1- to 100-year still-water levels from the nearest tide gauge, and sweeps the site to an expected annual loss — today and with NOAA’s 2022 sea-level rise.',
     howTo: 'The site is in Site check with the NOAA extreme-water-level ladder ticked (1- to 100-year). Press Run sweep for depth, egress and expected annual loss; Today vs future adds sea-level rise.',
   },
 ];
@@ -221,7 +221,7 @@ export const DEMO_PORTFOLIO_PATH = 'demo/houston-portfolio.csv';
 /** Name it is shown under in Impact & loss. */
 export const DEMO_PORTFOLIO_NAME = 'houston-portfolio.csv (fictional demo)';
 
-// ─── The business brief ("What Torrent answers for your business") ───────────────────────────────────────────────────
+// ─── The business brief ("What Deluge answers for your business") ───────────────────────────────────────────────────
 
 export interface BriefItem {
   question: string;

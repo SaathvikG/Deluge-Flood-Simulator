@@ -1,4 +1,4 @@
-# Torrent for Business: implementation-ready spec and business case
+# Deluge for Business: implementation-ready spec and business case
 
 *Scope: market, competitors, loss-model methods (with numeric tables ready to paste into TypeScript), building valuation, product concept, customer stories, pitch.*
 
@@ -8,7 +8,7 @@
 
 ## 0. TL;DR recommendations
 
-1. **Position Torrent as "the flood what-if engine", not "another risk score".** Incumbents (First Street, Jupiter, Fathom, XDI, Moody's RMS, Verisk) sell precomputed hazard layers and scores. None of them lets a non-specialist **draw a levee, re-run the flood in seconds and see the dollars change** in a browser tab. Own the *mitigation design + communication* moment: the board meeting, the grant application, the lender Q&A.
+1. **Position Deluge as "the flood what-if engine", not "another risk score".** Incumbents (First Street, Jupiter, Fathom, XDI, Moody's RMS, Verisk) sell precomputed hazard layers and scores. None of them lets a non-specialist **draw a levee, re-run the flood in seconds and see the dollars change** in a browser tab. Own the *mitigation design + communication* moment: the board meeting, the grant application, the lender Q&A.
 2. **Ship a loss layer first. It is about 1–2 weeks of TypeScript.** The JRC global depth–damage curves (Section C.1, extracted verbatim from the official spreadsheet) give per-continent and per-occupancy damage fractions. The JRC country construction costs (C.1.3) turn footprints into dollars. The GPU solver already stores max depth (`stateTexture.a`). Add max velocity, max d·v, first-wet time and wet duration as accumulators.
 3. **Every asset gets six numbers:** max depth, max velocity, hazard class (AIDR H1–H6 and the UK HR), first-wet time (lead time), damage %/$, and downtime days. A portfolio rolls up to loss, EAL and "top 10 assets at risk".
 4. **Mitigation ROI is the killer feature.** Draw a levee, then compute avoided loss, EAL delta, NPV at 7% (the FEMA default again since June 2025) and 3.1%, and the BCR. Export it as a FEMA-BCA-style appendix. A worked Houston example (Section E.4) gives BCR ≈ 1.9 for a permanent wall and ≈ 8.7 for deployable barriers.
@@ -36,7 +36,7 @@
 
 ### A.2 Buyer segments and their concrete "job to be done"
 
-| Segment | Why they buy | What Torrent must output | Fit for Torrent (1–5) |
+| Segment | Why they buy | What Deluge must output | Fit for Deluge (1–5) |
 |---|---|---|---|
 | **Insurers / reinsurers / MGAs** | Underwriting (per-address depth), accumulation (portfolio in footprint), event response (claims triage), pricing of flood where NFIP take-up is tiny (WNC: ~1–5% of homes insured for Helene [S]) | Per-asset depth/damage, event footprints, ensembles → EP curve | 3 (they own cat models; buy *event response* and *new-region* views) |
 | **Parametric insurers / brokers** (Floodbase, Descartes, FloodFlash, Aon) | Trigger design and basis-risk analysis: "if the gauge reads X, what floods?" | Fast ensembles mapping trigger metric → depth at insured sites | 4 |
@@ -65,22 +65,22 @@
 
 Public pricing is rare. Data points found: **ICEYE Flood Insights from €34,000/yr** (insurers with <€300 M nat-cat GWP) [S, https://www.iceye.com/solutions/insurance/flood-rapid-impact]; **Climate X Spectra $31,500/yr**, Regrid ~$12k/yr/state [S, https://batchdata.io/blog/climate-risk-real-estate-apis-buyer-guide]; ClimateCheck gives free consumer ratings with enterprise pricing undisclosed [S]; ProtectMyZip sells a $12 consumer report [S].
 
-| Vendor | What it is | Positioning / notes | Where Torrent differs |
+| Vendor | What it is | Positioning / notes | Where Deluge differs |
 |---|---|---|---|
 | **Fathom (Swiss Re, acq. Dec-2023)** | Global flood hazard maps (fluvial/pluvial/coastal), US flood map, cat models | Reinsurance-grade data; keeps its brand inside Swiss Re Reinsurance Solutions. https://www.swissre.com/press-release/Swiss-Re-acquires-Fathom-a-leader-in-water-risk-intelligence/4af5e0d7-e065-404a-b80d-6f32955f0fbe | Static return-period rasters; no interactive mitigation |
-| **First Street** | US (now global) property-level Risk Factor scores, Climate Risk API, Enterprise API, Raster Map API | Mortgage, real-estate and insurance data; pricing behind sales. https://apis.io/providers/first-street/ | Scores, not what-if. Torrent can *explain* a First Street score visually |
-| **Jupiter Intelligence** | ClimateScore Global, asset-level multi-peril, scenario-conditioned | Banks, PE, GRESB; added an "avoided loss / ROI across 10+ adaptation strategies" tool (Jul-2025). https://www.businesswire.com/news/home/20250723646042/en/Jupiter-Intelligence-Establishes-New-Standard-for-Investment-Grade-Climate-Analytics | Closest on adaptation ROI, but parametric/statistical. Torrent shows *physics* of the specific wall |
-| **ICEYE** | SAR-satellite observed flood extent and depth within hours of peak | Insurers' claims and event response; from €34k/yr | Observation, not prediction. Torrent = before the event + what-if; ICEYE = after |
-| **Moody's RMS** (acq. 2021, ~$2 B [M]) / **Verisk (ex-AIR)** | Probabilistic cat models (NA inland flood, etc.), Touchstone / Intelligent Risk Platform | Regulatory-grade EP curves; six- to seven-figure licenses [M, not public] | Torrent is not a cat model. Complement it with visualization of specific events and mitigation |
+| **First Street** | US (now global) property-level Risk Factor scores, Climate Risk API, Enterprise API, Raster Map API | Mortgage, real-estate and insurance data; pricing behind sales. https://apis.io/providers/first-street/ | Scores, not what-if. Deluge can *explain* a First Street score visually |
+| **Jupiter Intelligence** | ClimateScore Global, asset-level multi-peril, scenario-conditioned | Banks, PE, GRESB; added an "avoided loss / ROI across 10+ adaptation strategies" tool (Jul-2025). https://www.businesswire.com/news/home/20250723646042/en/Jupiter-Intelligence-Establishes-New-Standard-for-Investment-Grade-Climate-Analytics | Closest on adaptation ROI, but parametric/statistical. Deluge shows *physics* of the specific wall |
+| **ICEYE** | SAR-satellite observed flood extent and depth within hours of peak | Insurers' claims and event response; from €34k/yr | Observation, not prediction. Deluge = before the event + what-if; ICEYE = after |
+| **Moody's RMS** (acq. 2021, ~$2 B [M]) / **Verisk (ex-AIR)** | Probabilistic cat models (NA inland flood, etc.), Touchstone / Intelligent Risk Platform | Regulatory-grade EP curves; six- to seven-figure licenses [M, not public] | Deluge is not a cat model. Complement it with visualization of specific events and mitigation |
 | **KatRisk** | US and global inland flood and surge hazard/cat models (SpatialKat, SoloKat) | Insurer/MGA pricing [M] | Same |
-| **JBA Risk Management** | Global flood maps and cat models, strong in UK/EU/Asia | Insurers, banks, governments [M] | Same; JBA has Asia coverage. Torrent's GLOF cascade is a gap for JBA |
-| **Floodbase (ex-Cloud to Street)** | Satellite flood monitoring and parametric flood triggers; 9,000+ policies, 40+ countries; $5 M raise Feb-2025, ~$17 M total | Parametric programs with Swiss Re CorSo, Liberty Mutual Re, AXA Climate. https://fintech.global/2025/02/25/floodbase-raises-5m-to-expand-data-driven-flood-insurance-solutions/ | Torrent can do *trigger design* (simulate what a gauge reading means spatially) |
-| **7Analytics** (Norway) | Pluvial/flash-flood and ground-water risk for insurers and municipalities, ML + hydrology [M] | Nordic insurers, real estate | Torrent is interactive and global DEM |
+| **JBA Risk Management** | Global flood maps and cat models, strong in UK/EU/Asia | Insurers, banks, governments [M] | Same; JBA has Asia coverage. Deluge's GLOF cascade is a gap for JBA |
+| **Floodbase (ex-Cloud to Street)** | Satellite flood monitoring and parametric flood triggers; 9,000+ policies, 40+ countries; $5 M raise Feb-2025, ~$17 M total | Parametric programs with Swiss Re CorSo, Liberty Mutual Re, AXA Climate. https://fintech.global/2025/02/25/floodbase-raises-5m-to-expand-data-driven-flood-insurance-solutions/ | Deluge can do *trigger design* (simulate what a gauge reading means spatially) |
+| **7Analytics** (Norway) | Pluvial/flash-flood and ground-water risk for insurers and municipalities, ML + hydrology [M] | Nordic insurers, real estate | Deluge is interactive and global DEM |
 | **XDI (Cross Dependency Initiative)** | Asset-level physical-risk ratings for banks and governments (Australia origin) [M] | Bank/mortgage portfolios, sovereign | Scores; no hydrodynamics |
 | **ClimateCheck** | Consumer and enterprise property climate ratings; integrations (e.g., Dye & Durham UK) [S] | Real-estate / environmental due diligence | Scores |
-| **Engineering tools** (HEC-RAS 2D, TUFLOW, MIKE, InfoWorks ICM, Flood Modeller) | Professional hydraulic models | Desktop, expert-only, hours per run, licenses | Torrent = minutes, browser, no install, non-expert UX; *not* a replacement for a design-grade study |
+| **Engineering tools** (HEC-RAS 2D, TUFLOW, MIKE, InfoWorks ICM, Flood Modeller) | Professional hydraulic models | Desktop, expert-only, hours per run, licenses | Deluge = minutes, browser, no install, non-expert UX; *not* a replacement for a design-grade study |
 
-### B.1 Gaps Torrent can own
+### B.1 Gaps Deluge can own
 
 1. **Interactive what-if mitigation in the browser.** Draw a levee, berm or wall; the flood re-runs live; avoided loss, BCR and "protected land" update. Nobody in the score vendors does this, and engineers do it in HEC-RAS over days.
 2. **GPU speed makes ensembles cheap.** Run 50–200 variants (stage, rain intensity, Manning n, breach location, GLOF volume) on one laptop GPU to produce an exceedance curve and uncertainty bands per asset. It explains uncertainty instead of hiding it.
@@ -89,7 +89,7 @@ Public pricing is rare. Data points found: **ICEYE Flood Insights from €34,000
 5. **No install, private by design.** Static site, offline-capable, and the portfolio CSV never leaves the browser. That is a security story for banks and insurers ("your asset list never touches our servers").
 6. **Lead time / first-wet arrival time** per asset is rarely provided by score vendors and is directly actionable: shut gates, move inventory, evacuate.
 
-**Honest limits** (put these in the product): Torrent is a 2D shallow-water screening model. DEM resolution, missing channel bathymetry, culverts/storm drains and the levees that already exist drive error. It is not a FEMA FIRM, not a regulatory study and not a probabilistic cat model with a validated stochastic event catalog. Present outputs as *scenario* results, with stated uncertainty.
+**Honest limits** (put these in the product): Deluge is a 2D shallow-water screening model. DEM resolution, missing channel bathymetry, culverts/storm drains and the levees that already exist drive error. It is not a FEMA FIRM, not a regulatory study and not a probabilistic cat model with a validated stochastic event catalog. Present outputs as *scenario* results, with stated uncertainty.
 
 ---
 
@@ -203,7 +203,7 @@ JRC 90% CI on max damage: RES −28%/+53%, COM −31%/+35%, IND −30%/+53%. The
   - **Economic / JRC (default for public-sector BCA and ESG):** `loss = f(d) × MD_jrc × area`, where MD_jrc already includes depreciation and the undamageable share.
   - **Insurance / replacement cost:** `loss = f(d) × RV × (1 − u)`, where RV = replacement value and u = undamageable share (0.4 for masonry/concrete, 0 for wood/mud). Add contents separately with `f_contents(d) × CV`.
 
-**Recommended Torrent defaults (2026 USD per m² of gross floor area, user-overridable)** [I, derived from the above]
+**Recommended Deluge defaults (2026 USD per m² of gross floor area, user-overridable)** [I, derived from the above]
 
 | Occupancy | US | India | Nepal |
 |---|---|---|---|
@@ -320,7 +320,7 @@ Anchors:
 - Hazus county runs show BI ≈ 31–40% of building-related loss [S].
 - Baxter North Cove (Helene): ~$2.5 M/day revenue impact estimated by BofA [S, https://www.streetinsider.com/Investing/What+could+Hurricane+Helene+mean+for+BAX/23780047.html].
 
-Torrent already routes evacuations over a `RoadNetwork` with per-edge flood status. Reuse it to compute **access loss** (the edge is impassable when its max depth > 0.3 m for trucks, 0.15 m for cars) and **time-to-reopen** (from the wet-duration accumulator).
+Deluge already routes evacuations over a `RoadNetwork` with per-edge flood status. Reuse it to compute **access loss** (the edge is impassable when its max depth > 0.3 m for trucks, 0.15 m for cars) and **time-to-reopen** (from the wet-duration accumulator).
 
 ### C.6 Expected Annual Loss (EAL) from return-period scenarios
 
@@ -382,7 +382,7 @@ Precomputed UPV [V arithmetic]:
 | Nepal gabion-faced embankment | NPR 30,000–35,000/m (~$220–260/m) | same |
 | India (Bihar) embankment program | ₹1.56 B/yr (~$20 M) budget, no per-km rate | [S] https://dialogue.earth/en/water/3800-kilometres-of-embankments-worsen-floods-in-bihar-2/ |
 
-**Torrent default for the levee tool** [I]: cost/m = base × height^1.3, with US base ≈ $2,500/m per m height for an earthen levee and $6,000/m per m for a concrete floodwall (calibrated so a 1.5 m urban wall ≈ $9–10k/m, matching Fargo). South Asia: earthen ≈ $90/m per m, gabion ≈ $170/m per m. These are all editable; show a ±50% band.
+**Deluge default for the levee tool** [I]: cost/m = base × height^1.3, with US base ≈ $2,500/m per m height for an earthen levee and $6,000/m per m for a concrete floodwall (calibrated so a 1.5 m urban wall ≈ $9–10k/m, matching Fargo). South Asia: earthen ≈ $90/m per m, gabion ≈ $170/m per m. These are all editable; show a ±50% band.
 
 ---
 
@@ -393,7 +393,7 @@ Precomputed UPV [V arithmetic]:
 ```
 GFA_m2      = footprint_area_m2 × floors
 floors      = building:levels tag ?? round(height_m / storey_h) ?? default_by_kind
-storey_h    = 3.2 m low-rise, 3.95 m for ≥4 levels  (Torrent's own fit: src/data/buildings.ts LEVEL_HEIGHT_LOW/HIGH)
+storey_h    = 3.2 m low-rise, 3.95 m for ≥4 levels  (Deluge's own fit: src/data/buildings.ts LEVEL_HEIGHT_LOW/HIGH)
 RV_structure = GFA_m2 × unit_cost[occ][country] × regional_factor
 RV_contents  = RV_structure × content_factor[occ]       (JRC: RES 0.5, COM 1.0, IND 1.5)
 ```
@@ -427,13 +427,13 @@ Sources: footprints from OSM, Microsoft Global ML Building Footprints (1.4 B foo
 2. If `building=yes`: use a POI inside the footprint (`amenity=hospital|clinic|school|...`, `shop=*` → retail, `office=*` → office, `craft=*` / `industrial=*` → IND, `tourism=hotel` → COM-lodging).
 3. Otherwise use the enclosing `landuse=*` polygon: residential → RES, commercial/retail → COM, industrial → IND, farmyard → AG.
 4. Otherwise apply a size heuristic: footprint < 250 m² → RES; 250–5,000 m² → COM; > 5,000 m² and single storey → IND/warehouse [I].
-5. Store a `valueConfidence` flag (tagged / POI / landuse / heuristic), as Torrent already does for `heightSource`.
+5. Store a `valueConfidence` flag (tagged / POI / landuse / heuristic), as Deluge already does for `heightSource`.
 
-Torrent's current `BUILDING_KINDS` (other, house, residential, apartments, commercial, retail, office, industrial, civic, school, church, stadium, parking, shed, roof) maps almost 1:1. Add `hospital`, `warehouse`, `hotel`, `utility/powerhouse` and `agricultural`.
+Deluge's current `BUILDING_KINDS` (other, house, residential, apartments, commercial, retail, office, industrial, civic, school, church, stadium, parking, shed, roof) maps almost 1:1. Add `hospital`, `warehouse`, `hotel`, `utility/powerhouse` and `agricultural`.
 
 ---
 
-## E. Product concept: "Torrent for Business"
+## E. Product concept: "Deluge for Business"
 
 ### E.1 Asset portfolio CSV schema (parsed client-side; nothing uploaded)
 
@@ -478,7 +478,7 @@ GPU implementation: one extra `rgba32float` texture `hazardAccum` (r = maxSpeed,
 
 - **Portfolio cards:** total exposed value, # assets wet, # in H5–H6, scenario loss (P50, with P10–P90 band in ensemble mode), EAL, the top 10 assets, and the earliest-wetting asset (minimum lead time).
 - **Charts:** loss-exceedance curve, loss by occupancy, depth histogram, and a lead-time waterfall.
-- **Mitigation mode:** the user draws a levee/wall (existing tool) and picks a type (earthen, floodwall, deployable) and height. Cost comes from the unit-cost table. Torrent re-runs every return-period scenario (8 runs × a few seconds of GPU each), then shows the ΔEAL, the NPV at 7%/3.1%, the BCR and protected land/assets, alongside the "residual risk" (overtopping scenario) and "transferred risk" (who gets wetter downstream). That last one is crucial for municipal approval and a unique visual.
+- **Mitigation mode:** the user draws a levee/wall (existing tool) and picks a type (earthen, floodwall, deployable) and height. Cost comes from the unit-cost table. Deluge re-runs every return-period scenario (8 runs × a few seconds of GPU each), then shows the ΔEAL, the NPV at 7%/3.1%, the BCR and protected land/assets, alongside the "residual risk" (overtopping scenario) and "transferred risk" (who gets wetter downstream). That last one is crucial for municipal approval and a unique visual.
 - **Export:** a print-to-PDF report (CSS print stylesheet; no server) with map snapshots, per-asset table, assumptions/uncertainty, and a methods appendix (JRC citation, AIDR/FD2321, BCA formula), plus a CSV/GeoJSON of results. The "BCA appendix" lists the FEMA BCA Toolkit inputs (project useful life, discount rate, damages before/after per RP), so the engineer can transcribe them.
 
 ### E.4 Three customer stories
@@ -486,12 +486,12 @@ GPU implementation: one extra `rgba32float` texture `hazardAccum` (r = maxSpeed,
 **1) Hydropower operator below a glacial lake (Nepal/Sikkim-type)** [I, with real anchors]
 
 - Asset: a 100 MW run-of-river plant with surface powerhouse and desander, 25 km below a moraine-dammed lake. Revenue ≈ 100 MW × 8,760 h × 0.55 CF × $0.07/kWh ≈ **$33.7 M/yr** [I].
-- Torrent scenario: 20 M m³ released over 30 min (the existing Nepal preset volume). Output (illustrative): flood front reaches the headworks at **T+38 min** and the powerhouse at T+52 min, with peak depth 9 m, v 6 m/s, dv 54 (H6). The velocity override sets the structure to total loss.
+- Deluge scenario: 20 M m³ released over 30 min (the existing Nepal preset volume). Output (illustrative): flood front reaches the headworks at **T+38 min** and the powerhouse at T+52 min, with peak depth 9 m, v 6 m/s, dv 54 (H6). The velocity override sets the structure to total loss.
 - Loss: civil + E&M ≈ $1.1 M/MW (Teesta-III's ₹11,400 cr claim for 1,200 MW ≈ $1.14 M/MW [S]). Powerhouse + headworks share 60% ≈ $66 M, plus 24 months BI ≈ $67 M, **≈ $130 M per event**. At an annual probability of 1/100, EAL ≈ $1.3 M/yr.
 - Mitigation compared in-app:
   - (a) Early-warning system + gate-closure/evacuation protocol: ~$1–2 M [I], buys ~38 min of lead time for ~300 staff. Aug-2026 had 900+ workers trapped in blocked tunnels [S].
   - (b) Raise or relocate the desander and switch to an underground powerhouse at the design stage. In 2026, underground powerhouses "fared markedly better" [S].
-  - (c) A deflection berm drawn in Torrent.
+  - (c) A deflection berm drawn in Deluge.
 - Buyer value: lender E&S diligence (IFC PS4), insurer GLOF sub-limit negotiation (reinsurers reportedly capped GLOF liability at ₹500 cr for Teesta-III [S, weak]), and design choice.
 
 **2) Logistics warehouse in Houston (Harvey-type)** [computed in this session; inputs are I]
@@ -515,7 +515,7 @@ GPU implementation: one extra `rgba32float` texture `hazardAccum` (r = maxSpeed,
 **3) Hospital in Asheville (Helene-type), plus a supply-chain twin** [S anchors]
 
 - Facts: Helene cost $79.6 B (NOAA, 219 deaths) [S, https://www.climate.gov/news-features/blogs/beyond-data/2024-active-year-us-billion-dollar-weather-and-climate-disasters]. Flood insurance take-up in WNC was ~1–5% of homes, with just 1,295 NFIP policies in Buncombe County [S, https://www.insurancejournal.com/news/southeast/2024/09/30/794914.htm ; https://ncnewsline.com/2025/04/22/few-were-insured-against-helenes-floods-those-that-were-faced-long-claims-frustrating-hurdles/]. Mission Hospital went without running water for 6+ days and needed 20+ tankers and 200,000 gal/day; road closures kept staff away [S, https://www.healthcaredive.com/news/hca-mission-hurricane-helene-recovery-north-carolina/728653/].
-- Torrent use: run the Asheville preset at Helene rainfall, mark the hospital, water-treatment intake and main access corridors as assets. The output is the hours until each access route closes, which routes stay open (ambulance/staff routing), and the hours until the utility asset wets.
+- Deluge use: run the Asheville preset at Helene rainfall, mark the hospital, water-treatment intake and main access corridors as assets. The output is the hours until each access route closes, which routes stay open (ambulance/staff routing), and the hours until the utility asset wets.
 - Value is **lead time and continuity**, not structural loss: e.g., "I-240/Swannanoa corridor impassable 6 h before the hospital campus is cut off" [I].
 - Supply-chain twin: Baxter North Cove (Marion, NC) supplies ~60% of US IV solutions; analysts estimated a **$100–190 M** Q4-2024 revenue impact and hospitals were put on 40–50% allocations [S, https://bnnbloomberg.ca/investing/2024/09/30/baxters-largest-plant-closed-as-helene-damages-inventory]. A hospital system's procurement team can screen its single-source suppliers' plants with the same CSV.
 
@@ -550,8 +550,8 @@ Anchors: ICEYE from €34k/yr, Climate X $31.5k/yr [S]. Keep enterprise under th
    - **Chamoli 2021**: ₹1,500 cr (~$206 M) loss at NTPC Tapovan, 200+ dead [S].
    - **Nepal Aug-2026**: Bhote Koshi/Trishuli flood severely damaged 431 MW of generation (12 sites; ~12% of national capacity) and 470 MW under construction, with a $4–5 B reconstruction estimate and ~1,000 dead (counts vary) [S, https://www.energypolicy.columbia.edu/nepal-floods-test-resilience-of-its-hydropower-dependent-economy/].
    - 177 of ~257 Himalayan hydropower plants sit on potential GLOF paths [S, Schwanghart et al. 2016, ERL].
-5. **Mitigation pays, if you can prove it.** NIBS finds $6–7 saved per $1 on riverine flood mitigation [S]. In Ian, elevated homes averaged $50k NFIP claims vs $158k for non-elevated [S]. FEMA demands a BCR ≥ 1 at a 7% discount rate. Torrent computes it while you draw the wall.
-6. **Minutes matter.** Torrent gives every asset a **first-wet arrival time**. In 2025 Nepali officials didn't know a GLOF was coming until it reached Betrawati [S]. In 2026, 900+ workers were trapped in tunnels [S]. Lead time turns a catastrophe into an evacuation.
+5. **Mitigation pays, if you can prove it.** NIBS finds $6–7 saved per $1 on riverine flood mitigation [S]. In Ian, elevated homes averaged $50k NFIP claims vs $158k for non-elevated [S]. FEMA demands a BCR ≥ 1 at a 7% discount rate. Deluge computes it while you draw the wall.
+6. **Minutes matter.** Deluge gives every asset a **first-wet arrival time**. In 2025 Nepali officials didn't know a GLOF was coming until it reached Betrawati [S]. In 2026, 900+ workers were trapped in tunnels [S]. Lead time turns a catastrophe into an evacuation.
 7. **No install, no data leaves your laptop.** Real terrain, real buildings, GPU physics in a browser tab. Run 100 what-ifs before your consultant opens HEC-RAS, then hand them the scenario.
 8. **Built to be checked.** Open, cited curves (JRC 2017, AIDR 2017, FD2321), stated uncertainty bands, mass-conservation shown on screen. Every number in the report traces to a formula.
 

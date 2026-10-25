@@ -4,7 +4,7 @@
  *   EAL = Σ ½ (Lᵢ + Lᵢ₊₁)(pᵢ − pᵢ₊₁)  +  L_N · p_N        pᵢ = 1/Tᵢ, scenarios sorted frequent → rare
  *
  * The tail term assumes the loss stays at the rarest scenario's beyond it; it is optional, and the range with and
- * without it is the honest answer. The return period of a scenario is an INPUT: Torrent runs events, it does not know
+ * without it is the honest answer. The return period of a scenario is an INPUT: Deluge runs events, it does not know
  * how often they happen — that comes from a gauge frequency analysis (USGS Bulletin 17C, StreamStats) or the user.
  *
  *   BCR = PV(avoided losses) / PV(costs),   PV = Σ_{t=1..n} x / (1 + r)^t = x · UPV(r, n)

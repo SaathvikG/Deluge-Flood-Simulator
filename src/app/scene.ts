@@ -219,7 +219,7 @@ export class SceneManager {
       // A load that was overtaken and THEN failed (e.g. its download timed out) is still just superseded: its
       // failure must not trigger error handling (a fallback load) on top of the newer request.
       if (!isCurrent() && !(err instanceof SupersededLoadError)) {
-        console.info(`[torrent] superseded load of ${label} failed: ${err instanceof Error ? err.message : String(err)}`);
+        console.info(`[deluge] superseded load of ${label} failed: ${err instanceof Error ? err.message : String(err)}`);
         throw new SupersededLoadError();
       }
       throw err;

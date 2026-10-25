@@ -25,10 +25,10 @@ function fakeStorage(initial: string | null = null): Pick<Storage, 'getItem' | '
   return {
     value: initial,
     getItem(key: string) {
-      return key === 'torrent:gpu-lost-reload-at' ? this.value : null;
+      return key === 'deluge:gpu-lost-reload-at' ? this.value : null;
     },
     setItem(key: string, v: string) {
-      if (key === 'torrent:gpu-lost-reload-at') this.value = v;
+      if (key === 'deluge:gpu-lost-reload-at') this.value = v;
     },
   };
 }
@@ -63,7 +63,7 @@ test('deviceLostLead: a second loss soon after the restart says so, because then
     sinceAutoReloadMs: 20_000,
     lighterLabel: 'Pittsburgh',
   });
-  assert.match(lead, /20 seconds after Torrent restarted/);
+  assert.match(lead, /20 seconds after Deluge restarted/);
   assert.match(lead, /GPU-heavy/, 'advises clearing the GPU first');
   assert.ok(20_000 < AUTO_RELOAD_SETTLED_MS, 'this case is inside the "not settled" window');
 });

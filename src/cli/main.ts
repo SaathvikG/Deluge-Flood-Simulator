@@ -1,13 +1,13 @@
 /// <reference types="node" />
 /**
- * `torrent` — the headless batch CLI. Entry point for bin/torrent.mjs (which registers tsx so this TypeScript runs as it
+ * `deluge` — the headless batch CLI. Entry point for bin/deluge.mjs (which registers tsx so this TypeScript runs as it
  * is, from the same sources as the app). See README "Batch / API" and docs/api.md.
  *
- *   torrent presets                         the scenarios that ship (no GPU)
- *   torrent run --preset …                  one scenario → GeoTIFF rasters + summary.json
- *   torrent portfolio --preset … --csv …    per-asset metrics, optional ensemble p10/p50/p90
- *   torrent site --preset … --at …          Site check (with --sweep: ladder, EAL, FFE, mitigation, verdict)
- *   torrent dam --nid …                     a dam breach's peak band and hydrograph (no GPU)
+ *   deluge presets                         the scenarios that ship (no GPU)
+ *   deluge run --preset …                  one scenario → GeoTIFF rasters + summary.json
+ *   deluge portfolio --preset … --csv …    per-asset metrics, optional ensemble p10/p50/p90
+ *   deluge site --preset … --at …          Site check (with --sweep: ladder, EAL, FFE, mitigation, verdict)
+ *   deluge dam --nid …                     a dam breach's peak band and hydrograph (no GPU)
  *
  * Exit codes: 0 ok · 1 simulation or output failed · 2 bad arguments or input file · 3 no WebGPU adapter.
  */
@@ -41,7 +41,7 @@ function routeConsoleToStderr(): void {
   console.debug = toErr;
 }
 
-/** What every command shares: the presets on disk and this machine's GPU through Dawn (the CLI and `torrent serve`). */
+/** What every command shares: the presets on disk and this machine's GPU through Dawn (the CLI and `deluge serve`). */
 export function gpuEngine(v: string): Engine {
   return {
     version: v,
@@ -77,14 +77,14 @@ export async function main(argv: readonly string[]): Promise<number> {
   }
   const spec = COMMANDS[cmd];
   if (!spec) {
-    process.stderr.write(`torrent: unknown command "${cmd}"\n\n${mainHelp(v)}`);
+    process.stderr.write(`deluge: unknown command "${cmd}"\n\n${mainHelp(v)}`);
     return EXIT.usage;
   }
   let opts;
   try {
     opts = parseOptions(spec, rest);
   } catch (err) {
-    process.stderr.write(`torrent ${cmd}: ${err instanceof Error ? err.message : String(err)}\n`);
+    process.stderr.write(`deluge ${cmd}: ${err instanceof Error ? err.message : String(err)}\n`);
     return EXIT.usage;
   }
   if (flag(opts, 'help')) {
@@ -111,15 +111,15 @@ export async function main(argv: readonly string[]): Promise<number> {
   } catch (err) {
     log.endProgress();
     if (err instanceof UsageError) {
-      process.stderr.write(`torrent ${cmd}: ${err.message}\n`);
+      process.stderr.write(`deluge ${cmd}: ${err.message}\n`);
       return EXIT.usage;
     }
     if (err instanceof NoGpuError) {
-      process.stderr.write(`torrent ${cmd}: no WebGPU device — ${err.message}\n`);
+      process.stderr.write(`deluge ${cmd}: no WebGPU device — ${err.message}\n`);
       return EXIT.noGpu;
     }
-    process.stderr.write(`torrent ${cmd}: failed — ${err instanceof Error ? err.message : String(err)}\n`);
-    if (process.env.TORRENT_DEBUG && err instanceof Error && err.stack) process.stderr.write(`${err.stack}\n`);
+    process.stderr.write(`deluge ${cmd}: failed — ${err instanceof Error ? err.message : String(err)}\n`);
+    if (process.env.DELUGE_DEBUG && err instanceof Error && err.stack) process.stderr.write(`${err.stack}\n`);
     return EXIT.failure;
   } finally {
     await finishGpu();

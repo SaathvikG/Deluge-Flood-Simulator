@@ -1,5 +1,5 @@
 /**
- * Impact & loss layer ("Torrent for Business"): pure TypeScript, no DOM, no GPU — everything here runs in node:test.
+ * Impact & loss layer ("Deluge for Business"): pure TypeScript, no DOM, no GPU — everything here runs in node:test.
  *
  *   curves.ts     JRC 2017 global depth–damage curves (+ unverified USACE curves behind a flag)
  *   region.ts     domain bounds → country (cost table) and continent (curves)

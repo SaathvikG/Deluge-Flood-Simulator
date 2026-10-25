@@ -1,6 +1,6 @@
 /// <reference types="node" />
 /**
- * `torrent dam` (src/cli/dam.ts): the peak band and hydrograph for an NID dam or a described one, the history table, and
+ * `deluge dam` (src/cli/dam.ts): the peak band and hydrograph for an NID dam or a described one, the history table, and
  * usage errors — in-process, with the app's baked NID index read from disk (no GPU, no network).
  */
 import { test } from 'node:test';

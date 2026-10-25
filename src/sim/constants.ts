@@ -70,7 +70,7 @@ export interface SolverOptions {
    */
   stageRelaxSeconds: number;
   /**
-   * Largest Courant number robust mode will use, whatever SimParams.cfl says. Courant numbers in Torrent are
+   * Largest Courant number robust mode will use, whatever SimParams.cfl says. Courant numbers in Deluge are
    * TWO-DIMENSIONAL: Cr = √2·(√(g·h) + |u|)·dt/dx (see Solver.computeDt for the derivation). The staggered
    * forward–backward scheme is stable for Cr ≤ 1 without smoothing, and for Cr ≤ √θ with de Almeida
    * θ-smoothing (the smoothing damps the checkerboard mode but also shortens its stability interval).
@@ -98,7 +98,7 @@ export interface SolverOptions {
    * GPU time budget for the solver per rendered frame, ms. The solver measures its own GPU cost per substep
    * (timestamp queries) and caps substeps so the UI stays interactive (in addition to
    * SimParams.maxSubstepsPerFrame). Infinity = off: no measurement readbacks; for hosts that pace the solver
-   * themselves (the Torrent app's governor, src/app/governor.ts).
+   * themselves (the Deluge app's governor, src/app/governor.ts).
    */
   gpuBudgetMs: number;
   /**

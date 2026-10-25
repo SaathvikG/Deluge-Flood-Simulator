@@ -349,7 +349,7 @@ const root = document.getElementById('ui-root')!;
 mountUI(root, store, actions);
 (window as unknown as Record<string, unknown>).__store = store;
 (window as unknown as Record<string, unknown>).__actions = actions;
-(window as unknown as Record<string, unknown>).__ui = (root as unknown as { __torrentUI: unknown }).__torrentUI;
+(window as unknown as Record<string, unknown>).__ui = (root as unknown as { __delugeUI: unknown }).__delugeUI;
 
 // ─── Fake stats at 5 Hz ─────────────────────────────────────────────────────────────────────────
 /**

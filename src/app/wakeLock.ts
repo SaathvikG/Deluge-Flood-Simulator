@@ -1,5 +1,5 @@
 /**
- * Screen Wake Lock: keep the display awake while the Torrent tab is visible.
+ * Screen Wake Lock: keep the display awake while the Deluge tab is visible.
  *
  * A running WebGPU simulation is not "user activity" to macOS, so the demo laptop dims and blanks its display
  * mid-pitch (2 min on battery, 10 min on the adapter on this Air). The Screen Wake Lock API is the browser's way
@@ -59,7 +59,7 @@ const RETRY_BASE_MS = 2000;
 
 /**
  * Hold a screen wake lock for as long as the page is visible. Returns a handle whose `status` can be inspected
- * (`window.__torrent.getWakeLock()` in debug builds) and whose `sync()` re-evaluates on demand.
+ * (`window.__deluge.getWakeLock()` in debug builds) and whose `sync()` re-evaluates on demand.
  */
 export function keepScreenAwake(host: WakeLockHost = domWakeLockHost()): ScreenWakeLock {
   const status: WakeLockStatus = {

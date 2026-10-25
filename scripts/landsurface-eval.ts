@@ -17,7 +17,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { create, globals } from 'webgpu';
-import { createTorrentDevice } from '../src/gpu';
+import { createDelugeDevice } from '../src/gpu';
 import { createSolver } from '../src/sim';
 import { channelBaseSurface } from '../src/app/crest';
 import { StageRamp } from '../src/app/stageRamp';
@@ -251,7 +251,7 @@ async function run(device: GPUDevice, id: 'pittsburgh' | 'houston', variant: str
 
 async function main() {
   const gpu = create([]);
-  const { device, description } = await createTorrentDevice(gpu);
+  const { device, description } = await createDelugeDevice(gpu);
   const cases = arg('cases', 'pittsburgh,houston').split(',') as Array<'pittsburgh' | 'houston'>;
   const variants = arg('variants', Object.keys(VARIANTS).join(',')).split(',');
   const results = [];

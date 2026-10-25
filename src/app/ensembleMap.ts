@@ -5,13 +5,13 @@
  * (the renderer first, then the buffer).
  */
 import type { FloodSolver } from '../contracts';
-import type { TorrentRendererAPI } from '../render';
+import type { DelugeRendererAPI } from '../render';
 import { EnsembleAccumulator } from '../sim/ensemble';
 import type { EnsembleMapControl } from '../ui/bridge';
 
 export interface EnsembleMapDeps {
   getSolver(): FloodSolver | null;
-  getRenderer(): Partial<TorrentRendererAPI> | null;
+  getRenderer(): Partial<DelugeRendererAPI> | null;
   requestRender(): void;
 }
 

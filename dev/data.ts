@@ -1,4 +1,4 @@
-// Torrent — data module dev harness: top-down 2D inspection of presets and live areas.
+// Deluge — data module dev harness: top-down 2D inspection of presets and live areas.
 // URL: /dev/data.html?preset=pittsburgh   or   /dev/data.html?live=40.015,-105.27,6000[,1024]
 import { computeInitialWater, gridToGeo, listPresets, loadLiveArea, loadPreset } from '../src/data/index';
 import type { RoadClass, TerrainData } from '../src/contracts';

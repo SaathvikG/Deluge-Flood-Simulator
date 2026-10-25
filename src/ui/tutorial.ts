@@ -11,7 +11,7 @@ import type { AppState } from '../contracts';
 import { h, setText, toggleClass, type UIContext } from './dom';
 import { selectTool } from './toolDefs';
 
-export const TUTORIAL_STORAGE_KEY = 'torrent:tutorial-done';
+export const TUTORIAL_STORAGE_KEY = 'deluge:tutorial-done';
 
 /** Tools a first-time visitor does not need. Hidden until they open "More tools". */
 export const ADVANCED_TOOL_IDS = ['inflow', 'storm', 'water', 'dig'] as const;

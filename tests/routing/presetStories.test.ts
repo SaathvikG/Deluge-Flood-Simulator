@@ -17,12 +17,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ROAD_FLOODED_DEPTH } from '../../src/routing/constants';
-import { createRouter, type TorrentRouteResult } from '../../src/routing/index';
+import { createRouter, type DelugeRouteResult } from '../../src/routing/index';
 import { bakedPresetIds, loadPresetWorld } from './presetFiles';
 import { scenarioPeakLevel, type PresetWorld } from './presetWorld';
 
 /** A route's identity for "did it change?": the shelter it reaches and its length in 100 m buckets. */
-function signature(r: TorrentRouteResult): string {
+function signature(r: DelugeRouteResult): string {
   return r.state === 'ok' ? `${r.shelter?.name ?? '?'}|${Math.round(r.lengthMeters / 100)}` : `!${r.state}:${r.reason}`;
 }
 
@@ -34,7 +34,7 @@ function followTheRise(world: PresetWorld, start: { gx: number; gy: number }, st
   const router = createRouter();
   router.setNetwork(world.roads, world.cellSize, { nx, ny });
   router.setBaselineWater(world.initialWater, nx, ny); // exactly what the app does at load
-  const out: Array<{ ft: number; route: TorrentRouteResult }> = [];
+  const out: Array<{ ft: number; route: DelugeRouteResult }> = [];
   for (let k = 0; k <= steps; k++) {
     const level = pool + ((peak.level - pool) * k) / steps;
     router.updateFlood(world.bathtub(level), nx, ny);
@@ -44,7 +44,7 @@ function followTheRise(world: PresetWorld, start: { gx: number; gy: number }, st
 }
 
 /** Reason and numbers have to agree — whatever the preset, wherever the start. */
-function assertDiagnosisAgrees(r: TorrentRouteResult, where: string): void {
+function assertDiagnosisAgrees(r: DelugeRouteResult, where: string): void {
   if (r.state !== 'blocked') {
     assert.equal(r.diagnosis, null, `${where}: only a blocked route carries a diagnosis`);
     return;

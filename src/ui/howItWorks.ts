@@ -95,7 +95,7 @@ export function createHowItWorks(ctx: UIContext): Modal {
     h(
       'p',
       { class: 'dl-lead' },
-      'Torrent turns real USGS elevation data into a grid of about a million square cells, each a few meters across. Every cell stores how deep its water is; every edge between two cells stores how much water is flowing across it.',
+      'Deluge turns real USGS elevation data into a grid of about a million square cells, each a few meters across. Every cell stores how deep its water is; every edge between two cells stores how much water is flowing across it.',
     ),
     h(
       'div',
@@ -116,7 +116,7 @@ export function createHowItWorks(ctx: UIContext): Modal {
     h(
       'p',
       null,
-      'Raising the river is a time-lapse: in 1936 the Point rose about 21 ft over some 30 hours; Torrent raises it at about 10 ft per simulated minute so you can watch the whole crest in seconds. The flood that follows is solved at its real speed.',
+      'Raising the river is a time-lapse: in 1936 the Point rose about 21 ft over some 30 hours; Deluge raises it at about 10 ft per simulated minute so you can watch the whole crest in seconds. The flood that follows is solved at its real speed.',
     ),
   );
   bind(
@@ -184,7 +184,7 @@ export function createHowItWorks(ctx: UIContext): Modal {
     h(
       'p',
       null,
-      'Torrent starts from the ',
+      'Deluge starts from the ',
       h('b', null, 'local-inertial'),
       ' scheme behind production flood-inundation models (LISFLOOD-FP class; Bates et al. 2010, de Almeida et al. 2012) and keeps the ',
       h('b', null, 'convective acceleration'),
@@ -211,7 +211,7 @@ export function createHowItWorks(ctx: UIContext): Modal {
     h(
       'p',
       null,
-      'One explicit update has to survive 6 m-deep river channels, centimetre-thin films on steep streets and walls one cell wide — in 32-bit floats, on a million cells at once, many times per frame. The textbook version blows up here within about ten steps. Four ingredients keep Torrent stable and exact — every cubic metre is booked, so the HUD’s mass error stays below 0.01 %:',
+      'One explicit update has to survive 6 m-deep river channels, centimetre-thin films on steep streets and walls one cell wide — in 32-bit floats, on a million cells at once, many times per frame. The textbook version blows up here within about ten steps. Four ingredients keep Deluge stable and exact — every cubic metre is booked, so the HUD’s mass error stays below 0.01 %:',
     ),
     h(
       'div',
@@ -221,7 +221,7 @@ export function createHowItWorks(ctx: UIContext): Modal {
         'CFL-adaptive timestep',
         `${dt}${op('=')}${v('C')}${frac(dx, `${sqrt('2')}${rm('&thinsp;')}${sub(rm('max'), 'cells')}${paren(`${sqrt(`${g}${h_}`)}${op('+')}${abs(v('u'))}`)}`)}`,
         'a wave must never jump more than one cell in a single step.',
-        'The fastest cell sets the pace: its wave speed √(gh) plus the flow carrying the wave. The √2 is the 2-D part: the fastest grid-scale wave runs diagonally. The plain scheme is stable while this Courant number C stays below 1; the θ-smoothing Torrent adds (it damps only divergent grid-scale modes) lowers that to √θ ≈ 0.89. Depth and speed come back from the GPU a few hundred milliseconds late, so Δt aims for C = 0.7 against a padded estimate: the live Courant number in the HUD usually reads ≈ 0.55 and never exceeds 0.85. The frame then runs as many substeps as it needs.',
+        'The fastest cell sets the pace: its wave speed √(gh) plus the flow carrying the wave. The √2 is the 2-D part: the fastest grid-scale wave runs diagonally. The plain scheme is stable while this Courant number C stays below 1; the θ-smoothing Deluge adds (it damps only divergent grid-scale modes) lowers that to √θ ≈ 0.89. Depth and speed come back from the GPU a few hundred milliseconds late, so Δt aims for C = 0.7 against a padded estimate: the live Courant number in the HUD usually reads ≈ 0.55 and never exceeds 0.85. The frame then runs as many substeps as it needs.',
       ),
       ingredient(
         '2',
@@ -356,7 +356,7 @@ export function createHowItWorks(ctx: UIContext): Modal {
     h(
       'div',
       { class: 'dl-data' },
-      dataRow('layers', 'USGS 3D Elevation Program (3DEP)', 'Bare-earth elevation — 1 m lidar where available, ~10 m (1/3 arc-second) elsewhere. Rivers are hydro-flattened, so Torrent burns in a channel before filling them.'),
+      dataRow('layers', 'USGS 3D Elevation Program (3DEP)', 'Bare-earth elevation — 1 m lidar where available, ~10 m (1/3 arc-second) elsewhere. Rivers are hydro-flattened, so Deluge burns in a channel before filling them.'),
       dataRow('globe', 'USDA NAIP · Esri World Imagery', 'Aerial photography draped over the terrain: USDA NAIP via USGS The National Map for the built-in scenarios (public domain), Esri World Imagery for live areas (Esri, Vantor, Earthstar Geographics, and the GIS User Community).'),
       dataRow('route', 'US Census Bureau TIGER/Line roads', 'Road network for flood-aware evacuation routing; roads with ≥ 30 cm of water are treated as impassable.'),
       dataRow('gauge', 'NOAA National Weather Service', 'Official flood stages and historic crests for river gauges, marked on the river-stage slider.'),
@@ -375,7 +375,7 @@ export function createHowItWorks(ctx: UIContext): Modal {
       h(
         'table',
         { class: 'dl-nws' },
-        h('thead', null, h('tr', null, h('th', null, 'NWS impact'), h('th', null, 'NWS'), h('th', null, 'Torrent'))),
+        h('thead', null, h('tr', null, h('th', null, 'NWS impact'), h('th', null, 'NWS'), h('th', null, 'Deluge'))),
         h(
           'tbody',
           null,
@@ -401,7 +401,7 @@ export function createHowItWorks(ctx: UIContext): Modal {
 
   modal = createModal({
     id: 'how',
-    title: 'How Torrent works',
+    title: 'How Deluge works',
     subtitle: 'Real flood physics, solved on your GPU, in a browser tab.',
     icon: 'book',
     className: 'dl-how',

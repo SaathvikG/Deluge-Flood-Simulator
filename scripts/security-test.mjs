@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 /**
- * Torrent SECURITY REGRESSION SUITE — the penetration test's findings, automated so they cannot silently return.
+ * Deluge SECURITY REGRESSION SUITE — the penetration test's findings, automated so they cannot silently return.
  *
  *   npm run test:security                # full run (~3 min)
  *   npm run test:security -- --quick     # fast subset (~1 min): the runtime cases, no audit, fewer flows
- *   node scripts/security-test.mjs --url=https://example.com/torrent/   # check a deployed copy (static checks skipped)
+ *   node scripts/security-test.mjs --url=https://example.com/deluge/   # check a deployed copy (static checks skipped)
  *
- * It builds the RELEASED production bundle — a plain `vite build`, with no TORRENT_DEBUG_API, i.e. exactly what ships
- * — serves it, and drives it through the DOM only. Nothing here depends on window.__torrent, because one of the
- * things it checks is that window.__torrent is not there (FINDINGS.json SEC-07).
+ * It builds the RELEASED production bundle — a plain `vite build`, with no DELUGE_DEBUG_API, i.e. exactly what ships
+ * — serves it, and drives it through the DOM only. Nothing here depends on window.__deluge, because one of the
+ * things it checks is that window.__deluge is not there (FINDINGS.json SEC-07).
  *
  * Every external host is intercepted, so the run is hermetic and identical offline: hosts are either aborted (the
  * "venue wifi is down" case the lead re-confirmed SEC-01 under) or answered with a hostile payload of our choosing.
@@ -23,13 +23,13 @@
  *   AUDIT-*    supply chain: `npm audit --omit=dev` is clean
  *   *-PROJECT-*  saved projects (src/project): a ?project= link never puts its names on the page, never executes,
  *              never pollutes Object.prototype and stops a gzip bomb; a link of map-sized brushes is refused, not
- *              replayed, and a link's digging waits for the user's yes; hostile .torrent.json files get fixed refusals
- *   API-*      the HTTP job API (`torrent serve`, src/cli/server.ts), run as its own process with a token: loopback by
+ *              replayed, and a link's digging waits for the user's yes; hostile .deluge.json files get fixed refusals
+ *   API-*      the HTTP job API (`deluge serve`, src/cli/server.ts), run as its own process with a token: loopback by
  *              default and no open bind without a token, bearer auth everywhere but /v1/health, DNS rebinding and
  *              cross-site posts refused, no path traversal out of a job's directory, body caps (declared and
  *              streamed) and the CSV row cap, and hostile requests answered with fixed sentences that echo nothing
  *
- * A case whose fix has not landed yet is reported as PENDING rather than failing the build; TORRENT_SEC_STRICT=1
+ * A case whose fix has not landed yet is reported as PENDING rather than failing the build; DELUGE_SEC_STRICT=1
  * makes pending fatal too. Results: artifacts/security/security-results.json + a printed table; regressions exit 1.
  *
  * Flags: --quick --url=<url> --port=<n> --json=<path> --case=<substring> --headed --keep-dist --strict
@@ -61,12 +61,12 @@ const argv = Object.fromEntries(
   }),
 );
 const QUICK = argv.quick === 'true';
-const STRICT = argv.strict === 'true' || process.env.TORRENT_SEC_STRICT === '1';
-const KEEP_DIST = argv['keep-dist'] === 'true' || process.env.TORRENT_TEST_KEEP_DIST === '1';
+const STRICT = argv.strict === 'true' || process.env.DELUGE_SEC_STRICT === '1';
+const KEEP_DIST = argv['keep-dist'] === 'true' || process.env.DELUGE_TEST_KEEP_DIST === '1';
 const PORT = Number(argv.port ?? 5703);
-const EXTERNAL_URL = String(argv.url ?? process.env.TORRENT_TEST_URL ?? '');
+const EXTERNAL_URL = String(argv.url ?? process.env.DELUGE_TEST_URL ?? '');
 const JSON_OUT = String(argv.json ?? path.join(OUT_DIR, 'security-results.json'));
-const SKIP_AUDIT = process.env.TORRENT_SEC_SKIP_AUDIT === '1' || QUICK;
+const SKIP_AUDIT = process.env.DELUGE_SEC_SKIP_AUDIT === '1' || QUICK;
 /** CAP-*: idle stretch for the same-page drift control, ms (about as long as searchFlow's wait). */
 const CAP_IDLE_MS = 2500;
 /** CAP-*: live-heap growth allowed on top of a quarter of the payload, MB: twice the ~1.5 MB noise floor after a forced GC. */
@@ -132,9 +132,9 @@ async function buildAndServe(distDir, port, logFile) {
   fs.mkdirSync(path.dirname(logFile), { recursive: true });
   const log = fs.createWriteStream(logFile);
   process.stdout.write(`[security] building the RELEASED bundle (no debug API) → ${path.relative(ROOT, distDir)} … `);
-  // Deliberately NOT setting TORRENT_DEBUG_API: this suite must test the artifact that ships.
+  // Deliberately NOT setting DELUGE_DEBUG_API: this suite must test the artifact that ships.
   const env = { ...process.env };
-  delete env.TORRENT_DEBUG_API;
+  delete env.DELUGE_DEBUG_API;
   const build = spawn(process.execPath, [VITE_BIN, 'build', '--outDir', distDir], { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'], env });
   build.stdout.pipe(log, { end: false });
   build.stderr.pipe(log, { end: false });
@@ -314,15 +314,15 @@ function fulfilJSON(route, obj, opts = {}) {
   return route.fulfill({ status: 200, headers, body });
 }
 
-// ── the HTTP job API (`torrent serve`, src/cli/server.ts) ────────────────────────────────────────
+// ── the HTTP job API (`deluge serve`, src/cli/server.ts) ────────────────────────────────────────
 /**
  * API-* cases: the batch server as a separate process on a free loopback port, with a bearer token, a data directory
  * seeded with one finished job and a secret file next to the jobs. No GPU is needed: every case is refused before a
  * job would run (the job used for downloads is the seeded one).
  */
-const TORRENT_BIN = path.join(ROOT, 'bin', 'torrent.mjs');
+const DELUGE_BIN = path.join(ROOT, 'bin', 'deluge.mjs');
 const API_TOKEN = 'security-suite-token-0123456789abcdef';
-const API_MARKERS = ['EVACUATE', '555-0100', '<img', 'onerror', '__pwned', 'TOP-SECRET-TORRENT'];
+const API_MARKERS = ['EVACUATE', '555-0100', '<img', 'onerror', '__pwned', 'TOP-SECRET-DELUGE'];
 
 function apiRequest(port, method, p, { body, headers = {}, token = API_TOKEN } = {}) {
   return new Promise((resolve) => {
@@ -341,9 +341,9 @@ function apiRequest(port, method, p, { body, headers = {}, token = API_TOKEN } =
   });
 }
 
-/** Start `torrent serve`; resolves with the child and its port once it prints its address (or with its exit code). */
+/** Start `deluge serve`; resolves with the child and its port once it prints its address (or with its exit code). */
 async function startApi(args, env = {}) {
-  const child = spawn(process.execPath, [TORRENT_BIN, 'serve', ...args], { cwd: ROOT, stdio: ['ignore', 'ignore', 'pipe'], env: { ...process.env, ...env }, detached: process.platform !== 'win32' });
+  const child = spawn(process.execPath, [DELUGE_BIN, 'serve', ...args], { cwd: ROOT, stdio: ['ignore', 'ignore', 'pipe'], env: { ...process.env, ...env }, detached: process.platform !== 'win32' });
   let err = '';
   child.stderr.on('data', (c) => (err += c));
   for (let i = 0; i < 600; i++) {
@@ -353,33 +353,33 @@ async function startApi(args, env = {}) {
     await sleep(100);
   }
   killTree(child);
-  throw new Error(`torrent serve never came up: ${err.slice(0, 300)}`);
+  throw new Error(`deluge serve never came up: ${err.slice(0, 300)}`);
 }
 
 async function apiCases() {
-  console.log('\nHTTP job API (torrent serve)');
+  console.log('\nHTTP job API (deluge serve)');
   const dataDir = path.join(OUT_DIR, 'api-data');
   fs.rmSync(dataDir, { recursive: true, force: true });
   const jobId = `job_${'5ec0'.repeat(6)}`;
   const jobDir = path.join(dataDir, 'jobs', jobId);
   fs.mkdirSync(jobDir, { recursive: true });
   const now = new Date().toISOString();
-  fs.writeFileSync(path.join(jobDir, 'job.json'), JSON.stringify({ id: jobId, kind: 'run', status: 'succeeded', createdAt: now, startedAt: now, finishedAt: now, request: { preset: 'houston' }, command: ['torrent', 'run', '--preset', 'houston'], engine: { version: 'seeded', commit: null, gpu: null }, files: ['summary.json'], error: null, idempotencyKey: null, requestHash: 'x' }));
-  fs.writeFileSync(path.join(jobDir, 'summary.json'), '{"tool":"torrent","seeded":true}\n');
-  fs.writeFileSync(path.join(dataDir, 'secret.txt'), 'TOP-SECRET-TORRENT');
-  fs.writeFileSync(path.join(dataDir, 'jobs', 'secret.txt'), 'TOP-SECRET-TORRENT');
+  fs.writeFileSync(path.join(jobDir, 'job.json'), JSON.stringify({ id: jobId, kind: 'run', status: 'succeeded', createdAt: now, startedAt: now, finishedAt: now, request: { preset: 'houston' }, command: ['deluge', 'run', '--preset', 'houston'], engine: { version: 'seeded', commit: null, gpu: null }, files: ['summary.json'], error: null, idempotencyKey: null, requestHash: 'x' }));
+  fs.writeFileSync(path.join(jobDir, 'summary.json'), '{"tool":"deluge","seeded":true}\n');
+  fs.writeFileSync(path.join(dataDir, 'secret.txt'), 'TOP-SECRET-DELUGE');
+  fs.writeFileSync(path.join(dataDir, 'jobs', 'secret.txt'), 'TOP-SECRET-DELUGE');
 
   if (shouldRun('API-BIND')) {
-    const open = await startApi(['--host', '0.0.0.0', '--port', '0', '--data-dir', path.join(OUT_DIR, 'api-bind')], { TORRENT_API_TOKEN: '' });
+    const open = await startApi(['--host', '0.0.0.0', '--port', '0', '--data-dir', path.join(OUT_DIR, 'api-bind')], { DELUGE_API_TOKEN: '' });
     if (open.child.exitCode === null) await once(open.child, 'exit');
     const refused = open.child.exitCode === 2 && open.port === null && /token is required/.test(open.stderr());
     killTree(open.child);
     record('API-BIND', 'api', 'serve refuses a non-loopback address without a token', refused ? 'pass' : 'fail', refused ? '--host 0.0.0.0 without a token: exit 2' : `exit ${open.child.exitCode}: ${open.stderr().slice(0, 120)}`);
   }
 
-  const api = await startApi(['--port', '0', '--data-dir', dataDir], { TORRENT_API_TOKEN: API_TOKEN });
+  const api = await startApi(['--port', '0', '--data-dir', dataDir], { DELUGE_API_TOKEN: API_TOKEN });
   try {
-    if (api.port === null) throw new Error(`torrent serve exited (${api.code}): ${api.stderr().slice(0, 300)}`);
+    if (api.port === null) throw new Error(`deluge serve exited (${api.code}): ${api.stderr().slice(0, 300)}`);
     const port = api.port;
     if (shouldRun('API-BIND')) record('API-BIND-DEFAULT', 'api', 'the default bind is loopback', api.host === '127.0.0.1' ? 'pass' : 'fail', `listening on ${api.host}`);
 
@@ -503,7 +503,7 @@ async function apiCases() {
 }
 
 // ── main ────────────────────────────────────────────────────────────────────────────────────────
-console.log('\n=== Torrent security regression suite ===');
+console.log('\n=== Deluge security regression suite ===');
 console.log(`mode    : ${QUICK ? 'quick' : 'full'}${STRICT ? ' · STRICT (pending counts as failure)' : ''}`);
 
 let server = null;
@@ -590,12 +590,12 @@ try {
       const hits = [];
       for (const f of textFiles.filter((f) => f.endsWith('.js'))) {
         const t = readText(f);
-        if (t.includes('__torrent') || t.includes('__torrentUI')) hits.push(path.relative(distDir, f));
+        if (t.includes('__deluge') || t.includes('__delugeUI')) hits.push(path.relative(distDir, f));
       }
       const chunk = distFiles.filter((f) => /debugApi/i.test(path.basename(f))).map((f) => path.relative(distDir, f));
       const ok = hits.length === 0 && chunk.length === 0;
-      // SEC-07's fix is the TORRENT_DEBUG_API build gate in vite.config.ts. If it is ever reverted, this goes red.
-      record('DIST-DEBUG', 'SEC-07', 'window.__torrent compiled out of the release build', ok ? 'pass' : 'fail', ok ? 'no debug symbols in any chunk' : `${hits.concat(chunk).join(', ')}`);
+      // SEC-07's fix is the DELUGE_DEBUG_API build gate in vite.config.ts. If it is ever reverted, this goes red.
+      record('DIST-DEBUG', 'SEC-07', 'window.__deluge compiled out of the release build', ok ? 'pass' : 'fail', ok ? 'no debug symbols in any chunk' : `${hits.concat(chunk).join(', ')}`);
     }
   }
 
@@ -615,12 +615,12 @@ try {
     await page.goto(`${baseUrl}?preset=pittsburgh`, { waitUntil: 'load', timeout: 120000 });
     await waitForApp(page);
     const surfaces = await page.evaluate(() => ({
-      torrent: typeof window.__torrent,
-      ui: typeof document.getElementById('ui-root')?.__torrentUI,
-      keys: Object.keys(window).filter((k) => /torrent/i.test(k)),
+      deluge: typeof window.__deluge,
+      ui: typeof document.getElementById('ui-root')?.__delugeUI,
+      keys: Object.keys(window).filter((k) => /deluge/i.test(k)),
     }));
-    const ok = surfaces.torrent === 'undefined' && surfaces.ui === 'undefined' && surfaces.keys.length === 0;
-    record('RUNTIME-DEBUG', 'SEC-07', 'no automation handles on a released page', ok ? 'pass' : 'fail', `window.__torrent: ${surfaces.torrent}, #ui-root.__torrentUI: ${surfaces.ui}${surfaces.keys.length ? `, extra: ${surfaces.keys.join(',')}` : ''}`);
+    const ok = surfaces.deluge === 'undefined' && surfaces.ui === 'undefined' && surfaces.keys.length === 0;
+    record('RUNTIME-DEBUG', 'SEC-07', 'no automation handles on a released page', ok ? 'pass' : 'fail', `window.__deluge: ${surfaces.deluge}, #ui-root.__delugeUI: ${surfaces.ui}${surfaces.keys.length ? `, extra: ${surfaces.keys.join(',')}` : ''}`);
     await page.close();
   }
 
@@ -883,10 +883,10 @@ try {
   }
 
   // ── Saved projects: ?project= links and project files (src/project) ──────────────────────────
-  console.log('\nSaved projects: ?project= links and .torrent.json files (SEC-01/03/08)');
+  console.log('\nSaved projects: ?project= links and .deluge.json files (SEC-01/03/08)');
   /** A project that passes the strict reader, with `text` in every name-ish field. */
   const hostileProject = (text) => ({
-    format: 'torrent-project',
+    format: 'deluge-project',
     version: 1,
     name: text,
     scene: { kind: 'preset', id: 'pittsburgh' },
@@ -945,7 +945,7 @@ try {
 
   if (shouldRun('SPOOF-PROJECT-POLLUTE')) {
     const page = await newPage(browser);
-    const raw = `{"format":"torrent-project","version":1,"name":${JSON.stringify(SPOOF_NAME)},"__proto__":{"polluted":"EVACUATE NOW"},"constructor":{"prototype":{"polluted":1}}}`;
+    const raw = `{"format":"deluge-project","version":1,"name":${JSON.stringify(SPOOF_NAME)},"__proto__":{"polluted":"EVACUATE NOW"},"constructor":{"prototype":{"polluted":1}}}`;
     const { text } = await openProjectLink(page, projectLink(raw));
     const polluted = await page.evaluate(() => ({}).polluted !== undefined || Object.prototype.hasOwnProperty.call(Object.prototype, 'polluted'));
     const found = SPOOF_MARKERS.filter((m) => text.includes(m));
@@ -1024,13 +1024,13 @@ try {
       if (sec && !sec.classList.contains('dl-open')) sec.querySelector('.dl-sec-head')?.click();
     });
     const files = [
-      { name: 'xss.torrent.json', body: JSON.stringify(hostileProject(XSS_PAYLOADS[0])), expect: /^Opened/ },
-      { name: 'proto.torrent.json', body: '{"format":"torrent-project","version":1,"__proto__":{"polluted":1},"scene":{"kind":"preset","id":"pittsburgh"}}', expect: /reserved key/ },
-      { name: 'deep.torrent.json', body: `{"format":"torrent-project","version":1,"x":${'['.repeat(100000)}${']'.repeat(100000)}}`, expect: /nested too deeply/ },
-      { name: 'huge.torrent.json', body: `{"format":"torrent-project","version":1,"pad":"${'A'.repeat(3_100_000)}"}`, expect: /too large/ },
-      { name: 'inf.torrent.json', body: JSON.stringify(hostileProject('x')).replace('"stageOffset":0', '"stageOffset":1e400'), expect: /damaged or was edited/ },
-      { name: 'html.torrent.json', body: '<html><script>window.__pwned=1</script></html>', expect: /not valid JSON/ },
-      { name: 'newer.torrent.json', body: JSON.stringify({ ...hostileProject('x'), version: 99 }), expect: /newer version/ },
+      { name: 'xss.deluge.json', body: JSON.stringify(hostileProject(XSS_PAYLOADS[0])), expect: /^Opened/ },
+      { name: 'proto.deluge.json', body: '{"format":"deluge-project","version":1,"__proto__":{"polluted":1},"scene":{"kind":"preset","id":"pittsburgh"}}', expect: /reserved key/ },
+      { name: 'deep.deluge.json', body: `{"format":"deluge-project","version":1,"x":${'['.repeat(100000)}${']'.repeat(100000)}}`, expect: /nested too deeply/ },
+      { name: 'huge.deluge.json', body: `{"format":"deluge-project","version":1,"pad":"${'A'.repeat(3_100_000)}"}`, expect: /too large/ },
+      { name: 'inf.deluge.json', body: JSON.stringify(hostileProject('x')).replace('"stageOffset":0', '"stageOffset":1e400'), expect: /damaged or was edited/ },
+      { name: 'html.deluge.json', body: '<html><script>window.__pwned=1</script></html>', expect: /not valid JSON/ },
+      { name: 'newer.deluge.json', body: JSON.stringify({ ...hostileProject('x'), version: 99 }), expect: /newer version/ },
     ];
     const outcomes = [];
     for (const f of files) {
@@ -1046,7 +1046,7 @@ try {
     const polluted = await page.evaluate(() => ({}).polluted !== undefined);
     const clean = !t.pwned && t.injectedImgs === 0 && t.injectedScripts === 0 && t.iframes === 0 && !polluted;
     const wrong = outcomes.filter((o) => !o.ok);
-    record('PROJECT-FILE-HOSTILE', 'SEC-08', 'hostile .torrent.json files: refused with fixed sentences, names only ever text', clean && !wrong.length ? 'pass' : 'fail', clean ? (wrong.length ? `unexpected: ${wrong.map((o) => `${o.file}: ${o.status.slice(0, 60)}`).join('; ')}` : `${outcomes.length} files handled, window.__pwned unset, no pollution`) : JSON.stringify({ ...t, polluted }), { outcomes, ...t });
+    record('PROJECT-FILE-HOSTILE', 'SEC-08', 'hostile .deluge.json files: refused with fixed sentences, names only ever text', clean && !wrong.length ? 'pass' : 'fail', clean ? (wrong.length ? `unexpected: ${wrong.map((o) => `${o.file}: ${o.status.slice(0, 60)}`).join('; ')}` : `${outcomes.length} files handled, window.__pwned unset, no pollution`) : JSON.stringify({ ...t, polluted }), { outcomes, ...t });
     await page.close();
   }
 
@@ -1231,7 +1231,7 @@ try {
       id: 'CAP-SURGE-HOSTILE',
       route: '**/surge/ewl-stations.json',
       what: 'a hostile tide-station table (markup in names) is refused and never shown',
-      body: () => Buffer.from(JSON.stringify({ format: 'torrent-ewl-1', aeps: [0.99, 0.5, 0.1, 0.02, 0.01], stations: XSS_PAYLOADS.map((p, i) => ({ id: `87255${String(i).padStart(2, '0')}`, name: p, lat: 26.6, lon: -81.9 })) }), 'utf8'),
+      body: () => Buffer.from(JSON.stringify({ format: 'deluge-ewl-1', aeps: [0.99, 0.5, 0.1, 0.02, 0.01], stations: XSS_PAYLOADS.map((p, i) => ({ id: `87255${String(i).padStart(2, '0')}`, name: p, lat: 26.6, lon: -81.9 })) }), 'utf8'),
       payloadMB: 0,
       view: 'surge',
     },
@@ -1327,7 +1327,7 @@ try {
   // ── supply chain ─────────────────────────────────────────────────────────────────────────────
   console.log('\nSupply chain');
   if (shouldRun('AUDIT-PROD')) {
-    if (SKIP_AUDIT) record('AUDIT-PROD', 'supply-chain', 'npm audit --omit=dev is clean', 'skip', QUICK ? 'skipped in --quick' : 'TORRENT_SEC_SKIP_AUDIT=1');
+    if (SKIP_AUDIT) record('AUDIT-PROD', 'supply-chain', 'npm audit --omit=dev is clean', 'skip', QUICK ? 'skipped in --quick' : 'DELUGE_SEC_SKIP_AUDIT=1');
     else {
       try {
         // npm is a .cmd shim on Windows, which execFile only starts through a shell (constant arguments, so no injection);
@@ -1365,7 +1365,7 @@ try {
   fs.writeFileSync(
     JSON_OUT,
     JSON.stringify(
-      { suite: 'security', schema: 'torrent-security/1', date: new Date().toISOString(), quick: QUICK, strict: STRICT, baseUrl, counts, results, verdict: failures.length ? 'FAIL' : counts.pending ? 'PASS (with pending cases)' : 'PASS' },
+      { suite: 'security', schema: 'deluge-security/1', date: new Date().toISOString(), quick: QUICK, strict: STRICT, baseUrl, counts, results, verdict: failures.length ? 'FAIL' : counts.pending ? 'PASS (with pending cases)' : 'PASS' },
       null,
       2,
     ),

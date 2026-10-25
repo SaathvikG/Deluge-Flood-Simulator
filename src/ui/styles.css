@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════════════════════════════
-   Torrent UI — dark glass over a full-screen WebGPU canvas.
+   Deluge UI — dark glass over a full-screen WebGPU canvas.
    Everything is scoped under .dl-ui and prefixed dl- so it can't collide with other modules.
    ════════════════════════════════════════════════════════════════════════════════════════════ */
 
@@ -4468,10 +4468,10 @@
    renderer.setCinematic({ presentation: true }) stamps the document element; the View panel's switch and the
    debug API both go through it. Everything the UI draws lives in .dl-layer, so one rule clears the frame for a
    screenshot or a projector — the canvas keeps rendering and the keyboard still works. */
-html[data-torrent-presentation='on'] .dl-layer {
+html[data-deluge-presentation='on'] .dl-layer {
   display: none;
 }
-html[data-torrent-presentation='on'] .dl-tutorial {
+html[data-deluge-presentation='on'] .dl-tutorial {
   display: none;
 }
 

@@ -1,12 +1,12 @@
 /// <reference types="node" />
 /**
- * `torrent serve` — the CLI's commands as an HTTP job API (docs/api.md), on node:http with no other dependency.
+ * `deluge serve` — the CLI's commands as an HTTP job API (docs/api.md), on node:http with no other dependency.
  *
  *   GET    /v1/health                         liveness (no auth)
- *   GET    /v1/presets                        `torrent presets --json --levels`
- *   POST   /v1/runs                           `torrent run`        → 202 + job
- *   POST   /v1/portfolio-assessments          `torrent portfolio`  → 202 + job
- *   POST   /v1/site-checks                    `torrent site`       → 202 + job
+ *   GET    /v1/presets                        `deluge presets --json --levels`
+ *   POST   /v1/runs                           `deluge run`        → 202 + job
+ *   POST   /v1/portfolio-assessments          `deluge portfolio`  → 202 + job
+ *   POST   /v1/site-checks                    `deluge site`       → 202 + job
  *   GET    /v1/jobs                           the jobs held (newest first)
  *   GET    /v1/jobs/{id}                      status, progress, engine, files
  *   GET    /v1/jobs/{id}/results/{file}       a result file (also …/files/{file})
@@ -403,7 +403,7 @@ export async function startServer(opts: ServerOptions): Promise<ApiServer> {
       startedAt: null,
       finishedAt: null,
       request,
-      command: ['torrent', ...spec.argv],
+      command: ['deluge', ...spec.argv],
       engine: { version: engine.version, commit: opts.commit ?? null, gpu: null },
       files: [],
       error: null,
@@ -652,12 +652,12 @@ function gitCommit(): string | null {
   }
 }
 
-/** `torrent serve`: runs until SIGINT / SIGTERM. */
+/** `deluge serve`: runs until SIGINT / SIGTERM. */
 export async function serveCommand(o: ParsedOptions, engine: Engine, log: Log): Promise<number> {
   const host = str(o, 'host') ?? DEFAULTS.host;
   const port = num(o, 'port') ?? DEFAULTS.port;
   const fail = (msg: string) => {
-    process.stderr.write(`torrent serve: ${msg}\n`);
+    process.stderr.write(`deluge serve: ${msg}\n`);
     return EXIT.usage;
   };
   if (!(Number.isInteger(port) && port >= 0 && port <= 65535)) return fail('--port must be a whole number from 0 to 65535');
@@ -665,7 +665,7 @@ export async function serveCommand(o: ParsedOptions, engine: Engine, log: Log): 
   if (!(hours > 0 && hours <= 24 * 3650)) return fail('--retention-hours must be more than 0 and at most 87600');
   const maxQueue = num(o, 'max-queue') ?? DEFAULTS.maxQueue;
   if (!(Number.isInteger(maxQueue) && maxQueue >= 1 && maxQueue <= 10000)) return fail('--max-queue must be a whole number from 1 to 10000');
-  let token: string | null = process.env.TORRENT_API_TOKEN?.trim() || null;
+  let token: string | null = process.env.DELUGE_API_TOKEN?.trim() || null;
   const tokenFile = str(o, 'token-file');
   if (tokenFile) {
     try {
@@ -683,13 +683,13 @@ export async function serveCommand(o: ParsedOptions, engine: Engine, log: Log): 
     if (err instanceof UsageError) return fail(err.message);
     return fail(`cannot listen on ${host}:${port} (${err instanceof Error ? err.message : String(err)})`);
   }
-  process.stderr.write(`torrent serve: listening on ${api.url} · jobs in ${dataDir} · ${token ? 'bearer token required' : 'no token (this machine only)'} · results kept ${hours} h\n`);
+  process.stderr.write(`deluge serve: listening on ${api.url} · jobs in ${dataDir} · ${token ? 'bearer token required' : 'no token (this machine only)'} · results kept ${hours} h\n`);
   await new Promise<void>((resolve) => {
     const stop = () => resolve();
     process.once('SIGINT', stop);
     process.once('SIGTERM', stop);
   });
-  process.stderr.write('torrent serve: stopping…\n');
+  process.stderr.write('deluge serve: stopping…\n');
   await api.close();
   return EXIT.ok;
 }

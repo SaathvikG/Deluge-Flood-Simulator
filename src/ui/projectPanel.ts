@@ -1,10 +1,10 @@
 /**
- * The "Project" panel section: save everything on screen as a `.torrent.json` file, open one, share a small project as
+ * The "Project" panel section: save everything on screen as a `.deluge.json` file, open one, share a small project as
  * a `?project=` link, and — off by default — autosave it in this browser.
  *
  * PRIVACY. A project file is generated in this tab and downloaded; an opened file is read with File.text() here and
  * never uploaded. The portfolio CSV goes into a file only when its box is ticked, and never into a link or the
- * autosave. Autosave is the one thing in Torrent that writes to browser storage, and only after the user turns it on;
+ * autosave. Autosave is the one thing in Deluge that writes to browser storage, and only after the user turns it on;
  * turning it off deletes the copy.
  *
  * SECURITY. Every file and link goes through the strict reader (src/project/validate.ts). Messages are fixed
@@ -57,7 +57,7 @@ export function createProjectSection(ctx: UIContext): ProjectSection {
   const intro = h(
     'p',
     { class: 'dl-impact-note' },
-    'Save everything on screen — the scene, your scenario changes, walls and digging, Site check sites and settings, ensemble settings, designs, camera and view — as a .torrent.json file, and open it again later. Files stay on this computer.',
+    'Save everything on screen — the scene, your scenario changes, walls and digging, Site check sites and settings, ensemble settings, designs, camera and view — as a .deluge.json file, and open it again later. Files stay on this computer.',
   );
   const nameIn = h('input', { type: 'text', class: 'dl-num-input dl-site-name', maxlength: PROJECT_LIMITS.nameChars, placeholder: 'Project name (optional)', 'aria-label': 'Project name', 'data-project': 'name' });
   const contents = h('p', { class: 'dl-impact-fine', 'data-project': 'contents' });
@@ -74,7 +74,7 @@ export function createProjectSection(ctx: UIContext): ProjectSection {
   const saveBtn = button('Save project…', () => void save(), { icon: 'database', variant: 'primary', className: 'dl-btn-sm', tip: `Download the project as a ${PROJECT_EXTENSION} file`, side: 'top' });
   saveBtn.dataset.project = 'save';
   const fileInput = h('input', { type: 'file', accept: `${PROJECT_EXTENSION},.json,application/json`, class: 'dl-file-input', tabindex: -1, 'aria-hidden': 'true', 'data-project': 'file' });
-  const openBtn = button('Open project…', () => fileInput.click(), { icon: 'arrowRight', className: 'dl-btn-sm', tip: 'Open a .torrent.json file (read in this tab, never uploaded)', side: 'top' });
+  const openBtn = button('Open project…', () => fileInput.click(), { icon: 'arrowRight', className: 'dl-btn-sm', tip: 'Open a .deluge.json file (read in this tab, never uploaded)', side: 'top' });
   openBtn.dataset.project = 'open';
   const shareBtn = button('Share link', () => void share(), { className: 'dl-btn-sm', tip: `Put a small project in the address bar (?${PROJECT_PARAM}=); a larger one needs the file`, side: 'top' });
   shareBtn.dataset.project = 'share';
@@ -122,10 +122,10 @@ export function createProjectSection(ctx: UIContext): ProjectSection {
     const c = capture();
     if (!c.ok) return setStatus(c.error, 'warn');
     if (downloadsBlocked()) {
-      return setStatus('The desktop app blocks downloads by design, so it cannot save a project file. Use Share link for a small project, or run Torrent in a browser to save the file.', 'warn', c.notes);
+      return setStatus('The desktop app blocks downloads by design, so it cannot save a project file. Use Share link for a small project, or run Deluge in a browser to save the file.', 'warn', c.notes);
     }
     const text = projectToJson(c.project);
-    const base = safeFilename(`${c.project.name || `torrent-${store.get().presetId ?? 'area'}`}`);
+    const base = safeFilename(`${c.project.name || `deluge-${store.get().presetId ?? 'area'}`}`);
     const ok = downloadText(text, `${base.replace(/\.json$/i, '')}${PROJECT_EXTENSION}`, PROJECT_MIME);
     setStatus(ok ? `Saved ${fmtNum(text.length / 1024, 0)} KB${c.project.portfolio ? ' (with the portfolio CSV)' : ''}. Nothing was uploaded.` : 'This browser cannot save files from the page.', ok ? 'info' : 'warn', c.notes);
   }
@@ -134,7 +134,7 @@ export function createProjectSection(ctx: UIContext): ProjectSection {
     const file = fileInput.files?.[0];
     fileInput.value = '';
     if (!file) return;
-    if (file.size > PROJECT_LIMITS.maxFileChars * 4) return setStatus('The file is too large to be a Torrent project.', 'warn');
+    if (file.size > PROJECT_LIMITS.maxFileChars * 4) return setStatus('The file is too large to be a Deluge project.', 'warn');
     let text: string;
     try {
       text = await file.text();
@@ -232,7 +232,7 @@ export function createProjectSection(ctx: UIContext): ProjectSection {
       url.searchParams.set(PROJECT_PARAM, enc.value);
       window.history.replaceState(null, '', url);
       linkScene = sceneKey();
-      const note = downloadsBlocked() ? ' (In the desktop app the address is not a web link; open Torrent in a browser to share it.)' : '';
+      const note = downloadsBlocked() ? ' (In the desktop app the address is not a web link; open Deluge in a browser to share it.)' : '';
       await navigator.clipboard?.writeText(url.href).then(
         () => setStatus(`Link copied and put in the address bar (${fmtNum(enc.length)} characters). It carries the scene, walls, sites and settings — no names, no portfolio.${note}`),
         () => setStatus(`Project put in the address bar (?${PROJECT_PARAM}=, ${fmtNum(enc.length)} characters). It carries no names and no portfolio.${note}`),
@@ -323,7 +323,7 @@ export function createProjectSection(ctx: UIContext): ProjectSection {
       autosaveNote,
       autosaveOn
         ? `On: kept in this browser only, every few seconds while you work${desktop ? '. The desktop app clears storage each time it starts, so the copy lasts until you quit.' : '.'} Turning it off deletes the copy.`
-        : 'Off: Torrent stores nothing. Turn it on to have this browser keep your project (without a portfolio) and offer it back next time.',
+        : 'Off: Deluge stores nothing. Turn it on to have this browser keep your project (without a portfolio) and offer it back next time.',
     );
     restorePrevBtn.hidden = !autosaveOn || !readAutosaveBackup();
   }

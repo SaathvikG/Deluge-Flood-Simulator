@@ -1,5 +1,5 @@
 /**
- * End-to-end smoke test of the `torrent` binary on the real GPU (like tests/sim: needs a WebGPU adapter through Dawn).
+ * End-to-end smoke test of the `deluge` binary on the real GPU (like tests/sim: needs a WebGPU adapter through Dawn).
  * Short runs (2 simulated minutes) of real presets: the commands' outputs, exit codes, the GeoTIFF georeferencing, and
  * that the binary's numbers are the loss module's on the same GPU flood (the run is deterministic, so a scene run here
  * in-process reproduces the binary's hazard fields exactly).
@@ -22,33 +22,33 @@ import { resolveForcing } from '../../src/cli/scenario';
 after(finishGpuTests);
 
 const ROOT = path.resolve(import.meta.dirname, '../..');
-const BIN = path.join(ROOT, 'bin', 'torrent.mjs');
+const BIN = path.join(ROOT, 'bin', 'deluge.mjs');
 const DEMO_CSV = path.join(ROOT, 'public', 'demo', 'houston-portfolio.csv');
 let tmp = '';
 
 before(() => {
-  tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'torrent-cli-'));
+  tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'deluge-cli-'));
 });
 after(() => {
   fs.rmSync(tmp, { recursive: true, force: true });
 });
 
-function torrent(...args: string[]): { code: number | null; stdout: string; stderr: string; seconds: number } {
+function deluge(...args: string[]): { code: number | null; stdout: string; stderr: string; seconds: number } {
   const t0 = performance.now();
   const r = spawnSync(process.execPath, [BIN, ...args], { cwd: ROOT, encoding: 'utf8', timeout: 300_000 });
   return { code: r.status, stdout: r.stdout, stderr: r.stderr, seconds: (performance.now() - t0) / 1000 };
 }
 
 test('help, presets and usage errors (exit codes 0 / 2)', () => {
-  const help = torrent('--help');
+  const help = deluge('--help');
   assert.equal(help.code, 0);
-  assert.match(help.stdout, /torrent <command>/);
-  const list = torrent('presets', '--json');
+  assert.match(help.stdout, /deluge <command>/);
+  const list = deluge('presets', '--json');
   assert.equal(list.code, 0, list.stderr);
   const ids = (JSON.parse(list.stdout) as { presets: Array<{ id: string }> }).presets.map((p) => p.id);
   for (const id of ['pittsburgh', 'houston', 'nepal']) assert.ok(ids.includes(id), id);
   for (const bad of [['nope'], ['run', '--preset', 'atlantis'], ['run', '--preset', 'houston', '--minuts', '5'], ['portfolio', '--preset', 'houston', '--out', 'x.csv'], ['run', '--preset', 'houston', '--stage-ft', '30']]) {
-    const r = torrent(...bad);
+    const r = deluge(...bad);
     assert.equal(r.code, 2, `${bad.join(' ')} → ${r.code}: ${r.stderr}`);
     assert.ok(r.stderr.length > 0);
   }
@@ -56,7 +56,7 @@ test('help, presets and usage errors (exit codes 0 / 2)', () => {
 
 test('run: GeoTIFF rasters in EPSG:3857 on the preset’s bounds, and a summary', async () => {
   const out = path.join(tmp, 'run');
-  const r = torrent('run', '--preset', 'houston', '--minutes', '2', '--out', out);
+  const r = deluge('run', '--preset', 'houston', '--minutes', '2', '--out', out);
   assert.equal(r.code, 0, r.stderr);
   console.log(`  run houston 2 min: ${r.seconds.toFixed(1)} s wall · ${r.stdout.trim().split('\n')[0]}`);
   const summary = JSON.parse(fs.readFileSync(path.join(out, 'summary.json'), 'utf8'));
@@ -78,7 +78,7 @@ test('run: GeoTIFF rasters in EPSG:3857 on the preset’s bounds, and a summary'
 
 test('portfolio: the binary’s CSV is the loss module’s on the same GPU flood (in-process run, deterministic)', async () => {
   const out = path.join(tmp, 'portfolio.csv');
-  const r = torrent('portfolio', '--preset', 'houston', '--csv', DEMO_CSV, '--minutes', '10', '--out', out, '--quiet');
+  const r = deluge('portfolio', '--preset', 'houston', '--csv', DEMO_CSV, '--minutes', '10', '--out', out, '--quiet');
   assert.equal(r.code, 0, r.stderr);
   console.log(`  portfolio houston 10 min, 19 assets: ${r.seconds.toFixed(1)} s wall · ${r.stdout.trim().split('\n')[0]}`);
   const csv = fs.readFileSync(out, 'utf8');
@@ -109,7 +109,7 @@ test('portfolio: the binary’s CSV is the loss module’s on the same GPU flood
 test('site --sweep on two Pittsburgh levels: JSON report with EAL, FFE, verdict; repeat runs agree exactly', () => {
   const run = (name: string) => {
     const out = path.join(tmp, name);
-    const r = torrent('site', '--preset', 'pittsburgh', '--at', '40.4425,-80.0085', '--use', 'office', '--floors', '3', '--sweep', '--levels', 'ivan2004,rp100', '--minutes', '4', '--out', out, '--quiet');
+    const r = deluge('site', '--preset', 'pittsburgh', '--at', '40.4425,-80.0085', '--use', 'office', '--floors', '3', '--sweep', '--levels', 'ivan2004,rp100', '--minutes', '4', '--out', out, '--quiet');
     assert.equal(r.code, 0, r.stderr);
     console.log(`  site sweep 2 levels × 4 min: ${r.seconds.toFixed(1)} s wall`);
     return JSON.parse(fs.readFileSync(out, 'utf8'));

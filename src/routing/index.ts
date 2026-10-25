@@ -8,7 +8,7 @@
  *   const result = router.route(evacStart, shelters);    // message + structured via / wetMeters / reason / advice
  */
 export { createRouter } from './router';
-export type { TorrentRouter, TorrentRouteResult, RouteReason } from './router';
+export type { DelugeRouter, DelugeRouteResult, RouteReason } from './router';
 export {
   ROAD_FLOODED_DEPTH,
   ROAD_WET_DEPTH,

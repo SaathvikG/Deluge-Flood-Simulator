@@ -11,7 +11,7 @@
  * where dᵢ is the water depth above storey i's floor and u the undamageable share (foundations, frame). Splitting by
  * storey keeps a 30-storey tower with a metre of water in the lobby from booking half its value as lost.
  *
- * EVERY NUMBER HERE IS AN ASSUMPTION WITH A SOURCE. The unit costs are the research's recommended defaults ("Torrent
+ * EVERY NUMBER HERE IS AN ASSUMPTION WITH A SOURCE. The unit costs are the research's recommended defaults ("Deluge
  * for Business" spec §C.1.3, marked [I] there): derived from the JRC 2017 country construction costs, escalated to
  * 2026 and cross-checked against 2025 US contractor ranges and Nepali/Indian market rates — not quotes. They are
  * screening values; a portfolio row's own `replacement_value` always wins.
@@ -49,7 +49,7 @@ export type Occupancy = (typeof OCCUPANCIES)[number];
 export type CostClass = 'residential' | 'retail' | 'office' | 'industrial' | 'hospital' | 'civic';
 
 /**
- * Replacement cost of the structure, 2026 USD per m² of gross floor area. Spec §C.1.3 "Recommended Torrent defaults"
+ * Replacement cost of the structure, 2026 USD per m² of gross floor area. Spec §C.1.3 "Recommended Deluge defaults"
  * [I: derived — JRC 2017 construction cost × FX 1.30 × US CPI 2010→2025 ≈ 1.48 gives US residential ≈ $2,950/m², which
  * is high against 2025 market ranges (warehouse $70–150/ft², retail $120–300/ft², office $150–440/ft², healthcare
  * $250–1,018/ft²), so the defaults sit lower; Nepal/India use local market rates (NPR 2,800–3,600/ft² standard, CPWD

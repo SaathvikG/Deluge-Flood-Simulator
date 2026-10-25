@@ -62,7 +62,7 @@ export function createSurgeView(ctx: UIContext, deps: { panel: Pick<Panel, 'reve
     h(
       'p',
       { class: 'dl-uc-lede' },
-      `Type a place on the U.S. coast. Torrent loads ${SURGE_AREA_M / 1000} km around it (this needs internet), holds the sea on the map’s seaward edges at NOAA’s 1-, 2-, 10-, 50- and 100-year still-water levels from the nearest long-term tide gauge, drops a site on the point and opens Site check on that ladder. Or use the live area already on screen.`,
+      `Type a place on the U.S. coast. Deluge loads ${SURGE_AREA_M / 1000} km around it (this needs internet), holds the sea on the map’s seaward edges at NOAA’s 1-, 2-, 10-, 50- and 100-year still-water levels from the nearest long-term tide gauge, drops a site on the point and opens Site check on that ladder. Or use the live area already on screen.`,
     ),
     h('div', { class: 'dl-row dl-dam-search' }, form, hereBtn),
     status,

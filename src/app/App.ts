@@ -1,6 +1,6 @@
 import type { AppActions, AppState, FloodRenderer, FloodSolver, StepInfo, ToolController } from '../contracts';
-import { createTorrentDevice, type TorrentGPU } from '../gpu';
-import { createRenderer, type TorrentRendererAPI, type SimPressure } from '../render';
+import { createDelugeDevice, type DelugeGPU } from '../gpu';
+import { createRenderer, type DelugeRendererAPI, type SimPressure } from '../render';
 import { createRouter } from '../routing';
 import { createToolController, mountUI } from '../ui';
 import { createActions } from './actions';
@@ -91,7 +91,7 @@ export class App {
   /** Holds the display awake while the tab is visible (see wakeLock.ts): a pitch runs for minutes with no input. */
   readonly wakeLock: ScreenWakeLock;
 
-  gpu: TorrentGPU | null = null;
+  gpu: DelugeGPU | null = null;
   renderer: FloodRenderer | null = null;
   scenes: SceneManager | null = null;
   tools: ToolController | null = null;
@@ -101,7 +101,7 @@ export class App {
   /** The flood-probability ensemble's GPU accumulator, lent to the UI through SimControl.ensembleMap. */
   readonly ensembleMap = new EnsembleMapHost({
     getSolver: () => this.scenes?.scene?.solver ?? null,
-    getRenderer: () => this.renderer as Partial<TorrentRendererAPI> | null,
+    getRenderer: () => this.renderer as Partial<DelugeRendererAPI> | null,
     requestRender: () => this.requestRender(),
   });
 
@@ -150,7 +150,7 @@ export class App {
         const key = result?.cells && b ? `${result.cells}|${b.x0}|${b.y0}|${b.x1}|${b.y1}` : '';
         if (key === maskKey) return;
         maskKey = key;
-        (this.renderer as Partial<TorrentRendererAPI> | null)?.setProtectedMask?.(key ? result!.mask : null);
+        (this.renderer as Partial<DelugeRendererAPI> | null)?.setProtectedMask?.(key ? result!.mask : null);
         this.requestRender();
       },
     }, 1000, createProtectionWorker);
@@ -204,10 +204,10 @@ export class App {
 
   private async init(): Promise<void> {
     const { store } = this;
-    let gpu: TorrentGPU;
+    let gpu: DelugeGPU;
     try {
       if (!navigator.gpu) throw new Error('navigator.gpu is undefined');
-      gpu = await createTorrentDevice(navigator.gpu);
+      gpu = await createDelugeDevice(navigator.gpu);
     } catch (err) {
       throw new WebGPUUnavailableError(errorMessage(err));
     }
@@ -309,7 +309,7 @@ export class App {
    * per-pointermove slider would be a mistake. The initial state is applied once here so a link or a saved
    * default lands before the first frame.
    */
-  private installLookSync(renderer: TorrentRendererAPI): void {
+  private installLookSync(renderer: DelugeRendererAPI): void {
     const apply = (look: AppState['look'], prev: AppState['look'] | null): void => {
       try {
         if (!prev || look.quality !== prev.quality) renderer.setQuality(look.quality);
@@ -336,7 +336,7 @@ export class App {
   private async loadInitial(): Promise<void> {
     const { request, warnings } = parseStartupRequest(window.location.search);
     for (const w of warnings) {
-      console.warn(`[torrent] ${w}`);
+      console.warn(`[deluge] ${w}`);
       postNotice(this.store, { kind: 'info', title: 'Link parameter ignored', message: w });
     }
     const outcome = request.kind === 'live' ? await this.loadStartupLive(request) : await this.loadScene(request);
@@ -674,7 +674,7 @@ export class App {
   setSimPressure(pressure: SimPressure): void {
     if (pressure === this.simPressure) return;
     this.simPressure = pressure;
-    (this.renderer as Partial<TorrentRendererAPI> | null)?.setSimPressure?.(pressure);
+    (this.renderer as Partial<DelugeRendererAPI> | null)?.setSimPressure?.(pressure);
   }
 
   /**
@@ -685,11 +685,11 @@ export class App {
     if (!this.frameCeiling.sample(frameMs, busyMs)) return;
     const floor = this.frameCeiling.floorMs;
     this.budget.setFrameFloor(floor);
-    (this.renderer as Partial<TorrentRendererAPI> | null)?.setFrameIntervalFloor?.(floor);
+    (this.renderer as Partial<DelugeRendererAPI> | null)?.setFrameIntervalFloor?.(floor);
     console.info(
       floor > 0
-        ? `[torrent] browser paces frames at ~${(1000 / floor).toFixed(0)} fps (power saving); budgets retuned to it`
-        : '[torrent] frame-rate ceiling lifted',
+        ? `[deluge] browser paces frames at ~${(1000 / floor).toFixed(0)} fps (power saving); budgets retuned to it`
+        : '[deluge] frame-rate ceiling lifted',
     );
   }
 
@@ -726,7 +726,7 @@ export class App {
     this.failReady(new Error(details));
     const scene = this.scenes?.scene ?? null;
     if (scene) writeSceneToUrl(scene.request);
-    console.error(`[torrent] ${details} — frame loop stopped`);
+    console.error(`[deluge] ${details} — frame loop stopped`);
     // Anything that is not the offline default scenario gets a way out on the card ("Start with Pittsburgh"). Only a
     // live area (it needs the network after a reload too) or a grid larger than the presets may be swapped for it
     // AUTOMATICALLY — those are the ones a repeated loss really blames. Lost mid-load: judge the request being loaded.
@@ -758,7 +758,7 @@ export class App {
     this.driver.onSceneChanged(performance.now());
     this.chain.onSceneReady(scene);
     console.info(
-      `[torrent] loaded “${scene.terrain.name}” ${scene.terrain.nx}×${scene.terrain.ny} @ ${scene.terrain.cellSize.toFixed(2)} m`,
+      `[deluge] loaded “${scene.terrain.name}” ${scene.terrain.nx}×${scene.terrain.ny} @ ${scene.terrain.cellSize.toFixed(2)} m`,
     );
   }
 

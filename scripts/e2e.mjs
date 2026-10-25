@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Torrent end-to-end demo flows in headless Chromium on the real GPU.
+ * Deluge end-to-end demo flows in headless Chromium on the real GPU.
  *
  *   node scripts/e2e.mjs                    in-process Vite dev server on :5190 (or the next free port), all flows
  *   node scripts/e2e.mjs --prod             production build + `vite preview` (what `npm run demo` serves)
@@ -15,14 +15,14 @@
  * reported; the baked-preset flows must not need any. Only the opt-in live flow may use the network. The startup-cancel
  * flow holds external requests unanswered instead (stalled venue wifi), so it needs no network either.
  *
- * Debug API: the flows drive the app through `window.__torrent`, which a released build no longer contains
- * (FINDINGS.json SEC-07). This script therefore sets TORRENT_DEBUG_API=1 before it builds, which is what
+ * Debug API: the flows drive the app through `window.__deluge`, which a released build no longer contains
+ * (FINDINGS.json SEC-07). This script therefore sets DELUGE_DEBUG_API=1 before it builds, which is what
  * vite.config.ts's `define` reads. To point --prod/E2E_URL at a server you built yourself, build it the same way:
- * `TORRENT_DEBUG_API=1 npm run demo`. A plain `npm run demo` has no debug API, which is the point.
+ * `DELUGE_DEBUG_API=1 npm run demo`. A plain `npm run demo` has no debug API, which is the point.
  *
  * Screenshots → artifacts/e2e/NN-name.png, machine-readable report → artifacts/e2e/report.json.
  * Prints a PASS/FAIL table with measured numbers and exits non-zero if any flow fails.
- * Console errors, page errors and window.__torrent.errors are collected per flow; any of them fails the flow, unless
+ * Console errors, page errors and window.__deluge.errors are collected per flow; any of them fails the flow, unless
  * the flow declares them in `expectedErrors` (flow 14 destroys the GPU device on purpose).
  *
  * Flow 14 destroys the GPU device and flow 13 pretends the tab was hidden; both put the page back afterwards.
@@ -68,9 +68,9 @@ const OTHER_PRESETS = ['pittsburgh', 'sandbox', ...BAKED_PRESETS.filter((p) => p
 
 fs.mkdirSync(OUT, { recursive: true });
 
-// The flows need window.__torrent, which vite.config.ts only compiles in when this is set (SEC-07). Set before any
+// The flows need window.__deluge, which vite.config.ts only compiles in when this is set (SEC-07). Set before any
 // build()/createServer() call, because the config reads process.env when it is loaded. `??=` so an explicit 0 wins.
-process.env.TORRENT_DEBUG_API ??= '1';
+process.env.DELUGE_DEBUG_API ??= '1';
 
 // ─── process management ────────────────────────────────────────────────────────────────────────
 /** In-process Vite server (dev or preview); closed on exit, so it can never be left running. */
@@ -291,7 +291,7 @@ async function runFlow(flow, ctx) {
   stallNetwork = !!flow.stallNetwork;
   const t0 = Date.now();
   let threw = false;
-  const errBase = await torrentErrorCount();
+  const errBase = await delugeErrorCount();
   try {
     await withTimeout(flow.run(r, ctx), flow.timeoutMs ?? 300_000, `flow ${flow.id}`);
   } catch (e) {
@@ -302,7 +302,7 @@ async function runFlow(flow, ctx) {
   stallNetwork = false;
   await releaseStalled();
   r.seconds = (Date.now() - t0) / 1000;
-  const appErrors = await torrentErrors(flow.resetsPage ? 0 : errBase);
+  const appErrors = await delugeErrors(flow.resetsPage ? 0 : errBase);
   const all = [...consoleErrors, ...appErrors.filter((e) => !consoleErrors.some((c) => c.includes(e)))];
   // A flow that breaks something on purpose (flow 14 destroys the GPU device) declares the errors that proves it
   // worked; they are reported but do not fail it. Everything else still does.
@@ -325,16 +325,16 @@ function check(r, label, ok, measured, { soft = false } = {}) {
   console.log(`  ${ok ? '✓' : soft ? '~' : '✗'} ${label}${measured !== undefined ? ` — ${measured}` : ''}`);
 }
 
-async function torrentErrorCount() {
+async function delugeErrorCount() {
   try {
-    return await page.evaluate(() => window.__torrent?.errors.length ?? 0);
+    return await page.evaluate(() => window.__deluge?.errors.length ?? 0);
   } catch {
     return 0;
   }
 }
-async function torrentErrors(from) {
+async function delugeErrors(from) {
   try {
-    return await page.evaluate((f) => (window.__torrent?.errors ?? []).slice(f), from);
+    return await page.evaluate((f) => (window.__deluge?.errors ?? []).slice(f), from);
   } catch {
     return [];
   }
@@ -342,21 +342,21 @@ async function torrentErrors(from) {
 
 // ─── in-page helpers ───────────────────────────────────────────────────────────────────────────
 const D = (fn, arg) => page.evaluate(fn, arg);
-const stats = () => D(() => window.__torrent.getStats());
+const stats = () => D(() => window.__deluge.getStats());
 const state = (keys) =>
   D((ks) => {
-    const s = window.__torrent.getState();
+    const s = window.__deluge.getState();
     return Object.fromEntries(ks.map((k) => [k, s[k]]));
   }, keys);
 
 async function runFor(simSeconds) {
   const t0 = Date.now();
-  await D((s) => window.__torrent.runFor(s), simSeconds);
+  await D((s) => window.__deluge.runFor(s), simSeconds);
   return (Date.now() - t0) / 1000;
 }
 
 async function shot(name) {
-  await D(() => window.__torrent.waitFrames(6));
+  await D(() => window.__deluge.waitFrames(6));
   const file = path.join(OUT, `${name}.png`);
   await page.screenshot({ path: file });
   console.log(`  [shot] ${path.relative(ROOT, file)}`);
@@ -374,13 +374,13 @@ async function waitFor(predicate, timeoutMs, stepMs = 50) {
 }
 
 async function waitReady(timeoutMs) {
-  await page.waitForFunction(() => window.__torrent || document.getElementById('torrent-fatal'), null, {
+  await page.waitForFunction(() => window.__deluge || document.getElementById('deluge-fatal'), null, {
     timeout: timeoutMs,
   });
-  const fatal = await D(() => document.getElementById('torrent-fatal')?.innerText ?? null);
+  const fatal = await D(() => document.getElementById('deluge-fatal')?.innerText ?? null);
   if (fatal) throw new Error(`app showed fallback screen: ${fatal.slice(0, 300)}`);
   return D(async () => {
-    await window.__torrent.ready;
+    await window.__deluge.ready;
     return performance.now();
   });
 }
@@ -395,7 +395,7 @@ function statsFinite(s) {
  */
 async function crestOffset() {
   return D((preset) => {
-    const d = window.__torrent;
+    const d = window.__deluge;
     const stage = d.getScenario()?.stage;
     if (!stage) return null;
     const marks = [...(stage.marks ?? [])].sort((a, b) => b.ft - a.ft);
@@ -409,7 +409,7 @@ async function crestOffset() {
 /** Return to a calm baseline: no walls, scenario sources, stage 0, rain 0, water reset. */
 async function calm() {
   await D(() => {
-    const d = window.__torrent;
+    const d = window.__deluge;
     d.store.set({ panels: { howItWorks: false, locationPicker: false, help: false } });
     d.actions.clearWalls();
     d.actions.restoreScenario();
@@ -434,16 +434,16 @@ async function ensureControlFlood(r) {
   await calm();
   await runFor(30);
   await D(() => {
-    window.__e2e = { initial: window.__torrent.sampleGrid('depth', 4) };
+    window.__e2e = { initial: window.__deluge.sampleGrid('depth', 4) };
   });
-  await D((o) => window.__torrent.setStageOffset(o), crest.offset);
+  await D((o) => window.__deluge.setStageOffset(o), crest.offset);
   await runFor(900);
   await D(() => {
-    window.__e2e.control900 = window.__torrent.sampleGrid('depth', 4);
+    window.__e2e.control900 = window.__deluge.sampleGrid('depth', 4);
   });
   await runFor(900);
   await D(() => {
-    window.__e2e.control = window.__torrent.sampleGrid('depth', 4);
+    window.__e2e.control = window.__deluge.sampleGrid('depth', 4);
   });
   r?.notes.push('computed control flood (crest, 900 s + 1800 s)');
 }
@@ -475,7 +475,7 @@ const FLOWS = [
       r.metrics.gpu = s0.gpuInfo;
 
       await page
-        .waitForFunction(() => (window.__torrent.getStats()?.volume ?? 0) > 0, null, { timeout: 10_000 })
+        .waitForFunction(() => (window.__deluge.getStats()?.volume ?? 0) > 0, null, { timeout: 10_000 })
         .catch(() => {});
       const s = await stats();
       r.metrics.volume = s?.volume;
@@ -502,15 +502,15 @@ const FLOWS = [
       await calm();
       await runFor(30);
       await D(() => {
-        window.__e2e = { initial: window.__torrent.sampleGrid('depth', 4) };
+        window.__e2e = { initial: window.__deluge.sampleGrid('depth', 4) };
       });
       const before = await stats();
-      await D((o) => window.__torrent.setStageOffset(o), crest.offset);
+      await D((o) => window.__deluge.setStageOffset(o), crest.offset);
       // The river rises to the crest along its whole length (src/app/crest.ts) at a limited rate in simulated time
       // (src/app/stageRamp.ts: ~3.7 sim-min to 46 ft), not as a bore from the domain edges and not as a dam break.
       // Sample the HUD's max speed while it rises: an instant 9 m jump pinned it at the 15 m/s cap.
       await D(() => {
-        const d = window.__torrent;
+        const d = window.__deluge;
         window.__e2eSpeed = { max: 0, samples: 0 };
         window.__e2eSpeedTimer = setInterval(() => {
           const v = d.getStats()?.maxSpeed;
@@ -523,20 +523,20 @@ const FLOWS = [
       const t300 = await runFor(300);
       const rise = await D(() => {
         clearInterval(window.__e2eSpeedTimer);
-        return { ...window.__e2eSpeed, stage: window.__torrent.getStageApplied() };
+        return { ...window.__e2eSpeed, stage: window.__deluge.getStageApplied() };
       });
       const early = await stats();
       await shot('02-crest-300s');
       const t900 = t300 + (await runFor(600));
       const mid = await stats();
       await D(() => {
-        window.__e2e.control900 = window.__torrent.sampleGrid('depth', 4);
+        window.__e2e.control900 = window.__deluge.sampleGrid('depth', 4);
       });
       await shot('02a-crest-900s');
       const t1800 = await runFor(900);
       const after = await stats();
       await D(() => {
-        window.__e2e.control = window.__torrent.sampleGrid('depth', 4);
+        window.__e2e.control = window.__deluge.sampleGrid('depth', 4);
       });
       await shot('02b-crest-1800s');
       r.metrics = { before: before?.floodedArea, at300: early?.floodedArea, at900: mid?.floodedArea, at1800: after?.floodedArea, runSeconds: t900 + t1800, riseMaxSpeed: rise.max, riseSamples: rise.samples };
@@ -564,7 +564,7 @@ const FLOWS = [
       // multi-source BFS from the initially wet cells (rivers) gives, for every land sample, the distance and
       // direction to the nearest river; the wall goes across that direction, the protected land lies inland.
       const site = await D(() => {
-        const d = window.__torrent;
+        const d = window.__deluge;
         const { initial, control } = window.__e2e; // stride 4, max depth per block
         const { w, h, stride } = control;
         const N = w * h;
@@ -640,16 +640,16 @@ const FLOWS = [
 
       await calm();
       await runFor(30);
-      await D((s) => window.__torrent.drawWall([s.a, s.c, s.b], 4), site);
-      await D(() => window.__torrent.waitFrames(3));
-      const wall = await D((s) => window.__torrent.sampleAt(s.c.gx, s.c.gy), site);
+      await D((s) => window.__deluge.drawWall([s.a, s.c, s.b], 4), site);
+      await D(() => window.__deluge.waitFrames(3));
+      const wall = await D((s) => window.__deluge.sampleAt(s.c.gx, s.c.gy), site);
       check(r, 'wall raised on the bed (CPU mirror)', (wall?.barrier ?? 0) >= 3.5, `barrier ${num(wall?.barrier ?? 0)} m`);
 
-      await D((o) => window.__torrent.setStageOffset(o), crest.offset);
+      await D((o) => window.__deluge.setStageOffset(o), crest.offset);
       const secs = await runFor(900);
       // Mean depth over the protected streets (each a 4×4-cell block, max depth) with vs without the wall.
       const behind = await D((s) => {
-        const d = window.__torrent;
+        const d = window.__deluge;
         const withWall = d.sampleGrid('depth', 4);
         const control = window.__e2e.control900;
         let w = 0;
@@ -664,22 +664,22 @@ const FLOWS = [
       r.metrics = { site: { ...site, behindPts: site.behindPts.length }, behind, runSeconds: secs };
       check(r, 'protected streets drier than without the wall (same 900 s at the crest)', behind.withWall < behind.control - 0.05, `mean ${num(behind.withWall)} m with wall vs ${num(behind.control)} m without (${site.behindPts.length} blocks)`, { soft: true });
 
-      const ground = await D((s) => window.__torrent.sampleAt(s.c.gx, s.c.gy).ground, site);
+      const ground = await D((s) => window.__deluge.sampleAt(s.c.gx, s.c.gy).ground, site);
       // Look from the river side across the wall toward the protected land.
       const yaw = Math.atan2(site.ux, -site.uy);
       await D(
-        (p) => window.__torrent.setCamera({ target: { gx: p.gx, gy: p.gy, elevation: p.elev }, distance: 1500, yaw: p.yaw, pitch: 0.78 }),
+        (p) => window.__deluge.setCamera({ target: { gx: p.gx, gy: p.gy, elevation: p.elev }, distance: 1500, yaw: p.yaw, pitch: 0.78 }),
         { gx: site.behind.gx, gy: site.behind.gy, elev: ground, yaw },
       );
       await sleep(600);
       await shot('03a-levee');
-      await D(() => window.__torrent.setWaterMode('maxDepth'));
+      await D(() => window.__deluge.setWaterMode('maxDepth'));
       await sleep(400);
       await shot('03b-levee-max-depth');
       // The solver's hazard accumulators (readHazardFields) after the same 900 s at the crest, and the two views
       // drawn from them.
       const hz = await D(async () => {
-        const s = window.__torrent.getSolver();
+        const s = window.__deluge.getSolver();
         if (!s?.readHazardFields) return null;
         const f = await s.readHazardFields();
         let arrived = 0;
@@ -703,13 +703,13 @@ const FLOWS = [
         !!hz && hz.arrived > 0 && hz.bad === 0 && hz.latest <= hz.simTime,
         hz ? `${hz.arrived} cells reached since reset (latest at ${num(hz.latest / 60, 1)} of ${num(hz.simTime / 60, 1)} min), ${hz.never} never wet, ${hz.bad} non-finite` : 'readHazardFields missing',
       );
-      await D(() => window.__torrent.setWaterMode('arrival'));
+      await D(() => window.__deluge.setWaterMode('arrival'));
       await sleep(400);
       await shot('03c-levee-arrival');
-      await D(() => window.__torrent.setWaterMode('hazard'));
+      await D(() => window.__deluge.setWaterMode('hazard'));
       await sleep(400);
       await shot('03d-levee-hazard');
-      await D(() => window.__torrent.setWaterMode('realistic'));
+      await D(() => window.__deluge.setWaterMode('realistic'));
     },
   },
   {
@@ -728,7 +728,7 @@ const FLOWS = [
       await calm();
       await runFor(60);
       const before = await stats();
-      await D(() => window.__torrent.setRain(100));
+      await D(() => window.__deluge.setRain(100));
       const secs = await runFor(900);
       const after = await stats();
       const expectedRain = (100 / 1000 / 3600) * 900 * grid.nx * grid.ny * grid.cellSize ** 2;
@@ -739,13 +739,13 @@ const FLOWS = [
       check(r, 'rain is accounted as inflow', (after?.volumeIn ?? 0) - (before?.volumeIn ?? 0) >= 0.9 * expectedRain, `volumeIn +${m3((after?.volumeIn ?? 0) - (before?.volumeIn ?? 0))}`);
       check(r, 'wet area grows (streets pond)', (after?.wetArea ?? 0) > (control?.wetArea ?? 0), `${km2(control?.wetArea ?? 0)} → ${km2(after?.wetArea ?? 0)}`);
       check(r, 'mass balance error < 1 %', (after?.massError ?? 1) < 0.01, `${num((after?.massError ?? NaN) * 100, 4)} %`);
-      await D(() => window.__torrent.setWaterMode('depth'));
-      await D(() => window.__torrent.actions.cameraFrameAll());
+      await D(() => window.__deluge.setWaterMode('depth'));
+      await D(() => window.__deluge.actions.cameraFrameAll());
       await sleep(1800);
       await shot('04-rain-depth-mode');
       await D(() => {
-        window.__torrent.setRain(0);
-        window.__torrent.setWaterMode('realistic');
+        window.__deluge.setRain(0);
+        window.__deluge.setWaterMode('realistic');
       });
     },
   },
@@ -758,7 +758,7 @@ const FLOWS = [
       const crest = await crestOffset();
       await calm();
       await runFor(30);
-      const shelters = await D(() => window.__torrent.getState().shelters.length);
+      const shelters = await D(() => window.__deluge.getState().shelters.length);
       check(r, 'scenario has shelters', shelters > 0, `${shelters} shelters`);
 
       // Pittsburgh: Downtown / Strip District / North Shore candidates; prefer one that floods in the control run.
@@ -781,7 +781,7 @@ const FLOWS = [
               out.push({ gx: (x + 0.5) * stride, gy: (y + 0.5) * stride, d: Math.hypot(x - w / 2, y - h / 2) });
           }
         out.sort((a, b) => a.d - b.d);
-        const g = window.__torrent.getState().grid;
+        const g = window.__deluge.getState().grid;
         // Flooded cells first, then points on the land around them (more likely to be near a street).
         const seeds = out.filter((_, i) => i % 5 === 0).slice(0, 16);
         const ring = [];
@@ -792,7 +792,7 @@ const FLOWS = [
               if (gx > 1 && gy > 1 && gx < g.nx - 1 && gy < g.ny - 1) ring.push({ gx, gy });
             }
         return [...seeds, ...ring].slice(0, 160).map((p) => {
-          const geo = window.__torrent.gridToGeo(p.gx, p.gy);
+          const geo = window.__deluge.gridToGeo(p.gx, p.gy);
           return { name: `auto (${Math.round(p.gx)}, ${Math.round(p.gy)}) of ${g.nx}`, lat: geo.lat, lon: geo.lon };
         });
       });
@@ -801,7 +801,7 @@ const FLOWS = [
       let chosen = null;
       for (const c of candidates) {
         const res = await D((cand) => {
-          const d = window.__torrent;
+          const d = window.__deluge;
           const p = d.geoToGrid(cand.lon, cand.lat);
           const g = d.getState().grid;
           if (!p || p.gx < 0 || p.gy < 0 || p.gx >= g.nx || p.gy >= g.ny) return null;
@@ -823,24 +823,24 @@ const FLOWS = [
       }
       check(r, 'route found from a downtown start at normal stage', !!chosen, chosen ? `${chosen.name} (floods nearby: ${chosen.floods > 0})` : 'no candidate produced an ok route');
       if (!chosen) return;
-      await D((p) => window.__torrent.setEvacStart(p), chosen.p);
-      await D(() => window.__torrent.waitFrames(3));
-      const before = await D(() => window.__torrent.getRoute());
-      const roadsBefore = await D(() => window.__torrent.getRoadStatusCounts());
+      await D((p) => window.__deluge.setEvacStart(p), chosen.p);
+      await D(() => window.__deluge.waitFrames(3));
+      const before = await D(() => window.__deluge.getRoute());
+      const roadsBefore = await D(() => window.__deluge.getRoadStatusCounts());
       r.metrics.before = { state: before?.state, length: before?.lengthMeters, eta: before?.etaSeconds, message: before?.message };
-      const ground = await D((p) => window.__torrent.sampleAt(p.gx, p.gy).ground, chosen.p);
+      const ground = await D((p) => window.__deluge.sampleAt(p.gx, p.gy).ground, chosen.p);
       await D(
-        (p) => window.__torrent.setCamera({ target: { gx: p.gx, gy: p.gy, elevation: p.elev }, distance: 4200, yaw: 0.35, pitch: 0.95 }),
+        (p) => window.__deluge.setCamera({ target: { gx: p.gx, gy: p.gy, elevation: p.elev }, distance: 4200, yaw: 0.35, pitch: 0.95 }),
         { ...chosen.p, elev: ground },
       );
       await sleep(800);
       await shot('05a-evac-normal-stage');
 
-      await D((o) => window.__torrent.setStageOffset(o), crest.offset);
+      await D((o) => window.__deluge.setStageOffset(o), crest.offset);
       await runFor(1800);
       await sleep(700); // routing refresh ≤ 4 Hz
-      const after = await D(() => window.__torrent.getRoute());
-      const roadsAfter = await D(() => window.__torrent.getRoadStatusCounts());
+      const after = await D(() => window.__deluge.getRoute());
+      const roadsAfter = await D(() => window.__deluge.getRoadStatusCounts());
       r.metrics.after = { state: after?.state, length: after?.lengthMeters, eta: after?.etaSeconds, message: after?.message };
       r.metrics.roads = { before: roadsBefore, after: roadsAfter };
       const changed =
@@ -852,7 +852,7 @@ const FLOWS = [
       check(r, 'more roads flooded at the crest', (roadsAfter?.flooded ?? 0) > (roadsBefore?.flooded ?? 0), `${roadsBefore?.flooded ?? '?'} → ${roadsAfter?.flooded ?? '?'} of ${roadsAfter?.total ?? '?'}`);
       await shot('05b-evac-crest');
       // Leave no route behind: the later flows expect a clean map.
-      await D(() => window.__torrent.setEvacStart(null));
+      await D(() => window.__deluge.setEvacStart(null));
     },
   },
   {
@@ -864,7 +864,7 @@ const FLOWS = [
         const t0 = Date.now();
         let ok = true;
         try {
-          await D((p) => window.__torrent.loadPreset(p), id);
+          await D((p) => window.__deluge.loadPreset(p), id);
         } catch (e) {
           ok = false;
           check(r, `${id}: loads`, false, e.message);
@@ -873,7 +873,7 @@ const FLOWS = [
         const loadS = (Date.now() - t0) / 1000;
         const presetId = (await state(['presetId'])).presetId;
         check(r, `${id}: loads`, ok && presetId === id, `${loadS.toFixed(2)} s (presetId ${presetId})`);
-        await D(() => window.__torrent.setPaused(false));
+        await D(() => window.__deluge.setPaused(false));
         const secs = await runFor(300);
         const s = await stats();
         r.metrics[id] = { loadSeconds: loadS, runSeconds: secs, stats: s };
@@ -888,7 +888,7 @@ const FLOWS = [
     name: 'Every tool selectable via keyboard 1…0',
     timeoutMs: 180_000,
     async run(r) {
-      await D(() => window.__torrent.setPaused(false));
+      await D(() => window.__deluge.setPaused(false));
       const cx = WIDTH / 2;
       const cy = HEIGHT / 2 + 60;
       // Focus the page without triggering tool actions (orbit tool: a click is a no-op).
@@ -897,19 +897,19 @@ const FLOWS = [
       const seen = [];
       for (const key of TOOL_KEYS) {
         await page.keyboard.press(key);
-        await D(() => window.__torrent.waitFrames(2));
+        await D(() => window.__deluge.waitFrames(2));
         const tool = (await state(['tool'])).tool;
         seen.push(tool);
         // Exercise the tool: hover, short drag, release.
         await page.mouse.move(cx - 40, cy);
-        await D(() => window.__torrent.waitFrames(2));
+        await D(() => window.__deluge.waitFrames(2));
         await page.mouse.down();
         for (let k = 1; k <= 6; k++) {
           await page.mouse.move(cx - 40 + k * 14, cy + k * 4);
-          await D(() => window.__torrent.waitFrames(1));
+          await D(() => window.__deluge.waitFrames(1));
         }
         await page.mouse.up();
-        await D(() => window.__torrent.waitFrames(4));
+        await D(() => window.__deluge.waitFrames(4));
         if (key === '0') await shot('07-probe-tool');
       }
       r.metrics.keyToTool = Object.fromEntries(TOOL_KEYS.map((k, i) => [k, seen[i]]));
@@ -919,9 +919,9 @@ const FLOWS = [
       await page.keyboard.press('Escape');
       await page.keyboard.press('1');
       await D(() => {
-        window.__torrent.actions.restoreScenario();
-        window.__torrent.actions.clearWalls();
-        window.__torrent.setEvacStart(null);
+        window.__deluge.actions.restoreScenario();
+        window.__deluge.actions.clearWalls();
+        window.__deluge.setEvacStart(null);
       });
       const tool = (await state(['tool'])).tool;
       check(r, 'back to navigate tool', tool === 'orbit', tool);
@@ -933,9 +933,9 @@ const FLOWS = [
     timeoutMs: 180_000,
     async run(r) {
       const cur = (await state(['presetId'])).presetId;
-      if (cur !== PRESET) await D((p) => window.__torrent.loadPreset(p), PRESET);
+      if (cur !== PRESET) await D((p) => window.__deluge.loadPreset(p), PRESET);
       await D(() => {
-        const d = window.__torrent;
+        const d = window.__deluge;
         d.setPaused(false);
         d.setTimeScale(60);
         d.setRain(0);
@@ -949,7 +949,7 @@ const FLOWS = [
             const t0 = performance.now();
             const tick = (t) => {
               frames++;
-              if (t - t0 >= 3000) resolve({ frames, ms: t - t0, ema: window.__torrent.getFps(), step: window.__torrent.getState().stepInfo });
+              if (t - t0 >= 3000) resolve({ frames, ms: t - t0, ema: window.__deluge.getFps(), step: window.__deluge.getState().stepInfo });
               else requestAnimationFrame(tick);
             };
             requestAnimationFrame(tick);
@@ -968,7 +968,7 @@ const FLOWS = [
     async run(r) {
       // Count renderer.render() calls from inside the page (the loop keeps running rAF callbacks cheaply).
       await D(() => {
-        const d = window.__torrent;
+        const d = window.__deluge;
         const renderer = d.getRenderer();
         if (!window.__e2eRenderCount) {
           window.__e2eRenderCount = { n: 0 };
@@ -983,14 +983,14 @@ const FLOWS = [
       const countOver = (ms) =>
         D(async (dur) => {
           const c = window.__e2eRenderCount;
-          const d = window.__torrent;
+          const d = window.__deluge;
           const n0 = c.n;
           const t0 = d.getSimClock();
           await new Promise((res) => setTimeout(res, dur));
           return { renders: c.n - n0, simAdvanced: d.getSimClock() - t0, anim: d.getPerf().animTime };
         }, ms);
       const running = await countOver(2000);
-      await D(() => window.__torrent.setPaused(true));
+      await D(() => window.__deluge.setPaused(true));
       await sleep(1800); // hold period after the last change
       const idle = await countOver(3000);
       const idle2 = await countOver(1000);
@@ -1006,7 +1006,7 @@ const FLOWS = [
         await sleep(45);
       }
       const wokeRenders = await woke;
-      await D(() => window.__torrent.setPaused(false));
+      await D(() => window.__deluge.setPaused(false));
       r.metrics = { running, idle, wokeRenders };
       // Relative to idle (absolute rates vary with other GPU load on the machine).
       const runRate = running.renders / 2;
@@ -1028,7 +1028,7 @@ const FLOWS = [
       const req = { center: { lat: 40.4443, lon: -79.9608 }, sizeMeters: 4000, resolution: 512, name: 'Oakland, Pittsburgh (live)' };
       const t0 = Date.now();
       const outcome = await D(async (q) => {
-        const d = window.__torrent;
+        const d = window.__deluge;
         await d.actions.loadLiveArea(q);
         const s = d.getState();
         return { presetId: s.presetId, name: s.terrainName, grid: s.grid, attribution: s.attribution };
@@ -1036,11 +1036,11 @@ const FLOWS = [
       const loadS = (Date.now() - t0) / 1000;
       check(r, 'live area loaded', outcome.name && outcome.grid?.nx === req.resolution, `“${outcome.name}” ${outcome.grid?.nx}×${outcome.grid?.ny} @ ${num(outcome.grid?.cellSize)} m in ${loadS.toFixed(1)} s`);
       check(r, 'attribution shown', /USGS|3DEP/i.test(outcome.attribution ?? ''), outcome.attribution);
-      await D(() => window.__torrent.setRain(50));
+      await D(() => window.__deluge.setRain(50));
       const secs = await runFor(600);
       const s = await stats();
       check(r, 'rain ponds on live terrain', (s?.volume ?? 0) > 0 && statsFinite(s), s ? `volume ${m3(s.volume)}, wet ${km2(s.wetArea)} (${secs.toFixed(1)} s real)` : 'no stats');
-      await D(() => window.__torrent.setRain(0));
+      await D(() => window.__deluge.setRain(0));
       await sleep(2000);
       await shot('10-live-area');
       r.metrics = { loadSeconds: loadS, requests: externalRequests.length };
@@ -1064,7 +1064,7 @@ const FLOWS = [
       // sampling race (it was 0 in Brave, 5 in Chromium: artifacts/browsers3/e2e-brave-noflags.log). Wait for the
       // requests to actually be held, with the same "> 0" bar — a stall that never issues one still fails.
       const stalled = await waitFor(() => stalledRoutes.length > 0, 30_000);
-      const before = await D(() => window.__torrent.getState().loading);
+      const before = await D(() => window.__deluge.getState().loading);
       check(
         r,
         'live download stalls with Cancel offered',
@@ -1074,11 +1074,11 @@ const FLOWS = [
       const t0 = Date.now();
       await cancel.click();
       const shown = await page
-        .waitForFunction(() => window.__torrent.getState().presetId && !window.__torrent.getState().loading, null, { timeout: 30_000 })
+        .waitForFunction(() => window.__deluge.getState().presetId && !window.__deluge.getState().loading, null, { timeout: 30_000 })
         .then(() => true, () => false);
       const loadS = (Date.now() - t0) / 1000;
       const after = await D(async () => {
-        const d = window.__torrent;
+        const d = window.__deluge;
         const ready = await Promise.race([d.ready.then(() => 'ready', (e) => `rejected: ${e.message}`), new Promise((res) => setTimeout(() => res('pending'), 10_000))]);
         const s = d.getState();
         const notice = [...document.querySelectorAll('button')].find((b) => /^Retry /.test(b.textContent ?? ''));
@@ -1115,7 +1115,7 @@ const FLOWS = [
     name: 'One-click levee keeps its land dry at the 1936 crest',
     timeoutMs: 300_000,
     async run(r) {
-      const levee = await D(() => window.__torrent.getScenario()?.levee ?? null);
+      const levee = await D(() => window.__deluge.getScenario()?.levee ?? null);
       if (!levee) {
         r.notes.push(`${PRESET} has no demo levee: skipped`);
         check(r, 'scenario without a demo levee (nothing to check)', true, PRESET);
@@ -1123,21 +1123,21 @@ const FLOWS = [
       }
       await calm();
       // The real Try-it button: raises the wall along its line over ~2 s, then sends the river to the crest.
-      await D(() => window.__torrent.store.set({ paused: false }));
+      await D(() => window.__deluge.store.set({ paused: false }));
       await page.click('.dl-try-step[data-step="levee"]');
       const built = await page
         .waitForFunction(() => {
-          const d = window.__torrent;
+          const d = window.__deluge;
           const s = d.getState();
           const crest = d.stageOffsetForFeet(Math.max(...(s.scenario?.stage?.marks ?? [{ ft: 0 }]).map((m) => m.ft)));
           return (d.getProtection()?.wallCells ?? 0) > 500 && Math.abs(s.stageOffset - crest) < 0.01;
         }, null, { timeout: 30_000 })
         .then(() => true, () => false);
-      const wall = await D(() => window.__torrent.getProtection());
+      const wall = await D(() => window.__deluge.getProtection());
       check(r, 'levee raised and the river sent to the crest', built, `${wall?.wallCells ?? 0} wall cells`);
       await runFor(1500);
       const res = await D(() => {
-        const d = window.__torrent;
+        const d = window.__deluge;
         const p = d.getProtection();
         const pts = d.getScenario().levee.points;
         // Probe the land behind the middle of the levee: 25 cells inland of its midpoint, away from the river.
@@ -1154,7 +1154,7 @@ const FLOWS = [
       });
       const p = res.p;
       const glow = await D(() => {
-        const d = window.__torrent;
+        const d = window.__deluge;
         return { maskOn: !!d.getRenderer()?.scene?.protectOn, offThread: !!d.app.protection.backend };
       });
       check(r, 'protected land glows on the map (mask uploaded)', glow.maskOn, glow.maskOn ? 'mask on' : 'no mask');
@@ -1167,7 +1167,7 @@ const FLOWS = [
       check(r, 'no false "water is pouring over your wall" alarm', !res.overtopNotice, res.overtopNotice ? 'notice shown' : 'none');
       check(r, 'stats stay finite', statsFinite(res.stats), `mass error ${res.stats?.massError}`);
       r.metrics = { protection: p, flooded: res.stats?.floodedArea };
-      await D((c) => window.__torrent.setCamera(c), levee.camera);
+      await D((c) => window.__deluge.setCamera(c), levee.camera);
       await sleep(800);
       await shot('12-demo-levee');
       // The step toggles: "Remove levee" clears the walls, the status line and the glow.
@@ -1176,7 +1176,7 @@ const FLOWS = [
       const removed = await page
         .waitForFunction(
           () => {
-            const d = window.__torrent;
+            const d = window.__deluge;
             const kept = [...document.querySelectorAll('.dl-try-status-kept')].some((e) => !e.hidden);
             return (d.getProtection()?.wallCells ?? 0) === 0 && !kept && !d.getRenderer()?.scene?.protectOn;
           },
@@ -1202,25 +1202,25 @@ const FLOWS = [
       await calm();
       // A riverfront lot at the Point: dry at NWS minor flood, under about a metre at FEMA's 1 % level.
       const site = { lat: 40.4425, lon: -80.0085 };
-      const g = await D((p) => window.__torrent.geoToGrid(p.lon, p.lat), site);
+      const g = await D((p) => window.__deluge.geoToGrid(p.lon, p.lat), site);
       const before = await D(() => {
-        const s = window.__torrent.getState();
+        const s = window.__deluge.getState();
         return { stageOffset: s.stageOffset, paused: s.paused, sources: s.sources.length };
       });
       await D((p) => {
-        const d = window.__torrent;
+        const d = window.__deluge;
         const ground = d.sampleAt(p.gx, p.gy).ground;
         d.setCamera({ target: { gx: p.gx, gy: p.gy, elevation: ground }, distance: 900, yaw: 0, pitch: Math.PI / 2 - 0.01 });
       }, g);
-      await D(() => window.__torrent.waitFrames(4));
-      await D(() => window.__torrent.selectTool('site'));
-      const box = await page.locator('#torrent-canvas').boundingBox();
+      await D(() => window.__deluge.waitFrames(4));
+      await D(() => window.__deluge.selectTool('site'));
+      const box = await page.locator('#deluge-canvas').boundingBox();
       await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
       const placed = await page
         .waitForFunction(() => document.querySelectorAll('.dl-site-item').length === 1 && document.querySelector('[data-section="site"]')?.classList.contains('dl-open'), null, { timeout: 5000 })
         .then(() => true, () => false);
       check(r, 'a click with the Site tool drops a site and opens the Site check section', placed, placed ? '1 site' : 'none');
-      await D(() => window.__torrent.selectTool('orbit'));
+      await D(() => window.__deluge.selectTool('orbit'));
 
       // This run: assess the calm river (the site must be dry, and reach a shelter).
       await page.click('[data-section="site"] button:has-text("Assess this run")');
@@ -1254,7 +1254,7 @@ const FLOWS = [
         rows: document.querySelectorAll('.dl-site-sweep-out table tbody tr').length,
         chart: !!document.querySelector('.dl-site-sweep-out svg.dl-site-chart'),
         state: (() => {
-          const s = window.__torrent.getState();
+          const s = window.__deluge.getState();
           return { stageOffset: s.stageOffset, paused: s.paused, sources: s.sources.length };
         })(),
       }));
@@ -1299,9 +1299,9 @@ const FLOWS = [
       // A running simulation is not "user activity" to macOS, so without this the demo laptop's display dims and
       // blanks mid-pitch (artifacts/browsers3: 2 min on battery). src/app/wakeLock.ts asks the browser to hold it.
       const held = await page
-        .waitForFunction(() => window.__torrent.getWakeLock().held, null, { timeout: 15_000 })
+        .waitForFunction(() => window.__deluge.getWakeLock().held, null, { timeout: 15_000 })
         .then(() => true, () => false);
-      const status = await D(() => window.__torrent.getWakeLock());
+      const status = await D(() => window.__deluge.getWakeLock());
       r.metrics = { wakeLock: status };
       check(r, 'the browser supports the Screen Wake Lock API', status.supported, status.supported ? 'navigator.wakeLock' : 'missing');
       check(r, 'a screen wake lock is held while the tab is visible', held && status.held && status.acquired >= 1, `held ${status.held}, acquired ${status.acquired}, error ${status.lastError ?? 'none'}`);
@@ -1317,15 +1317,15 @@ const FLOWS = [
         }, hidden);
       await hide(true);
       const released = await page
-        .waitForFunction(() => !window.__torrent.getWakeLock().held, null, { timeout: 10_000 })
+        .waitForFunction(() => !window.__deluge.getWakeLock().held, null, { timeout: 10_000 })
         .then(() => true, () => false);
       check(r, 'the lock is released when the tab is hidden', released, released ? 'released' : 'still held');
 
       await hide(false);
       const regained = await page
-        .waitForFunction(() => window.__torrent.getWakeLock().held, null, { timeout: 10_000 })
+        .waitForFunction(() => window.__deluge.getWakeLock().held, null, { timeout: 10_000 })
         .then(() => true, () => false);
-      const after = await D(() => window.__torrent.getWakeLock());
+      const after = await D(() => window.__deluge.getWakeLock());
       r.metrics.wakeLockAfter = after;
       check(
         r,
@@ -1354,7 +1354,7 @@ const FLOWS = [
       // lead has a real "how long did it run" to report: 4 minutes, which it must NOT call "again after restarting".
       await D(() => {
         const now = Date.now();
-        sessionStorage.setItem('torrent:gpu-lost-reload-at', JSON.stringify([now - 300_000, now - 240_000]));
+        sessionStorage.setItem('deluge:gpu-lost-reload-at', JSON.stringify([now - 300_000, now - 240_000]));
       });
 
       const live = new URL(ctx.baseUrl);
@@ -1362,15 +1362,15 @@ const FLOWS = [
       await page.goto(live.href, { waitUntil: 'domcontentloaded' });
       await page.locator('.dl-loading-cancel').waitFor({ state: 'visible', timeout: 90_000 });
       await waitFor(() => stalledRoutes.length > 0, 30_000);
-      const before = await D(() => ({ search: location.search, loading: window.__torrent.getState().loading, presetId: window.__torrent.getState().presetId }));
+      const before = await D(() => ({ search: location.search, loading: window.__deluge.getState().loading, presetId: window.__deluge.getState().presetId }));
       check(r, 'a live scene is downloading when the device dies', !!before.loading && before.presetId === null, `“${before.loading?.message}”, ${stalledRoutes.length} requests held`);
 
-      await D(() => window.__torrent.app.gpu.device.destroy());
+      await D(() => window.__deluge.app.gpu.device.destroy());
       const carded = await page
-        .waitForFunction(() => document.getElementById('torrent-fatal'), null, { timeout: 30_000 })
+        .waitForFunction(() => document.getElementById('deluge-fatal'), null, { timeout: 30_000 })
         .then(() => true, () => false);
       const card = await D(() => {
-        const root = document.getElementById('torrent-fatal');
+        const root = document.getElementById('deluge-fatal');
         if (!root) return null;
         return {
           title: root.querySelector('h1')?.textContent ?? '',
@@ -1378,7 +1378,7 @@ const FLOWS = [
           countdown: root.querySelector('.countdown')?.textContent ?? null,
           buttons: [...root.querySelectorAll('button')].map((b) => b.textContent?.trim()),
           search: location.search,
-          usable: window.__torrent.app.scenes?.usable ?? null,
+          usable: window.__deluge.app.scenes?.usable ?? null,
         };
       });
       r.metrics = { card };
@@ -1405,15 +1405,15 @@ const FLOWS = [
       await releaseStalled();
       await sleep(8000);
       const after = await D(() => {
-        const s = window.__torrent.getState();
-        return { search: location.search, presetId: s.presetId, terrainName: s.terrainName, scene: !!window.__torrent.app.scenes?.scene };
+        const s = window.__deluge.getState();
+        return { search: location.search, presetId: s.presetId, terrainName: s.terrainName, scene: !!window.__deluge.app.scenes?.scene };
       });
       r.metrics.after = after;
       check(r, 'the abandoned load never rewrites the address bar afterwards', after.search === before.search, `${after.search}`);
       check(r, 'and never builds a fallback scene on the dead device', after.presetId === null && !after.scene, `presetId ${after.presetId}, scene ${after.scene}`);
 
       // Leave the tab as the later runs expect: no seeded history, the default scene on screen.
-      await D(() => sessionStorage.removeItem('torrent:gpu-lost-reload-at'));
+      await D(() => sessionStorage.removeItem('deluge:gpu-lost-reload-at'));
       await page.goto(ctx.appUrl, { waitUntil: 'domcontentloaded' });
       await waitReady(90_000);
     },
@@ -1426,15 +1426,15 @@ const FLOWS = [
       // src/app/hazardChain.ts runs the chain in a worker on load and swaps the preset's inflow for the routed wave;
       // the panel's Hazard chain section and the valley timeline (src/ui/chainPanel.ts, chainTimeline.ts) draw it.
       for (const id of ['nepal', 'chungthang', 'chamoli']) {
-        await D((p) => window.__torrent.loadPreset(p), id);
+        await D((p) => window.__deluge.loadPreset(p), id);
         const t0 = Date.now();
         const ready = await page
-          .waitForFunction(() => window.__torrent.getHazardChain()?.status === 'ready', null, { timeout: 120_000 })
+          .waitForFunction(() => window.__deluge.getHazardChain()?.status === 'ready', null, { timeout: 120_000 })
           .then(() => true, () => false);
-        const chain = await D(() => window.__torrent.getHazardChain());
+        const chain = await D(() => window.__deluge.getHazardChain());
         r.metrics[id] = { chainSeconds: (Date.now() - t0) / 1000, status: chain?.status, offset: chain?.offset, entryFront: chain?.entryFront, entryPeak: chain?.entryPeak, error: chain?.error };
         check(r, `${id}: chain ran in the worker (run + 27-member ensemble)`, ready && !!chain?.bands, `${chain?.status} in ${((Date.now() - t0) / 1000).toFixed(1)} s, edge peak ${num(chain?.entryPeak ?? NaN, 0)} m³/s`);
-        const sources = await D(() => window.__torrent.getState().sources.map((s) => ({ id: s.id, n: s.hydrograph?.length ?? 0 })));
+        const sources = await D(() => window.__deluge.getState().sources.map((s) => ({ id: s.id, n: s.hydrograph?.length ?? 0 })));
         check(r, `${id}: the map's inflow is the routed hydrograph`, sources.some((s) => s.id === 'chain-inflow' && s.n > 3), JSON.stringify(sources));
 
         const ui = await D(() => {
@@ -1530,13 +1530,13 @@ const FLOWS = [
         // Advance the flood until every station the front reaches inside the map has been passed.
         const runS = Math.min(3600, Math.max(300, ...chain.stations.filter((s) => Number.isFinite(s.tFront)).map((s) => s.tFront - chain.offset + 60)));
         await D(() => {
-          window.__torrent.setPaused(false);
-          window.__torrent.actions.resetWater();
+          window.__deluge.setPaused(false);
+          window.__deluge.actions.resetWater();
         });
-        await D(() => window.__torrent.waitFrames(4));
+        await D(() => window.__deluge.waitFrames(4));
         // The timeline follows the stats readback (~300 ms), not the reset itself: wait until a readback shows the
         // reset clock, or 'before' reads the previous run's lit stations.
-        for (let i = 0; i < 50 && (await D(() => window.__torrent.getStats()?.simTime ?? 0)) > 120; i++) await sleep(100);
+        for (let i = 0; i < 50 && (await D(() => window.__deluge.getStats()?.simTime ?? 0)) > 120; i++) await sleep(100);
         // ...and until the timeline has redrawn from it: its updates are coalesced (≤ 10 Hz) and trail the readback, so
         // poll the lit-station count until three reads 150 ms apart agree.
         {
@@ -1555,7 +1555,7 @@ const FLOWS = [
             passed: document.querySelectorAll('.dl-cl-chipbox.dl-cl-passed').length,
             chips: document.querySelectorAll('.dl-cl-chipbox').length,
             clock: document.querySelector('.dl-cl-clock')?.textContent ?? '',
-            t: window.__torrent.getStats()?.simTime ?? 0,
+            t: window.__deluge.getStats()?.simTime ?? 0,
           }));
         const before = await read();
         if (id === 'nepal') await shot('16-nepal-start');
@@ -1572,7 +1572,7 @@ const FLOWS = [
         await page.locator('[data-section="chain"]').screenshot({ path: path.join(OUT, `16-${id}-panel.png`) });
       }
       // Leave the page on the suite's own preset: later flows assume it (the ensemble flow frames Pittsburgh's crest).
-      await D((p) => window.__torrent.loadPreset(p), PRESET);
+      await D((p) => window.__deluge.loadPreset(p), PRESET);
       await waitReady(120_000);
     },
   },
@@ -1587,36 +1587,36 @@ const FLOWS = [
       await calm();
       const crest = await crestOffset();
       const ft = PRESET === 'pittsburgh' ? 40 : null;
-      const offset = crest ? (ft !== null ? await D((f) => window.__torrent.stageOffsetForFeet(f), ft) : crest.offset * 0.8) : 0;
-      if (crest) await D((o) => window.__torrent.setStage(o, { instant: true }), offset);
+      const offset = crest ? (ft !== null ? await D((f) => window.__deluge.stageOffsetForFeet(f), ft) : crest.offset * 0.8) : 0;
+      if (crest) await D((o) => window.__deluge.setStage(o, { instant: true }), offset);
       // A Site check site at the Point (Pittsburgh's riverfront), for the "floods in k of N members" line.
       let siteName = null;
       if (PRESET === 'pittsburgh') {
         const have = await D(() => document.querySelectorAll('.dl-site-item').length);
-        const g = await D((p) => window.__torrent.geoToGrid(p.lon, p.lat), { lat: 40.4425, lon: -80.0085 });
+        const g = await D((p) => window.__deluge.geoToGrid(p.lon, p.lat), { lat: 40.4425, lon: -80.0085 });
         if (!have) {
           await D((p) => {
-            const d = window.__torrent;
+            const d = window.__deluge;
             d.setCamera({ target: { gx: p.gx, gy: p.gy, elevation: d.sampleAt(p.gx, p.gy).ground }, distance: 900, yaw: 0, pitch: Math.PI / 2 - 0.01 });
           }, g);
-          await D(() => window.__torrent.waitFrames(4));
-          await D(() => window.__torrent.selectTool('site'));
-          const box = await page.locator('#torrent-canvas').boundingBox();
+          await D(() => window.__deluge.waitFrames(4));
+          await D(() => window.__deluge.selectTool('site'));
+          const box = await page.locator('#deluge-canvas').boundingBox();
           await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
           await page.waitForFunction(() => document.querySelectorAll('.dl-site-item').length >= 1, null, { timeout: 5000 }).catch(() => {});
-          await D(() => window.__torrent.selectTool('orbit'));
+          await D(() => window.__deluge.selectTool('orbit'));
         }
         siteName = await D(() => document.querySelector('.dl-site-item .dl-impact-name')?.textContent ?? null);
       }
       // Frame the flood from above, then freeze the user's scenario (paused) so the restore can be checked exactly.
       await D(() => {
-        const d = window.__torrent;
+        const d = window.__deluge;
         const cam = d.getScenario()?.camera;
         if (cam) d.setCamera({ ...cam, distance: cam.distance * 1.1, pitch: Math.PI / 2 - 0.05 });
         d.setPaused(true);
       });
       const before = await D(() => {
-        const s = window.__torrent.getState();
+        const s = window.__deluge.getState();
         return { stageOffset: s.stageOffset, paused: s.paused, sources: JSON.stringify(s.sources), rain: s.sim.rainRate, manning: s.sim.manningN };
       });
       const probHiddenBefore = await D(() => document.querySelector('.dl-seg-btn[data-mode="probability"]')?.hidden ?? null);
@@ -1637,9 +1637,9 @@ const FLOWS = [
         .waitForFunction(() => /^(Done|Stopped|Cancelled)/.test(document.querySelector('[data-ens="status"]')?.textContent ?? ''), null, { timeout: 480_000 })
         .then(() => true, () => false);
       const wall = (Date.now() - t0) / 1000;
-      await D(() => window.__torrent.waitFrames(8));
+      await D(() => window.__deluge.waitFrames(8));
       const out = await D(() => {
-        const s = window.__torrent.getState();
+        const s = window.__deluge.getState();
         return {
           status: document.querySelector('[data-ens="status"]')?.textContent ?? '',
           results: !!document.querySelector('[data-ens="results"]')?.textContent,
@@ -1652,7 +1652,7 @@ const FLOWS = [
           after: { stageOffset: s.stageOffset, paused: s.paused, sources: JSON.stringify(s.sources), rain: s.sim.rainRate, manning: s.sim.manningN },
         };
       });
-      const ens = await D(() => window.__torrent.getEnsemble());
+      const ens = await D(() => window.__deluge.getEnsemble());
       r.metrics.ensemble = { wallSeconds: wall, status: out.status, members: ens?.members, floodedM2: ens?.floodedM2, loss: ens?.loss, map: ens?.map, rows: ens?.rows };
       check(r, '3-member ensemble completes', done && /^Done: 3 members/.test(out.status), `${out.status.slice(0, 160)} (${num(wall, 1)} s wall)`);
       check(r, 'results: flooded area and loss p10/p50/p90', out.results && /p10 · p50 · p90/.test(out.kv) && ens?.members === 3, out.kv.slice(0, 160));
@@ -1671,16 +1671,16 @@ const FLOWS = [
       const palettes = {};
       for (const m of ['depth', 'maxDepth', 'velocity', 'arrival', 'hazard', 'probability']) {
         palettes[m] = await D((mode) => {
-          window.__torrent.setWaterMode(mode);
+          window.__deluge.setWaterMode(mode);
           return [...document.querySelectorAll('.dl-legend-bar span')].map((e) => getComputedStyle(e).backgroundColor.match(/\d+/g).slice(0, 3).map(Number));
         }, m);
       }
       palettes.velocity = palettes.velocity.slice(1); // its slowest band is drawn as plain water
       r.metrics.palettes = palettes;
       const grab = async (mode) => {
-        await D((m) => window.__torrent.setWaterMode(m), mode);
-        await D(() => window.__torrent.waitFrames(12));
-        return (await page.locator('#torrent-canvas').screenshot({ type: 'png' })).toString('base64');
+        await D((m) => window.__deluge.setWaterMode(m), mode);
+        await D(() => window.__deluge.waitFrames(12));
+        return (await page.locator('#deluge-canvas').screenshot({ type: 'png' })).toString('base64');
       };
       const refPng = await grab('maxDepth');
       const probPng = await grab('probability');
@@ -1724,8 +1724,8 @@ const FLOWS = [
       await shot('17-ensemble-map');
       // The 0.5 m threshold.
       await page.click('[data-section="ensemble"] .dl-seg-btn:has-text("> 50 cm")');
-      await D(() => window.__torrent.waitFrames(6));
-      const t50 = await D(() => ({ title: document.querySelector('.dl-legend-title')?.textContent ?? '', thr: window.__torrent.getState().render.probabilityThreshold }));
+      await D(() => window.__deluge.waitFrames(6));
+      const t50 = await D(() => ({ title: document.querySelector('.dl-legend-title')?.textContent ?? '', thr: window.__deluge.getState().render.probabilityThreshold }));
       check(r, 'the 0.5 m threshold toggle', t50.thr === 0.5 && /deeper than 50 cm/.test(t50.title), `${t50.thr} · “${t50.title.slice(0, 60)}”`);
       await shot('17-ensemble-map-50cm');
       await D(() => document.querySelector('[data-ens="results"]')?.scrollIntoView({ block: 'start' }));
@@ -1733,7 +1733,7 @@ const FLOWS = [
       const panelShot = path.join(OUT, '17-ensemble-panel.png');
       await page.locator('.dl-panel').screenshot({ path: panelShot });
       console.log(`  [shot] ${path.relative(ROOT, panelShot)}`);
-      await D(() => window.__torrent.store.set({ render: { ...window.__torrent.getState().render, probabilityThreshold: 0.15 } }));
+      await D(() => window.__deluge.store.set({ render: { ...window.__deluge.getState().render, probabilityThreshold: 0.15 } }));
       await calm();
     },
   },
@@ -1743,9 +1743,9 @@ const FLOWS = [
     timeoutMs: 420_000,
     async run(r) {
       // src/climate + src/app/climate.ts: a layer on what the solver receives; the store (and the sliders) keep today.
-      await D((p) => window.__torrent.loadPreset(p), 'houston');
+      await D((p) => window.__deluge.loadPreset(p), 'houston');
       await D(() => {
-        const d = window.__torrent;
+        const d = window.__deluge;
         d.store.set({ climate: { horizon: 'today', pathway: 'ssp585', scaling: 'cc' } });
         d.actions.restoreScenario();
         d.setPaused(false);
@@ -1753,7 +1753,7 @@ const FLOWS = [
       });
       const read = () =>
         D(() => {
-          const d = window.__torrent;
+          const d = window.__deluge;
           const solver = d.getSolver();
           const inflow = (solver?.sources ?? []).find((s) => s.type === 'inflow');
           return {
@@ -1789,14 +1789,14 @@ const FLOWS = [
 
       // Site check: a lot that floods in today's storm. Run the scenario 10 sim-min, take a cell that was dry at the
       // start and is under 1–3 m now (block maximum), drop the site there.
-      await D(() => window.__torrent.actions.resetWater());
+      await D(() => window.__deluge.actions.resetWater());
       await runFor(2); // a readback of the reset water
       await D(() => {
-        window.__e2e17 = { initial: window.__torrent.sampleGrid('depth', 8) };
+        window.__e2e17 = { initial: window.__deluge.sampleGrid('depth', 8) };
       });
       await runFor(600);
       const spot = await D(() => {
-        const d = window.__torrent;
+        const d = window.__deluge;
         const a = window.__e2e17.initial;
         const b = d.sampleGrid('depth', 8);
         if (!a || !b) return { diag: `no samples (${!!a}, ${!!b})` };
@@ -1831,19 +1831,19 @@ const FLOWS = [
       check(r, 'found a lot that floods in today’s storm', found, found ? `(${num(spot.gx, 0)}, ${num(spot.gy, 0)}) ${num(spot.depth, 2)} m after 10 min` : spot?.diag ?? 'none');
       if (!found) return;
       await D((p) => {
-        const d = window.__torrent;
+        const d = window.__deluge;
         const ground = d.sampleAt(p.gx, p.gy).ground;
         d.setCamera({ target: { gx: p.gx, gy: p.gy, elevation: ground }, distance: 700, yaw: 0, pitch: Math.PI / 2 - 0.01 });
       }, spot);
-      await D(() => window.__torrent.waitFrames(4));
-      await D(() => window.__torrent.selectTool('site'));
-      const box = await page.locator('#torrent-canvas').boundingBox();
+      await D(() => window.__deluge.waitFrames(4));
+      await D(() => window.__deluge.selectTool('site'));
+      const box = await page.locator('#deluge-canvas').boundingBox();
       await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
       const placed = await page
         .waitForFunction(() => document.querySelectorAll('.dl-site-item').length >= 1 && document.querySelector('[data-section="site"]')?.classList.contains('dl-open'), null, { timeout: 5000 })
         .then(() => true, () => false);
       check(r, 'a site is dropped on the lot', placed);
-      await D(() => window.__torrent.selectTool('orbit'));
+      await D(() => window.__deluge.selectTool('orbit'));
 
       // Ladder: forcing × 0.5 and × 1 with return periods typed in (10 and 100 years, the user's input), 10 min each.
       // Houston is rain-led, so Site check opens on the NOAA Atlas 14 rain ladder once it has looked it up: pick the
@@ -1878,8 +1878,8 @@ const FLOWS = [
         status: document.querySelector('[data-site="sweep-status"]')?.textContent ?? '',
         eal: document.querySelector('[data-site="climate-eal"]')?.textContent ?? '',
         rows: [...document.querySelectorAll('[data-site="climate-compare"] tbody tr')].map((tr) => [...[...tr.children].map((td) => td.textContent), tr.dataset.simS]),
-        climate: window.__torrent.getState().climate,
-        solverRain: window.__torrent.getSolver()?.params.rainRate ?? NaN,
+        climate: window.__deluge.getState().climate,
+        solverRain: window.__deluge.getSolver()?.params.rainRate ?? NaN,
       }));
       r.metrics.compare = { ...out, seconds: (Date.now() - t0) / 1000 };
       check(r, 'today-vs-future sweep completes', done && /^Done: 2 levels today and under 2050 · SSP5-8\.5/.test(out.status), `${out.status.slice(0, 90)} (${num((Date.now() - t0) / 1000, 1)} s wall)`);
@@ -1912,7 +1912,7 @@ const FLOWS = [
       await sleep(200);
       const back = await read();
       check(r, 'Today again restores the scenario’s own forcing', back.solverRain === today.solverRain && back.solverInflow === today.solverInflow, `rain ${num(back.solverRain, 1)}, inflow ${num(back.solverInflow, 0)}`);
-      await D((p) => window.__torrent.loadPreset(p), PRESET);
+      await D((p) => window.__deluge.loadPreset(p), PRESET);
     },
   },
   {
@@ -1932,7 +1932,7 @@ const FLOWS = [
         .waitForFunction(() => document.querySelectorAll('.dl-site-item').length === 2, null, { timeout: 30_000 })
         .then(() => true, () => false);
       const site = await D(() => ({
-        preset: window.__torrent.getState().presetId,
+        preset: window.__deluge.getState().presetId,
         url: location.search,
         names: [...document.querySelectorAll('.dl-site-item')].map((e) => e.textContent ?? ''),
       }));
@@ -2008,13 +2008,13 @@ const FLOWS = [
       await sleep(300);
       await shot('19-business-brief');
       await page.keyboard.press('Escape');
-      const closed = await D(() => !window.__torrent.getState().panels.useCases);
+      const closed = await D(() => !window.__deluge.getState().panels.useCases);
       check(r, 'Esc closes the use-case dialog', closed, String(closed));
 
       // Glacier risk for hydropower.
       await open('?usecase=glacier');
       const chainReady = await page
-        .waitForFunction(() => window.__torrent.getHazardChain()?.status === 'ready', null, { timeout: 180_000 })
+        .waitForFunction(() => window.__deluge.getHazardChain()?.status === 'ready', null, { timeout: 180_000 })
         .then(() => true, () => false);
       await sleep(1200);
       const glacier = await D(() => {
@@ -2022,7 +2022,7 @@ const FLOWS = [
         const panel = document.querySelector('.dl-panel-scroll')?.getBoundingClientRect();
         const b = blk?.getBoundingClientRect();
         return {
-          preset: window.__torrent.getState().presetId,
+          preset: window.__deluge.getState().presetId,
           visible: !!blk && !blk.hidden && !!b && !!panel && b.top < panel.bottom && b.bottom > panel.top,
           chips: document.querySelectorAll('.dl-ew-chip').length,
         };
@@ -2039,19 +2039,19 @@ const FLOWS = [
       const assessed = await page
         .waitForFunction(() => /of 19 reached/.test(document.querySelector('.dl-impact-portfolio')?.textContent ?? ''), null, { timeout: 60_000 })
         .then(() => true, () => false);
-      const speed = await D(() => ({ timeScale: window.__torrent.getState().sim.timeScale, paused: window.__torrent.getState().paused }));
+      const speed = await D(() => ({ timeScale: window.__deluge.getState().sim.timeScale, paused: window.__deluge.getState().paused }));
       // Half an hour of Harvey's worst-hour rain, then a few of the 5 s auto-recomputes.
       await runFor(1800);
-      await D(() => window.__torrent.setPaused(false));
+      await D(() => window.__deluge.setPaused(false));
       const grew = await page
         .waitForFunction(() => /[1-9]\d* of 19 reached · loss \$[0-9.]+\s?[KMB]/.test(document.querySelector('.dl-impact-portfolio')?.textContent ?? ''), null, { timeout: 30_000 })
         .then(() => true, () => false);
       const pf = await D(() => ({
-        preset: window.__torrent.getState().presetId,
+        preset: window.__deluge.getState().presetId,
         info: document.querySelector('.dl-impact-portfolio')?.textContent ?? '',
         rows: document.querySelectorAll('.dl-impact-portfolio + .dl-impact-table tbody tr').length,
-        simTime: window.__torrent.getStats()?.simTime ?? 0,
-        ensembleAssets: window.__torrent.getPortfolioIds()?.length ?? 0,
+        simTime: window.__deluge.getStats()?.simTime ?? 0,
+        ensembleAssets: window.__deluge.getPortfolioIds()?.length ?? 0,
       }));
       r.metrics.portfolio = { ...pf, speed };
       // The demo arrives through loadPortfolioText, not the file input: the ensemble must tally those same assets.
@@ -2064,7 +2064,7 @@ const FLOWS = [
       await open('?usecase=%3Cimg%20src%3Dx%20onerror%3D%22window.__pwned%3D1%22%3EEVACUATE%20NOW');
       await sleep(500);
       const hostile = await D(() => ({
-        preset: window.__torrent.getState().presetId,
+        preset: window.__deluge.getState().presetId,
         pwned: window.__pwned === 1,
         echoed: /EVACUATE NOW|onerror/.test(document.body.innerText),
         url: location.search,
@@ -2087,8 +2087,8 @@ const FLOWS = [
       const open = (qs) => page.goto(new URL(qs, ctx.baseUrl).href, { waitUntil: 'domcontentloaded' }).then(() => waitReady(120_000));
       const card = () =>
         D(() => {
-          const ui = document.getElementById('ui-root')?.__torrentUI;
-          const d = window.__torrent;
+          const ui = document.getElementById('ui-root')?.__delugeUI;
+          const d = window.__deluge;
           const s = d.getState();
           const pose = d.getRenderer()?.camera?.pose;
           return {
@@ -2114,7 +2114,7 @@ const FLOWS = [
         .then(() => true, () => false);
       await sleep(800);
       let c = await card();
-      const preset = await D(() => window.__torrent.getState().presetId);
+      const preset = await D(() => window.__deluge.getState().presetId);
       check(r, '?story=pittsburgh-1936 opens Pittsburgh and starts the story in story mode', started && preset === 'pittsburgh' && c.mode && c.storyId === 'pittsburgh-1936' && /story=pittsburgh-1936/.test(c.url), `${preset}, beat ${c.beatId}, “${(c.caption ?? '').slice(0, 60)}…”`);
       check(r, 'the first caption cites its source', /Allegheny/.test(c.caption) && /^Source: .+/.test(c.source), c.source);
       await shot('20-story-first-beat');
@@ -2151,21 +2151,21 @@ const FLOWS = [
       );
 
       // 4. The whole story at 1/20 pace (waits capped at 30 s so a slow GPU cannot stall the flow).
-      await D(() => window.__torrent.setPaused(false));
+      await D(() => window.__deluge.setPaused(false));
       // The user's own state before the story: put back when it ends (a wall of theirs included).
       const userState = () =>
         D(() => {
-          const s = window.__torrent.getState();
-          const walls = window.__torrent.getSolver()?.getBarrierCPU().reduce((n, v) => n + (v > 0.2 ? 1 : 0), 0) ?? -1;
+          const s = window.__deluge.getState();
+          const walls = window.__deluge.getSolver()?.getBarrierCPU().reduce((n, v) => n + (v > 0.2 ? 1 : 0), 0) ?? -1;
           return { stage: s.stageOffset, rain: s.sim.rainRate, timeScale: s.sim.timeScale, view: s.render.waterMode, evac: !!s.evacStart, walls };
         });
       await D(() => {
-        const d = window.__torrent;
+        const d = window.__deluge;
         d.getSolver().applyBrush({ kind: 'wall', ax: 100, ay: 100, bx: 140, by: 100, radius: 2, height: 3 });
         d.setStageOffset(1.5);
       });
       const pre = await userState();
-      const ok = await D(() => document.getElementById('ui-root').__torrentUI.story.play('pittsburgh-1936', { pace: 0.05, maxWaitCapMs: 30_000 }));
+      const ok = await D(() => document.getElementById('ui-root').__delugeUI.story.play('pittsburgh-1936', { pace: 0.05, maxWaitCapMs: 30_000 }));
       check(r, 'the story plays from the debug handle', ok === true, String(ok));
       const seen = new Map();
       const t0 = Date.now();
@@ -2195,7 +2195,7 @@ const FLOWS = [
       check(r, 'the simulation changes with it: river raised, route planned, levee standing', end.stageOffset > 5 && end.stageApplied > 1 && end.evac && end.walls > 0, `stage offset ${num(end.stageOffset)} m (applied ${num(end.stageApplied)}), route ${end.route}, ${end.walls} wall cells`);
       check(r, 'kept-dry figure is read live from the protection estimate', !!kept && /acres|nothing yet/.test(kept.caption), kept?.caption.slice(0, 120));
       await shot('20-story-end');
-      await D(() => document.getElementById('ui-root').__torrentUI.story.stop());
+      await D(() => document.getElementById('ui-root').__delugeUI.story.stop());
       await sleep(300);
       const post = await userState();
       check(r, 'leaving the story puts the user’s stage, rain, time scale, view, route and walls back', JSON.stringify({ ...post, walls: 0 }) === JSON.stringify({ ...pre, walls: 0 }) && pre.walls > 0 && Math.abs(post.walls - pre.walls) <= 2, `before ${JSON.stringify(pre)} · after ${JSON.stringify(post)}`);
@@ -2253,7 +2253,7 @@ const FLOWS = [
         const asks = await page
           .waitForFunction(() => document.querySelector('[data-modal="usecases"].dl-open [data-uc-view="address"]:not([hidden])'), null, { timeout: 30_000 })
           .then(() => true, () => false);
-        const bad = await D(() => ({ preset: window.__torrent.getState().presetId, text: document.body.innerText }));
+        const bad = await D(() => ({ preset: window.__deluge.getState().presetId, text: document.body.innerText }));
         check(r, 'link: an at= outside the US loads the default scene and opens the address search', asks && bad.preset === 'pittsburgh', `preset ${bad.preset}, search ${asks ? 'open' : 'closed'}`);
         r.metrics.intercepted = intercepted.slice(0, 12);
       } finally {
@@ -2314,18 +2314,18 @@ const FLOWS = [
           const sec = document.querySelector(`[data-section="${sid}"]`);
           if (sec && !sec.classList.contains('dl-open')) sec.querySelector('.dl-sec-head')?.click();
         }, id);
-      const barrierCells = () => D(() => window.__torrent.getSolver().getBarrierCPU().reduce((n, v) => n + (v > 0.2 ? 1 : 0), 0));
+      const barrierCells = () => D(() => window.__deluge.getSolver().getBarrierCPU().reduce((n, v) => n + (v > 0.2 ? 1 : 0), 0));
       // Start without sites (flow 15 leaves none, but a rerun may).
       await D(() => document.querySelectorAll('.dl-site-remove').forEach((b) => b.click()));
 
       // Design A: the one-click levee (the real Try-it button), then the river back to normal pool.
-      await D(() => window.__torrent.store.set({ paused: false }));
+      await D(() => window.__deluge.store.set({ paused: false }));
       await page.click('.dl-try-step[data-step="levee"]');
       const built = await page
-        .waitForFunction(() => (window.__torrent.getProtection()?.wallCells ?? 0) > 500 && /remove levee/i.test(document.querySelector('.dl-try-step[data-step="levee"]')?.textContent ?? ''), null, { timeout: 30_000 })
+        .waitForFunction(() => (window.__deluge.getProtection()?.wallCells ?? 0) > 500 && /remove levee/i.test(document.querySelector('.dl-try-step[data-step="levee"]')?.textContent ?? ''), null, { timeout: 30_000 })
         .then(() => true, () => false);
       await D(() => {
-        const d = window.__torrent;
+        const d = window.__deluge;
         d.setPaused(true);
         d.setStageOffset(0);
         d.actions.resetWater();
@@ -2336,9 +2336,9 @@ const FLOWS = [
       await page.click('[data-compare="capture"]');
       // Design B: a shorter wall — the levee's upstream half at the same crest.
       await page.click('[data-compare="clear"]');
-      await page.waitForFunction(() => window.__torrent.getSolver().getBarrierCPU().every((v) => v <= 0.2), null, { timeout: 10_000 });
+      await page.waitForFunction(() => window.__deluge.getSolver().getBarrierCPU().every((v) => v <= 0.2), null, { timeout: 10_000 });
       const short = await D(() => {
-        const d = window.__torrent;
+        const d = window.__deluge;
         const lv = d.getScenario().levee;
         const n = Math.max(2, Math.ceil(lv.points.length / 2));
         const pts = lv.points.slice(0, n);
@@ -2362,36 +2362,36 @@ const FLOWS = [
       const wallCells = await barrierCells();
 
       // A site at the Point (as flow 15).
-      const g = await D((p) => window.__torrent.geoToGrid(p.lon, p.lat), { lat: 40.4425, lon: -80.0085 });
+      const g = await D((p) => window.__deluge.geoToGrid(p.lon, p.lat), { lat: 40.4425, lon: -80.0085 });
       await D((p) => {
-        const d = window.__torrent;
+        const d = window.__deluge;
         d.setCamera({ target: { gx: p.gx, gy: p.gy, elevation: d.sampleAt(p.gx, p.gy).ground }, distance: 900, yaw: 0, pitch: Math.PI / 2 - 0.01 });
       }, g);
-      await D(() => window.__torrent.waitFrames(4));
-      await D(() => window.__torrent.selectTool('site'));
-      const box = await page.locator('#torrent-canvas').boundingBox();
+      await D(() => window.__deluge.waitFrames(4));
+      await D(() => window.__deluge.selectTool('site'));
+      const box = await page.locator('#deluge-canvas').boundingBox();
       await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
       await page.waitForFunction(() => document.querySelectorAll('.dl-site-item').length === 1, null, { timeout: 5000 });
-      await D(() => window.__torrent.selectTool('orbit'));
+      await D(() => window.__deluge.selectTool('orbit'));
 
       // Save the project.
       await openSection('project');
       await page.fill('[data-project="name"]', 'North Shore levee study');
       const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 20_000 }), page.click('[data-project="save"]')]);
-      const file = path.join(OUT, '23-project.torrent.json');
+      const file = path.join(OUT, '23-project.deluge.json');
       await dl.saveAs(file);
       const saved = JSON.parse(fs.readFileSync(file, 'utf8'));
       const walls = saved.edits.filter((e) => e.op === 'wall');
       check(
         r,
-        'the saved .torrent.json holds the scene, the wall, the site and both designs',
-        dl.suggestedFilename().endsWith('.torrent.json') && saved.format === 'torrent-project' && saved.version === 1 && saved.scene.id === 'pittsburgh' && walls.length === 1 && saved.sites.length === 1 && saved.designs.length === 2 && saved.portfolio === null,
+        'the saved .deluge.json holds the scene, the wall, the site and both designs',
+        dl.suggestedFilename().endsWith('.deluge.json') && saved.format === 'deluge-project' && saved.version === 1 && saved.scene.id === 'pittsburgh' && walls.length === 1 && saved.sites.length === 1 && saved.designs.length === 2 && saved.portfolio === null,
         `${dl.suggestedFilename()}, ${(fs.statSync(file).size / 1024).toFixed(1)} KB: ${saved.edits.length} edit(s), ${saved.sites.length} site, designs ${saved.designs.map((d) => `${d.name} (${d.edits.length} edit, ${d.edits[0]?.pts?.length / 2} pts)`).join(' / ')}`,
       );
 
       // Wipe it, then open the file again.
       await D(() => {
-        const d = window.__torrent;
+        const d = window.__deluge;
         d.actions.clearWalls();
         document.querySelectorAll('.dl-site-remove').forEach((b) => b.click());
         d.setStageOffset(2);
@@ -2404,14 +2404,14 @@ const FLOWS = [
         status: document.querySelector('[data-project="status"]')?.textContent ?? '',
         sites: document.querySelectorAll('.dl-site-item').length,
         designs: [...document.querySelectorAll('[data-design-id]')].length,
-        stage: window.__torrent.getState().stageOffset,
+        stage: window.__deluge.getState().stageOffset,
       }));
       const reopened = await barrierCells();
       check(r, 'opening the file puts the wall, the site, the designs and the scenario back', opened && back.sites === 1 && back.designs === 2 && Math.abs(reopened - wallCells) <= Math.max(2, wallCells * 0.01) && back.stage === 0, `${back.status.slice(0, 100)} · ${reopened} wall cells (saved ${wallCells}), stage ${back.stage}`);
 
       // Hostile file: refused with a fixed sentence, nothing changed.
-      const hostile = path.join(OUT, '23-hostile.torrent.json');
-      fs.writeFileSync(hostile, '{"format":"torrent-project","version":1,"name":"<img src=x onerror=window.__pwned=1>","__proto__":{"polluted":1}}');
+      const hostile = path.join(OUT, '23-hostile.deluge.json');
+      fs.writeFileSync(hostile, '{"format":"deluge-project","version":1,"name":"<img src=x onerror=window.__pwned=1>","__proto__":{"polluted":1}}');
       await page.setInputFiles('[data-project="file"]', hostile);
       await sleep(400);
       const refused = await D(() => ({ status: document.querySelector('[data-project="status"]')?.textContent ?? '', pwned: !!window.__pwned, polluted: ({}).polluted !== undefined }));
@@ -2431,7 +2431,7 @@ const FLOWS = [
         rp.dispatchEvent(new Event('change'));
       });
       const before = await D(() => {
-        const s = window.__torrent.getState();
+        const s = window.__deluge.getState();
         return { stageOffset: s.stageOffset, paused: s.paused, sources: s.sources.length };
       });
       const t0 = Date.now();
@@ -2439,7 +2439,7 @@ const FLOWS = [
       // Mid-run, Clear walls waits (the run owns the map and puts the user's walls back from the edit log).
       await sleep(300);
       const midRun = await D(() => {
-        window.__torrent.actions.clearWalls();
+        window.__deluge.actions.clearWalls();
         return document.querySelector('.dl-notice.dl-show')?.textContent ?? '';
       });
       const done = await page
@@ -2453,7 +2453,7 @@ const FLOWS = [
         maps: document.querySelectorAll('[data-compare-map]').length,
         transfer: document.querySelector('[data-compare="transfer"]')?.textContent ?? '',
         state: (() => {
-          const s = window.__torrent.getState();
+          const s = window.__deluge.getState();
           return { stageOffset: s.stageOffset, paused: s.paused, sources: s.sources.length };
         })(),
       }));
@@ -2538,7 +2538,7 @@ const FLOWS = [
 
       // Save again: the comparison's numbers travel in the project.
       const [dl2] = await Promise.all([page.waitForEvent('download', { timeout: 20_000 }), page.click('[data-project="save"]')]);
-      const file2 = path.join(OUT, '23-project-with-results.torrent.json');
+      const file2 = path.join(OUT, '23-project-with-results.deluge.json');
       await dl2.saveAs(file2);
       const saved2 = JSON.parse(fs.readFileSync(file2, 'utf8'));
       check(r, 'a saved project carries the comparison summary', saved2.comparison?.designs?.length === 2 && saved2.comparison.levels.length === 2, saved2.comparison ? `${saved2.comparison.designs.map((d) => `${d.name}: BCR7 ${d.bcr7 == null ? '—' : d.bcr7.toFixed(2)}`).join('; ')}` : 'none');
@@ -2559,13 +2559,13 @@ const FLOWS = [
       const value = new URL(link).searchParams.get('project') ?? '';
       const tab = await page.context().newPage();
       await tab.goto(link, { waitUntil: 'domcontentloaded' });
-      await tab.waitForFunction(() => window.__torrent, null, { timeout: 90_000 });
-      await tab.evaluate(() => window.__torrent.ready);
+      await tab.waitForFunction(() => window.__deluge, null, { timeout: 90_000 });
+      await tab.evaluate(() => window.__deluge.ready);
       const linked = await tab
-        .waitForFunction(() => document.querySelectorAll('.dl-site-item').length === 1 && window.__torrent.getSolver()?.getBarrierCPU().some((v) => v > 0.2), null, { timeout: 60_000 })
+        .waitForFunction(() => document.querySelectorAll('.dl-site-item').length === 1 && window.__deluge.getSolver()?.getBarrierCPU().some((v) => v > 0.2), null, { timeout: 60_000 })
         .then(() => true, () => false);
       const tabInfo = await tab.evaluate(() => ({
-        cells: window.__torrent.getSolver().getBarrierCPU().reduce((n, v) => n + (v > 0.2 ? 1 : 0), 0),
+        cells: window.__deluge.getSolver().getBarrierCPU().reduce((n, v) => n + (v > 0.2 ? 1 : 0), 0),
         designs: document.querySelectorAll('[data-design-id]').length,
         names: [...document.querySelectorAll('.dl-site-item .dl-impact-name')].map((e) => e.textContent),
         rate: document.querySelector('[data-compare-field="discount-rate"]')?.value ?? '',
@@ -2594,11 +2594,11 @@ const FLOWS = [
     async run(r) {
       // src/app/landSurface.ts → FloodSolver.setLandSurface (ARCHITECTURE.md §3.11). The Advanced panel's switches, what
       // the solver ends up with, and that rain on a blocked city stays out of the footprints with mass intact.
-      const setSim = (patch) => D((p) => window.__torrent.store.set({ sim: { ...window.__torrent.getState().sim, ...p } }), patch);
+      const setSim = (patch) => D((p) => window.__deluge.store.set({ sim: { ...window.__deluge.getState().sim, ...p } }), patch);
       const land = () =>
         D(() => ({
-          solver: window.__torrent.getSolver()?.landSurfaceState ?? null,
-          status: window.__torrent.getState().landSurface ?? null,
+          solver: window.__deluge.getSolver()?.landSurfaceState ?? null,
+          status: window.__deluge.getState().landSurface ?? null,
           switches: Object.fromEntries(
             [...document.querySelectorAll('[data-section="advanced"] .dl-switch')].map((b) => [b.textContent?.trim() ?? '', b.getAttribute('aria-checked')]),
           ),
@@ -2614,13 +2614,13 @@ const FLOWS = [
       r.metrics.on = on;
       check(r, 'switching on reaches the solver and the panel', on.solver?.obstacles === off.status.obstacleCells && on.solver.porous === off.status.porousCells && on.solver.roughness && on.solver.drains && on.switches['Buildings block flow'] === 'true', JSON.stringify(on.solver));
       const before = await stats();
-      await D(() => window.__torrent.setRain(100));
+      await D(() => window.__deluge.setRain(100));
       await runFor(600);
       const after = await stats();
       // Blocked cells stay dry under the rain apart from the film running off their roofs (a handful of roofs lower than
       // the hillside beside them fill like pits: ARCHITECTURE.md §3.11), so fewer than 0.5 % hold 10 cm.
       const roof = await D(() => {
-        const d = window.__torrent;
+        const d = window.__deluge;
         const s = d.getSolver();
         const obst = s?.getObstacleCPU?.();
         if (!obst) return null;
@@ -2640,14 +2640,14 @@ const FLOWS = [
       r.metrics.roof = roof;
       check(r, 'no water stands in a footprint (roof films; < 0.5 % of blocked cells hold 10 cm)', !!roof && roof.blocked > 20_000 && roof.deep < 0.005 * roof.blocked, JSON.stringify(roof));
       check(r, 'drains take water out and it is booked (volumeOut grows; mass balance < 0.1 %)', (after?.volumeOut ?? 0) > (before?.volumeOut ?? 0) && (after?.massError ?? 1) < 1e-3, `out ${m3(before?.volumeOut)} → ${m3(after?.volumeOut)}, massError ${num((after?.massError ?? NaN) * 100, 5)} %`);
-      await D(() => window.__torrent.setWaterMode('depth'));
+      await D(() => window.__deluge.setWaterMode('depth'));
       await shot('24-land-surface');
       await setSim({ buildingObstacles: false, roughnessMap: false, drainage: false });
       const back = await land();
       check(r, 'switching off restores the bare-earth solver', back.solver?.obstacles === 0 && back.solver.porous === 0 && !back.solver.roughness && !back.solver.drains, JSON.stringify(back.solver));
       await D(() => {
-        window.__torrent.setRain(0);
-        window.__torrent.setWaterMode('realistic');
+        window.__deluge.setRain(0);
+        window.__deluge.setWaterMode('realistic');
       });
     },
   },
@@ -2661,17 +2661,17 @@ const FLOWS = [
         await D(() => {
           for (const b of document.querySelectorAll('.dl-site-remove')) b.click();
         });
-        const g = await D((p) => window.__torrent.geoToGrid(p.lon, p.lat), lonlat);
+        const g = await D((p) => window.__deluge.geoToGrid(p.lon, p.lat), lonlat);
         await D((p) => {
-          const d = window.__torrent;
+          const d = window.__deluge;
           d.setCamera({ target: { gx: p.gx, gy: p.gy, elevation: d.sampleAt(p.gx, p.gy).ground }, distance: 1600, yaw: 0, pitch: Math.PI / 2 - 0.01 });
         }, g);
-        await D(() => window.__torrent.waitFrames(4));
-        await D(() => window.__torrent.selectTool('site'));
-        const box = await page.locator('#torrent-canvas').boundingBox();
+        await D(() => window.__deluge.waitFrames(4));
+        await D(() => window.__deluge.selectTool('site'));
+        const box = await page.locator('#deluge-canvas').boundingBox();
         await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
         await page.waitForFunction(() => document.querySelectorAll('.dl-site-item').length === 1, null, { timeout: 5000 });
-        await D(() => window.__torrent.selectTool('orbit'));
+        await D(() => window.__deluge.selectTool('orbit'));
       };
       /** Infrastructure: open the section, assess, read the summary. */
       const assessInfra = async (tag) => {
@@ -2716,10 +2716,10 @@ const FLOWS = [
       };
 
       // ── Pittsburgh at the 1936 crest ──
-      await D((p) => window.__torrent.loadPreset(p), 'pittsburgh');
+      await D((p) => window.__deluge.loadPreset(p), 'pittsburgh');
       await calm();
       const crest = await crestOffset();
-      await D((o) => window.__torrent.setStageOffset(o), crest.offset);
+      await D((o) => window.__deluge.setStageOffset(o), crest.offset);
       await runFor(1800);
       const pi = await assessInfra('pittsburgh');
       r.metrics.pittsburghInfra = pi.summary;
@@ -2741,9 +2741,9 @@ const FLOWS = [
       check(r, 'site assessment report carries both sections and their methods', missing.length === 0 && !/<script/i.test(html), missing.length ? `missing: ${missing.join(', ')}` : `${(html.length / 1024).toFixed(0)} KB`);
 
       // ── Houston, Harvey rain ──
-      await D((p) => window.__torrent.loadPreset(p), 'houston');
+      await D((p) => window.__deluge.loadPreset(p), 'houston');
       await D(() => {
-        const d = window.__torrent;
+        const d = window.__deluge;
         d.actions.restoreScenario();
         d.setPaused(false);
         d.actions.resetWater();
@@ -2761,7 +2761,7 @@ const FLOWS = [
       await D(() => {
         for (const b of document.querySelectorAll('.dl-site-remove')) b.click();
       });
-      await D((p) => window.__torrent.loadPreset(p), PRESET);
+      await D((p) => window.__deluge.loadPreset(p), PRESET);
       await calm();
     },
   },
@@ -2770,30 +2770,30 @@ const FLOWS = [
     name: 'Leaving by road: departure curve after the alert and the queue at the exit — share out before the last route closes, clearance vs window, shelters as dependencies',
     timeoutMs: 300_000,
     async run(r) {
-      await D((p) => window.__torrent.loadPreset(p), 'pittsburgh');
+      await D((p) => window.__deluge.loadPreset(p), 'pittsburgh');
       await calm();
       const crest = await crestOffset();
-      await D((o) => window.__torrent.setStageOffset(o), crest.offset);
+      await D((o) => window.__deluge.setStageOffset(o), crest.offset);
       await runFor(1800);
       // A pin on the North Shore demo parcel A (between the stadiums).
       await D(() => {
         for (const b of document.querySelectorAll('.dl-site-remove')) b.click();
       });
-      const g = await D((p) => window.__torrent.geoToGrid(p.lon, p.lat), { lon: -80.0124, lat: 40.446 });
+      const g = await D((p) => window.__deluge.geoToGrid(p.lon, p.lat), { lon: -80.0124, lat: 40.446 });
       await D((p) => {
-        const d = window.__torrent;
+        const d = window.__deluge;
         d.setCamera({ target: { gx: p.gx, gy: p.gy, elevation: d.sampleAt(p.gx, p.gy).ground }, distance: 1600, yaw: 0, pitch: Math.PI / 2 - 0.01 });
       }, g);
-      await D(() => window.__torrent.waitFrames(4));
+      await D(() => window.__deluge.waitFrames(4));
       await D(() => {
         const sec = document.querySelector('[data-section="site"]');
         if (sec && !sec.classList.contains('dl-open')) sec.querySelector('.dl-sec-head')?.click();
       });
-      await D(() => window.__torrent.selectTool('site'));
-      const box = await page.locator('#torrent-canvas').boundingBox();
+      await D(() => window.__deluge.selectTool('site'));
+      const box = await page.locator('#deluge-canvas').boundingBox();
       await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
       await page.waitForFunction(() => document.querySelectorAll('.dl-site-item').length === 1, null, { timeout: 5000 });
-      await D(() => window.__torrent.selectTool('orbit'));
+      await D(() => window.__deluge.selectTool('orbit'));
       await page.click('[data-section="site"] button:has-text("Assess this run")');
       await page.waitForFunction(() => /occupants out before|No route to a shelter closes|Not assessed/.test(document.querySelector('[data-site="road"]')?.textContent ?? ''), null, { timeout: 60_000 });
       // The card re-renders (the extras block fills in after the card is on screen): wait for a filled road block.
@@ -2857,7 +2857,7 @@ const FLOWS = [
       await D(() => {
         for (const b of document.querySelectorAll('.dl-site-remove')) b.click();
       });
-      await D((p) => window.__torrent.loadPreset(p), PRESET);
+      await D((p) => window.__deluge.loadPreset(p), PRESET);
       await calm();
     },
   },
@@ -2957,19 +2957,19 @@ const FLOWS = [
       });
       await page.click('.dl-try-step[data-step="levee"]');
       const built = await page
-        .waitForFunction(() => (window.__torrent.getProtection()?.wallCells ?? 0) > 500 && /remove levee/i.test(document.querySelector('.dl-try-step[data-step="levee"]')?.textContent ?? ''), null, { timeout: 30_000 })
+        .waitForFunction(() => (window.__deluge.getProtection()?.wallCells ?? 0) > 500 && /remove levee/i.test(document.querySelector('.dl-try-step[data-step="levee"]')?.textContent ?? ''), null, { timeout: 30_000 })
         .then(() => true, () => false);
-      await D(() => window.__torrent.setPaused(true));
+      await D(() => window.__deluge.setPaused(true));
       await page.click('[data-compare="capture"]');
       const captured = await D(() => [...document.querySelectorAll('[data-design-id]')].map((e) => e.getAttribute('data-design-id')).join());
       check(r, 'the one-click levee is captured as the only design', built && captured === 'A', captured);
 
       // The ensemble: the bare scene at the 1936 crest, 3 members.
       await page.click('[data-compare="clear"]');
-      await page.waitForFunction(() => window.__torrent.getSolver().getBarrierCPU().every((v) => v <= 0.2), null, { timeout: 10_000 });
+      await page.waitForFunction(() => window.__deluge.getSolver().getBarrierCPU().every((v) => v <= 0.2), null, { timeout: 10_000 });
       const crest = await crestOffset();
       await D((o) => {
-        const d = window.__torrent;
+        const d = window.__deluge;
         d.setStageOffset(o);
         d.actions.resetWater();
       }, crest.offset);
@@ -2985,7 +2985,7 @@ const FLOWS = [
       const ensDone = await page
         .waitForFunction(() => /^(Done|Stopped|Cancelled)/.test(document.querySelector('[data-ens="status"]')?.textContent ?? ''), null, { timeout: 480_000 })
         .then(() => true, () => false);
-      const ens = await D(() => window.__torrent.getEnsemble());
+      const ens = await D(() => window.__deluge.getEnsemble());
       check(r, 'a 3-member ensemble of the bare scene at the 1936 crest completes with a loss band', ensDone && ens?.members === 3 && Array.isArray(ens.loss) && ens.loss[1] > 0, ens ? `loss p10 / p50 / p90 ${ens.loss.map((v) => `$${num(v / 1e9, 2)} B`).join(' / ')}` : 'none');
 
       // Compare on the 1936 crest with the 500-year return period typed (the user's input, as in flow 23).
@@ -3064,7 +3064,7 @@ const FLOWS = [
           };
         });
       const show = async (id, want) => {
-        await D((p) => window.__torrent.loadPreset(p), id);
+        await D((p) => window.__deluge.loadPreset(p), id);
         // The summary is fetched once and filled in asynchronously after the preset change.
         const deadline = Date.now() + 15_000;
         let b = await block();
@@ -3103,7 +3103,7 @@ const FLOWS = [
       await page.goto(new URL('?preset=pittsburgh&sites=v1:40.4405,-79.996~office~4~~~~~My%20own%20lot', ctx.baseUrl).href, { waitUntil: 'domcontentloaded' });
       await waitReady(120_000);
       await D(() => {
-        const d = window.__torrent;
+        const d = window.__deluge;
         d.getSolver().applyBrush({ kind: 'wall', ax: 100, ay: 100, bx: 140, by: 100, radius: 2, height: 3 });
         d.setStageOffset(1.5);
       });
@@ -3116,12 +3116,12 @@ const FLOWS = [
       check(r, 'Parcel A’s verdict is the panel’s own sentences, read live', /^Parcel A, in the panel’s own words: (Water reaches Demo parcel A \(North Shore\) at the .+ m at the lowest grade\.|Demo parcel A \(North Shore\) stays dry)/.test(cap('a-verdict')), cap('a-verdict').slice(0, 200));
       check(r, 'egress, EAL and the two floor levels are filled in from the sweep', /route|access|Egress/.test(cap('a-egress')) && /Expected annual loss|No expected annual loss/.test(cap('a-eal')) && /Designed to the FEMA 1 % level, the floor is .*(m above grade|m above the lowest grade).*Designed for the worst level that reaches it, the floor is \d/.test(cap('a-floor')), `${cap('a-egress').slice(0, 90)} | ${cap('a-eal').slice(0, 60)} | ${cap('a-floor').slice(0, 160)}`);
       check(r, 'the pick: B is dry where A is not', /B is dry at the 1936 record crest \(46\.0 ft\); A takes \d+\.\d m at the lowest grade/.test(cap('pick')), cap('pick').slice(0, 220));
-      await D(() => document.getElementById('ui-root').__torrentUI.story.stop());
+      await D(() => document.getElementById('ui-root').__delugeUI.story.stop());
       await sleep(600);
       const post = await userScene();
       check(r, 'Esc / close: the user’s site, wall, river and view are back', JSON.stringify({ ...post, walls: 0 }) === JSON.stringify({ ...pre, walls: 0 }) && Math.abs(post.walls - pre.walls) <= 2, `before ${JSON.stringify(pre)} · after ${JSON.stringify(post)}`);
       // Esc in the middle of the sweep: the sweep is cancelled, and the user's state comes back once it has stopped.
-      await D(() => document.getElementById('ui-root').__torrentUI.story.play('site-decision', { pace: 0.05, maxWaitCapMs: 30_000 }));
+      await D(() => document.getElementById('ui-root').__delugeUI.story.play('site-decision', { pace: 0.05, maxWaitCapMs: 30_000 }));
       const inSweep = await page
         .waitForFunction(() => /Level \d+ of \d+/.test(document.querySelector('[data-site="sweep-status"]')?.textContent ?? ''), null, { timeout: 60_000 })
         .then(() => true, () => false);
@@ -3147,7 +3147,7 @@ const FLOWS = [
       await waitReady(120_000);
       // The user's own design work: a short wall of theirs, captured as their Design A, and the river raised a little.
       await D(() => {
-        const d = window.__torrent;
+        const d = window.__deluge;
         d.getSolver().applyBrush({ kind: 'wall', ax: 100, ay: 100, bx: 140, by: 100, radius: 2, height: 3 });
         d.setStageOffset(1.5);
         const sec = document.querySelector('[data-section="designs"]');
@@ -3165,7 +3165,7 @@ const FLOWS = [
       check(r, 'avoided EAL and cost come from the comparison', /avoids \$[\d.]+\s?[kMB]? a year \(\$.+\) in expected annual loss/.test(cap('benefit')) && /unit rates: \$[\d.]+\s?[kMB]? \(unit-cost estimate/.test(cap('benefit')), cap('benefit').slice(0, 220));
       check(r, 'the BCR is never alone: central, range and verdict, at 7 % over 50 years', /At 7 % over 50 yr \(FEMA standard\), the BCR is \d+\.\d\d, with a range of \d+\.\d\d( – \d+\.\d\d)?\. The panel’s verdict: (Pays|Uncertain|Does not pay|Makes)/.test(cap('bcr')), cap('bcr').slice(0, 220));
       check(r, 'break-even cost against the estimate', /still pay at the central estimate: \$[\d.]+\s?[kMB]?, against an estimate of \$/.test(cap('breakeven')), cap('breakeven').slice(0, 160));
-      await D(() => document.getElementById('ui-root').__torrentUI.story.stop());
+      await D(() => document.getElementById('ui-root').__delugeUI.story.stop());
       await sleep(600);
       const post = await userScene();
       const theirs = await userDesign();
@@ -3188,11 +3188,11 @@ const FLOWS = [
         await page.goto(new URL('?story=dam-upstream', ctx.baseUrl).href, { waitUntil: 'domcontentloaded' });
         await waitReady(120_000);
         const started = await page
-          .waitForFunction(() => document.querySelector('.dl-nar[data-story="dam-upstream"]:not([hidden])') && window.__torrent.getScenario()?.damBreach?.nidId === 'MI00549', null, { timeout: 240_000 })
+          .waitForFunction(() => document.querySelector('.dl-nar[data-story="dam-upstream"]:not([hidden])') && window.__deluge.getScenario()?.damBreach?.nidId === 'MI00549', null, { timeout: 240_000 })
           .then(() => true, () => false);
-        const s0 = await D(() => ({ preset: window.__torrent.getState().presetId, mode: window.__torrent.getScenario()?.damBreach?.mode ?? null, url: location.search }));
+        const s0 = await D(() => ({ preset: window.__deluge.getState().presetId, mode: window.__deluge.getScenario()?.damBreach?.mode ?? null, url: location.search }));
         check(r, '?story=dam-upstream loads the valley below Edenville Dam, breaches it flood-induced and starts the story', started && s0.preset === null && s0.mode === 'flood' && /story=dam-upstream/.test(s0.url), JSON.stringify(s0));
-        await D(() => document.getElementById('ui-root').__torrentUI.story.stop());
+        await D(() => document.getElementById('ui-root').__delugeUI.story.stop());
         await sleep(300);
         // The whole story at 1/20 pace, on the area already loaded (the player keeps it rather than loading it again).
         const out = await playStory(r, 'dam-upstream', ['dam', 'band', 'wave', 'arrivals', 'county', 'limits'], { shots: ['arrivals'], pace: 0.2 });
@@ -3200,10 +3200,10 @@ const FLOWS = [
         check(r, 'the dam’s NID numbers and the band of eight relations are read live', /^Edenville Dam \(NID MI00549\) held [\d,]+ acre-ft/.test(cap('dam')) && /peak outflow at [\d,]+ m³\/s – [\d,]+ m³\/s for this dam\. The map runs the central case, [\d,]+ m³\/s \(Froehlich 1995/.test(cap('band')), `${cap('dam').slice(0, 90)} | ${cap('band').slice(0, 200)}`);
         check(r, 'arrival times downstream, each with its spread across the band', /at 1 km in (\d+ min|[\d.]+ h) \(.+ across the band\)/.test(cap('arrivals')) && !/\{/.test(cap('arrivals')), cap('arrivals').slice(0, 260));
         check(r, 'what to tell the county is filled in', /For the county: water at 2 km in (\d+ min|[\d.]+ h|not yet)/.test(cap('county')), cap('county').slice(0, 200));
-        const loads = await D(() => window.__torrent.getState().terrainName);
+        const loads = await D(() => window.__deluge.getState().terrainName);
         await page.keyboard.press('Escape');
         await sleep(300);
-        const after = await D(() => ({ visible: !!document.querySelector('.dl-nar:not([hidden])'), terrain: window.__torrent.getState().terrainName, breach: window.__torrent.getScenario()?.damBreach?.nidId ?? null, url: location.search }));
+        const after = await D(() => ({ visible: !!document.querySelector('.dl-nar:not([hidden])'), terrain: window.__deluge.getState().terrainName, breach: window.__deluge.getScenario()?.damBreach?.nidId ?? null, url: location.search }));
         check(r, 'Esc leaves the story on the dam’s valley (the scene it loaded), ?story= dropped', !after.visible && after.terrain === loads && after.breach === 'MI00549' && !/story=/.test(after.url), JSON.stringify(after));
         r.metrics.intercepted = intercepted.slice(0, 12);
       } finally {
@@ -3218,7 +3218,7 @@ const FLOWS = [
 /** Flows 60–62: the user's own state the business stories must put back (sites, designs, walls, river, view). */
 async function userScene() {
   return D(() => {
-    const d = window.__torrent;
+    const d = window.__deluge;
     const s = d.getState();
     return {
       sites: [...document.querySelectorAll('.dl-site-item .dl-impact-name')].map((e) => e.textContent),
@@ -3240,7 +3240,7 @@ async function userScene() {
 async function playStory(r, id, order, { shots = [], pace = 0.05 } = {}) {
   const sample = () =>
     D(() => {
-      const ui = document.getElementById('ui-root')?.__torrentUI;
+      const ui = document.getElementById('ui-root')?.__delugeUI;
       return {
         ...(ui?.story?.debugState() ?? {}),
         dataState: document.querySelector('.dl-nar')?.getAttribute('data-state') ?? null,
@@ -3251,7 +3251,7 @@ async function playStory(r, id, order, { shots = [], pace = 0.05 } = {}) {
         compareStatus: document.querySelector('[data-compare="status"]')?.textContent ?? '',
       };
     });
-  const ok = await D(([sid, p]) => document.getElementById('ui-root').__torrentUI.story.play(sid, { pace: p, maxWaitCapMs: 30_000 }), [id, pace]);
+  const ok = await D(([sid, p]) => document.getElementById('ui-root').__delugeUI.story.play(sid, { pace: p, maxWaitCapMs: 30_000 }), [id, pace]);
   check(r, `${id} plays from the debug handle`, ok === true, String(ok));
   const seen = new Map();
   const t0 = Date.now();
@@ -3365,11 +3365,11 @@ async function damFlow(r, ctx, { tag, fixtures, simMinutes = 30 }) {
   const t0 = Date.now();
   await page.click('[data-dam="breach"]');
   const ok = await page
-    .waitForFunction((nid) => window.__torrent?.getScenario()?.damBreach?.nidId === nid && !window.__torrent.getState().loading, EDENVILLE.nid, { timeout: fixtures ? 180_000 : 400_000 })
+    .waitForFunction((nid) => window.__deluge?.getScenario()?.damBreach?.nidId === nid && !window.__deluge.getState().loading, EDENVILLE.nid, { timeout: fixtures ? 180_000 : 400_000 })
     .then(() => true, () => false);
   r.metrics.loadSeconds = (Date.now() - t0) / 1000;
   const s = await D(() => {
-    const d = window.__torrent;
+    const d = window.__deluge;
     const sc = d.getScenario();
     const g = d.getState().grid;
     const c = g ? d.gridToGeo(g.nx / 2, g.ny / 2) : null;
@@ -3392,7 +3392,7 @@ async function damFlow(r, ctx, { tag, fixtures, simMinutes = 30 }) {
   check(r, 'the link carries the NID id and the scenario, never the dam’s name; the Arrival view is on', s.spec.method === 'central' && !/method=/.test(s.url) && /usecase=dam/.test(s.url) && /nid=MI00549/.test(s.url) && /breach=flood/.test(s.url) && !/Edenville[+ ]Dam/i.test(decodeURIComponent(s.url)) && s.mode === 'arrival', `${s.url} · ${s.mode}`);
   const v0 = (await stats())?.volume ?? 0;
   const wall = await runFor(simMinutes * 60);
-  await D(() => window.__torrent.waitFrames(30));
+  await D(() => window.__deluge.waitFrames(30));
   const v1 = (await stats())?.volume ?? 0;
   r.metrics.runSeconds = wall;
   check(r, `the breach wave enters the map (${simMinutes} simulated min)`, v1 > v0 + 1e5, `volume ${m3(v0)} → ${m3(v1)} in ${num(wall, 1)} s`);
@@ -3421,9 +3421,9 @@ async function damFlow(r, ctx, { tag, fixtures, simMinutes = 30 }) {
   await page.goto(new URL(link, ctx.baseUrl).href, { waitUntil: 'domcontentloaded' });
   await waitReady(120_000);
   const again = await page
-    .waitForFunction((nid) => window.__torrent?.getScenario()?.damBreach?.nidId === nid && !window.__torrent.getState().loading, EDENVILLE.nid, { timeout: 180_000 })
+    .waitForFunction((nid) => window.__deluge?.getScenario()?.damBreach?.nidId === nid && !window.__deluge.getState().loading, EDENVILLE.nid, { timeout: 180_000 })
     .then(() => true, () => false);
-  const peak2 = await D(() => window.__torrent.getScenario()?.damBreach?.peak ?? 0);
+  const peak2 = await D(() => window.__deluge.getScenario()?.damBreach?.peak ?? 0);
   check(r, 'link: reopening it breaches the same dam the same way', again && Math.abs(peak2 - s.spec.peak) < 1e-6 * s.spec.peak, `${again ? 'set up' : 'not set up'}, peak ${Math.round(peak2)} m³/s`);
 }
 
@@ -3440,7 +3440,7 @@ async function surgeFlow(r, ctx, { tag, fixtures, minutes, point = FTM_POINT, ff
   const ready = await page
     .waitForFunction(
       () => {
-        const s = window.__torrent?.getState();
+        const s = window.__deluge?.getState();
         return !!s && !s.loading && !!s.scenario?.coastal && document.querySelector('[data-site="ladder"]')?.value === 'stage' && document.querySelectorAll('.dl-site-ladder input[data-level^="ewl-"]').length === 5 && document.querySelectorAll('.dl-site-item').length >= 1;
       },
       null,
@@ -3449,7 +3449,7 @@ async function surgeFlow(r, ctx, { tag, fixtures, minutes, point = FTM_POINT, ff
     .then(() => true, () => false);
   r.metrics.loadSeconds = (Date.now() - t0) / 1000;
   const s = await D(() => {
-    const sc = window.__torrent.getScenario();
+    const sc = window.__deluge.getScenario();
     return {
       coastal: sc?.coastal ? { station: sc.coastal.stationName, km: sc.coastal.stationKm, datum: sc.coastal.datum, mhhw: sc.coastal.mhhw, runs: sc.coastal.seaRuns, l100: sc.coastal.levels.at(-1)?.elevation } : null,
       sea: sc?.sources.filter((x) => x.type === 'stage').map((x) => ({ id: x.id, gx: Math.round(x.gx), gy: Math.round(x.gy), r: Math.round(x.radius) })) ?? [],
@@ -3474,7 +3474,7 @@ async function surgeFlow(r, ctx, { tag, fixtures, minutes, point = FTM_POINT, ff
   await page.fill('[data-site-field="duration"]', String(minutes));
   await page.dispatchEvent('[data-site-field="duration"]', 'change');
   const before = await D(() => {
-    const st = window.__torrent.getState();
+    const st = window.__deluge.getState();
     return { rain: st.sim.rainRate, stageOffset: st.stageOffset, sources: st.sources.length };
   });
   await shot(`${tag}-surge-site`);
@@ -3491,7 +3491,7 @@ async function surgeFlow(r, ctx, { tag, fixtures, minutes, point = FTM_POINT, ff
     caveats: !!document.querySelector('[data-site="surge-caveats"]'),
     gauge: document.querySelector('[data-site="surge-gauge"]')?.textContent ?? '',
     after: (() => {
-      const st = window.__torrent.getState();
+      const st = window.__deluge.getState();
       return { rain: st.sim.rainRate, stageOffset: st.stageOffset, sources: st.sources.length };
     })(),
   }));
@@ -3516,7 +3516,7 @@ async function surgeFlow(r, ctx, { tag, fixtures, minutes, point = FTM_POINT, ff
   const missing = has.filter((x) => !html.includes(x));
   check(r, 'the site assessment cites NOAA’s extreme water levels and carries the caveats', missing.length === 0 && !/<script/i.test(html), missing.length ? `missing: ${missing.join(', ')}` : `${(html.length / 1024).toFixed(0)} KB`);
   // Today vs 2050 SSP5-8.5: the same ladder with NOAA's Intermediate sea-level rise at the gauge on top.
-  await D(() => window.__torrent.store.set({ climate: { horizon: '2050', pathway: 'ssp585', scaling: 'cc' } }));
+  await D(() => window.__deluge.store.set({ climate: { horizon: '2050', pathway: 'ssp585', scaling: 'cc' } }));
   await sleep(300);
   const enabled = await D(() => document.querySelector('[data-site="run-climate-sweep"]')?.disabled === false);
   check(r, '“Today vs future” is offered on the surge ladder under 2050 SSP5-8.5', enabled, String(enabled));
@@ -3529,12 +3529,12 @@ async function surgeFlow(r, ctx, { tag, fixtures, minutes, point = FTM_POINT, ff
     r.metrics.climate = cmp.eal;
     check(r, 'today vs 2050: the sea is raised by NOAA’s 0.32 m at the gauge and the EAL is compared', cdone && /0\.32 m/.test(cmp.block) && /EAL/.test(cmp.eal), cmp.eal.slice(0, 200));
   }
-  await D(() => window.__torrent.store.set({ climate: { horizon: 'today', pathway: 'ssp585', scaling: 'cc' } }));
+  await D(() => window.__deluge.store.set({ climate: { horizon: 'today', pathway: 'ssp585', scaling: 'cc' } }));
   if (!fixtures) return;
   await page.goto(new URL(`?usecase=surge&at=${point.lat},${point.lon}`, ctx.baseUrl).href, { waitUntil: 'domcontentloaded' });
   await waitReady(120_000);
   const again = await page
-    .waitForFunction(() => window.__torrent?.getScenario()?.coastal?.stationId === '8725520' && document.querySelector('[data-site="ladder"]')?.value === 'stage', null, { timeout: 180_000 })
+    .waitForFunction(() => window.__deluge?.getScenario()?.coastal?.stationId === '8725520' && document.querySelector('[data-site="ladder"]')?.value === 'stage', null, { timeout: 180_000 })
     .then(() => true, () => false);
   check(r, 'link: ?usecase=surge&at= reopens the surge set-up', again, String(again));
 }
@@ -3613,7 +3613,7 @@ async function addressSetUp(r, at, timeoutMs, label = 'search') {
   const ready = await page
     .waitForFunction(
       (p) => {
-        const s = window.__torrent?.getState();
+        const s = window.__deluge?.getState();
         const sel = document.querySelector('[data-site="ladder"]');
         return !!s && s.presetId === null && !!s.terrainName && !s.loading && document.querySelectorAll('.dl-site-item').length >= 1 && sel?.value === 'rain' && document.querySelectorAll('.dl-site-ladder input[data-level^="a14-"]').length === 5;
       },
@@ -3622,8 +3622,8 @@ async function addressSetUp(r, at, timeoutMs, label = 'search') {
     )
     .then(() => true, () => false);
   const out = await D(() => {
-    const s = window.__torrent.getState();
-    const t = window.__torrent.getTerrain?.() ?? null;
+    const s = window.__deluge.getState();
+    const t = window.__deluge.getTerrain?.() ?? null;
     return {
       name: s.terrainName,
       grid: s.grid,
@@ -3652,7 +3652,7 @@ async function addressSetUp(r, at, timeoutMs, label = 'search') {
 /** Press "Run the sweep" in the notice and check the sweep, its EAL, the caveats, the restored scenario and the report. */
 async function addressSweep(r, tag) {
   const before = await D(() => {
-    const s = window.__torrent.getState();
+    const s = window.__deluge.getState();
     return { rain: s.sim.rainRate, stageOffset: s.stageOffset, storms: s.storms.length, sources: s.sources.length };
   });
   await shot(`${tag}-address-site`);
@@ -3669,7 +3669,7 @@ async function addressSweep(r, tag) {
     caveats: !!document.querySelector('[data-site="rain-caveats"]'),
     chart: !!document.querySelector('.dl-site-sweep-out svg'),
     after: (() => {
-      const s = window.__torrent.getState();
+      const s = window.__deluge.getState();
       return { rain: s.sim.rainRate, stageOffset: s.stageOffset, storms: s.storms.length, sources: s.sources.length };
     })(),
   }));

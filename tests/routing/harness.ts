@@ -7,7 +7,7 @@
  *
  * window.__harness = { ready, bench(), state() } for screenshot automation (bench = warm in-browser timings).
  */
-import { createRouter, type TorrentRouteResult } from '../../src/routing/index';
+import { createRouter, type DelugeRouteResult } from '../../src/routing/index';
 import type { RoadNetwork, Shelter } from '../../src/contracts';
 import type { PresetMeta } from '../../src/data/presets';
 import { floodRect, makeCity, shelterAt } from './city';
@@ -37,7 +37,7 @@ const router = createRouter();
 let world: World;
 let depth: Float32Array;
 let start: { gx: number; gy: number } | null = null;
-let lastRoute: TorrentRouteResult | null = null;
+let lastRoute: DelugeRouteResult | null = null;
 let timings = '';
 let background: ImageBitmap | null = null;
 

@@ -234,7 +234,7 @@ export const SITE_METHOD_NOTES: ReadonlyArray<{ title: string; text: string }> =
     title: 'Expected annual loss and BCR',
     text:
       'EAL by the trapezoid rule over annual exceedance probability (1/T), reported without and with the tail term (the rarest level’s loss times its ' +
-      `probability) — Torrent runs events, it does not know how often they happen. BCR = PV(avoided EAL) / cost at ${Math.round(DISCOUNT_RATE_FEMA * 1000) / 10} % (FEMA BCA default) ` +
+      `probability) — Deluge runs events, it does not know how often they happen. BCR = PV(avoided EAL) / cost at ${Math.round(DISCOUNT_RATE_FEMA * 1000) / 10} % (FEMA BCA default) ` +
       `and ${Math.round(DISCOUNT_RATE_LOW * 1000) / 10} %, over each option’s FEMA standard useful life (BCA Reference Guide 2009, App. D: walls and levees 50 years, raising a home 30, raising another building or dry floodproofing it 25), on the mid of the EAL range. Only walls and levees have unit costs here; for the other ` +
       'options the most they could cost and still break even is shown instead.',
   },
@@ -313,7 +313,7 @@ export function buildSiteReport(i: SiteReportInput): HTMLElement {
   const sections: HTMLElement[] = [];
   sections.push(
     h('header', { class: 'dl-rep-head' },
-      h('div', { class: 'dl-rep-kicker' }, 'Torrent — site assessment (flood screening)'),
+      h('div', { class: 'dl-rep-kicker' }, 'Deluge — site assessment (flood screening)'),
       h('h1', null, `${i.sites.length === 1 ? i.sites[0].spec.name || 'Site' : `${i.sites.length} candidate sites`} — ${i.terrainName}`),
       h('p', { class: 'dl-rep-meta' }, `Generated ${i.generatedAt.toISOString().slice(0, 16).replace('T', ' ')} UTC · ${i.regionName} costs, 2026 USD`),
       h('p', { class: 'dl-rep-warn' },

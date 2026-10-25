@@ -2,7 +2,7 @@ import type {
   AppActions,
   AppState,
   CameraPose,
-  TorrentDebugAPI,
+  DelugeDebugAPI,
   FloodRenderer,
   FloodSolver,
   PickResult,
@@ -31,9 +31,9 @@ export interface GridSample {
 }
 
 /**
- * Extras beyond the TorrentDebugAPI contract. Non-contract, for automation and debugging only.
+ * Extras beyond the DelugeDebugAPI contract. Non-contract, for automation and debugging only.
  */
-export interface TorrentDebugExtras {
+export interface DelugeDebugExtras {
   /** The application object itself (diagnostics / profiling only). */
   readonly app: App;
   readonly store: Store;
@@ -112,29 +112,29 @@ export interface TorrentDebugExtras {
   waitFrames(n: number): Promise<void>;
 }
 
-export type TorrentDebug = TorrentDebugAPI & TorrentDebugExtras;
+export type DelugeDebug = DelugeDebugAPI & DelugeDebugExtras;
 
 declare global {
   interface Window {
-    __torrent?: TorrentDebug;
+    __deluge?: DelugeDebug;
   }
 }
 
 /**
- * Build the debug API for an App. `main.ts` exposes it as `window.__torrent` through the forwarding handle
+ * Build the debug API for an App. `main.ts` exposes it as `window.__deluge` through the forwarding handle
  * (see debugHandle.ts) so automation can await `ready` before the App module has even loaded.
  */
-export function createDebugApi(app: App, ready: Promise<void>): TorrentDebug {
+export function createDebugApi(app: App, ready: Promise<void>): DelugeDebug {
   const { store, actions } = app;
 
   const requireSolver = () => {
     const solver = app.scenes?.scene?.solver;
-    if (!solver) throw new Error('No terrain loaded yet (await __torrent.ready)');
+    if (!solver) throw new Error('No terrain loaded yet (await __deluge.ready)');
     return solver;
   };
   const terrain = () => app.scenes?.scene?.terrain ?? null;
 
-  const api: TorrentDebug = {
+  const api: DelugeDebug = {
     ready,
     errors: app.errors.errors,
 

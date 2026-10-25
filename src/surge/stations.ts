@@ -23,7 +23,7 @@
  */
 import { fetchBytes } from '../data/net';
 
-export const SURGE_FORMAT = 'torrent-ewl-1';
+export const SURGE_FORMAT = 'deluge-ewl-1';
 /** Annual exceedance probabilities baked per station, in file order (CO-OPS publishes 0.99 … 0.01). */
 export const SURGE_AEPS = [0.99, 0.5, 0.1, 0.02, 0.01] as const;
 /** Their return periods, years (1 / AEP). */

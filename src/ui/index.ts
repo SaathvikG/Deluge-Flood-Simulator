@@ -1,5 +1,5 @@
 /**
- * Torrent UI — mountUI(root, store, actions) renders the whole interface from store state, and
+ * Deluge UI — mountUI(root, store, actions) renders the whole interface from store state, and
  * createToolController(canvas, deps) turns canvas pointer input into edits (see tools.ts).
  *
  * Rendering model: every component registers selector → apply bindings on a single Binder. On each
@@ -123,8 +123,8 @@ export function mountUI(root: HTMLElement, store: Store, actions: AppActions): v
   });
 
   // Automation / dev hook (not part of the contract), compiled out of a released build: FINDINGS.json SEC-07.
-  if (import.meta.env.DEV || __TORRENT_DEBUG_API__) {
-    (root as HTMLElement & { __torrentUI?: unknown }).__torrentUI = { picker, help, how, panel, tutorial, useCases, story };
+  if (import.meta.env.DEV || __DELUGE_DEBUG_API__) {
+    (root as HTMLElement & { __delugeUI?: unknown }).__delugeUI = { picker, help, how, panel, tutorial, useCases, story };
   }
 }
 

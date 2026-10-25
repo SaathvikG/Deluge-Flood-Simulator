@@ -285,7 +285,7 @@ function startLiveConditioning(elevation: Float32Array, n: number, cellSize: num
   };
   let worker: Worker | null = null;
   try {
-    if (typeof Worker === 'function') worker = new Worker(new URL('./liveWorker.ts', import.meta.url), { type: 'module', name: 'torrent-live-terrain' });
+    if (typeof Worker === 'function') worker = new Worker(new URL('./liveWorker.ts', import.meta.url), { type: 'module', name: 'deluge-live-terrain' });
   } catch (e) {
     console.warn('[data] live-terrain worker unavailable, conditioning on the main thread:', e);
   }

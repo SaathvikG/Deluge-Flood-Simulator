@@ -10,10 +10,10 @@
     -->
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Torrent — real-time flood simulation</title>
+    <title>Deluge — real-time flood simulation</title>
     <meta
       name="description"
-      content="Torrent simulates floods in real time on real USGS terrain: shallow-water equations solved on your GPU with WebGPU compute shaders. Raise the rivers, crank the rain, build levees and watch evacuation routes re-plan."
+      content="Deluge simulates floods in real time on real USGS terrain: shallow-water equations solved on your GPU with WebGPU compute shaders. Raise the rivers, crank the rain, build levees and watch evacuation routes re-plan."
     />
     <meta name="theme-color" content="#05070d" />
     <meta name="color-scheme" content="dark" />
@@ -33,7 +33,7 @@
         -webkit-font-smoothing: antialiased;
         -webkit-tap-highlight-color: transparent;
       }
-      #torrent-canvas {
+      #deluge-canvas {
         position: fixed;
         inset: 0;
         width: 100%;
@@ -82,7 +82,7 @@
     </style>
   </head>
   <body>
-    <canvas id="torrent-canvas" tabindex="0" aria-label="3D flood simulation view"></canvas>
+    <canvas id="deluge-canvas" tabindex="0" aria-label="3D flood simulation view"></canvas>
     <div id="ui-root"></div>
     <div id="boot" aria-hidden="true">
       <div class="mark">
@@ -90,12 +90,12 @@
           <path d="M32 7C23 20 14 30.5 14 40.5a18 18 0 0 0 36 0C50 30.5 41 20 32 7z" fill="#3aa0ff" />
           <path d="M19 41.5c4.3-3 8.7-3 13 0s8.7 3 13 0" stroke="#eaf8ff" stroke-width="3.6" fill="none" stroke-linecap="round" />
         </svg>
-        Torrent
+        Deluge
       </div>
     </div>
     <noscript>
       <p style="position: fixed; inset: 0; display: grid; place-items: center; margin: 0">
-        Torrent needs JavaScript and WebGPU to run.
+        Deluge needs JavaScript and WebGPU to run.
       </p>
     </noscript>
     <script type="module" src="/src/main.ts"></script>

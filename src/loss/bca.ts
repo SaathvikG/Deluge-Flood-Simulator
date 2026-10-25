@@ -53,7 +53,7 @@ export interface UsefulLifeEntry {
   row: string;
 }
 
-/** FEMA BCA Reference Guide (2009) Appendix D, the rows Torrent's mitigation options map to. */
+/** FEMA BCA Reference Guide (2009) Appendix D, the rows Deluge's mitigation options map to. */
 export const USEFUL_LIFE: Readonly<Record<UsefulLifeKind, UsefulLifeEntry>> = {
   floodwall: { years: 50, range: [35, 50], row: 'Concrete infrastructure, flood walls, roads, bridges, major drainage system' },
   earthen: { years: 50, range: [35, 100], row: 'Major infrastructure (minor localized flood reduction projects)' },

@@ -388,7 +388,7 @@ test('surge table: oversized, not JSON, or hostile — refused with a fixed mess
   const e2 = await withFetch(serve('<html><script>window.__pwned=1</script></html>'), () => loadSurgeTable('https://example.test/surge/ewl-stations.json').then(() => null, (e: Error) => e));
   assert.equal(e2?.message, 'Surge table: not JSON');
   resetSurgeCache();
-  const hostile = '{"format":"torrent-ewl-1","aeps":[0.99,0.5,0.1,0.02,0.01],"stations":[{"id":"1","name":"<img src=x onerror=alert(1)>"}]}';
+  const hostile = '{"format":"deluge-ewl-1","aeps":[0.99,0.5,0.1,0.02,0.01],"stations":[{"id":"1","name":"<img src=x onerror=alert(1)>"}]}';
   const e3 = await withFetch(serve(hostile), () => loadSurgeTable('https://example.test/surge/ewl-stations.json').then(() => null, (e: Error) => e));
   assert.equal(e3?.message, 'Surge table: no valid station');
   resetSurgeCache();

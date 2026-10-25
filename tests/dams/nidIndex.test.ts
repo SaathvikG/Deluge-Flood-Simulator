@@ -109,7 +109,7 @@ test('encode → decode round-trips every field', () => {
 test('hostile index files: wrong magic, short, a lying header, too many records, broken names → refused', () => {
   const good = encodeNidIndex([dam(), dam({ id: 'TX00002' })]);
   const bad = (mut: (b: Uint8Array) => Uint8Array) => mut(good.slice());
-  assert.throws(() => decodeNidIndex(bad((b) => ((b[0] = 0x58), b))), /not a Torrent dam index/);
+  assert.throws(() => decodeNidIndex(bad((b) => ((b[0] = 0x58), b))), /not a Deluge dam index/);
   assert.throws(() => decodeNidIndex(good.subarray(0, 12)), /too short/);
   assert.throws(() => decodeNidIndex(bad((b) => b.subarray(0, b.length - 1))), /length does not match|name count/);
   assert.throws(() => decodeNidIndex(new Uint8Array([...good, 0x41])), /length does not match/);

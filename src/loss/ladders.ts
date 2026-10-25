@@ -203,7 +203,7 @@ export type LadderKind = 'stage' | 'scale' | 'rain';
  * The event ladders a scenario can run, and the one the Site check picks by itself ('auto'): a researched river or
  * tide ladder (a preset's, or a coastal live area's tide-station levels) first; then, on a live area or a rain-led
  * preset where NOAA Atlas 14 covers the map, the rain ladder; then the stage slider's marks; else the forcing
- * multipliers. Shared by the panel (src/ui/siteCheck.ts) and the CLI (src/cli/scenario.ts), so `torrent site` sweeps
+ * multipliers. Shared by the panel (src/ui/siteCheck.ts) and the CLI (src/cli/scenario.ts), so `deluge site` sweeps
  * what the app sweeps.
  */
 export function ladderKinds(
