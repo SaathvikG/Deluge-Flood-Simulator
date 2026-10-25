@@ -93,4 +93,4 @@ export function isAllowedDataUrl(url) {
 }
 
 /** R9: the only external links the wrapper will ever hand to the OS browser. */
-export const EXTERNAL_LINKS = Object.freeze(['https://github.com/rkottomt/deluge-flood-sim']);
+export const EXTERNAL_LINKS = Object.freeze(['https://github.com/SaathvikG/Deluge-Flood-Simulator']);

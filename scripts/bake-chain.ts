@@ -16,7 +16,7 @@
  * 1. CENTRELINE — OpenStreetMap waterways (© OpenStreetMap contributors, ODbL 1.0). The OSM API 0.6 `map` call is
  *    fetched in 0.03° tiles along a coarse corridor (ChainDef.route ± corridorDeg) and cached in
  *    artifacts/<id>-build/chain-osm/ (gitignored). Overpass would be one query, but the public instances answered
- *    "too busy"/504 for every corridor-sized request on the day of this bake (12 Oct 2026); the tiled API call is
+ *    "too busy"/504 for every corridor-sized request when this was baked; the tiled API call is
  *    slower and always works. `waterway=river|stream` ways become a DIRECTED graph (OSM draws waterways in the
  *    flow direction); the profile is the shortest downstream path from the node nearest ChainDef.source to the node
  *    nearest ChainDef.end. Edges against the drawn direction cost 5× (a mis-drawn way does not break the route),

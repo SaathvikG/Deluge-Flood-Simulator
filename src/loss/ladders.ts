@@ -3,7 +3,7 @@
  * comes from and — only where a published frequency analysis gives one — its return period.
  *
  * Levels are gauge readings in FEET above the gauge datum, the same unit as StageControl.marks (the app converts them
- * with stageOffsetForFeet). Every number below was read from the source named next to it in October 2026; a
+ * with stageOffsetForFeet). Every number below was read from the source named next to it; a
  * "converted" value is the source's NAVD88 elevation minus the gauge datum, and says so. A level without a return
  * period is NOT given one here: the panel asks the user for it and labels it "your input".
  *

@@ -9,7 +9,7 @@
  *
  * READING (fetchCopernicusDEM)
  *   • One COG per 1°×1° tile, 3600×3600 Float32, Deflate with the floating-point predictor, internal 1024² tiles and
- *     four overview levels (verified 2026-09-19, artifacts/nepal-build/out-cog.txt). geotiff fetches only the internal
+ *     four overview levels (verified, artifacts/nepal-build/out-cog.txt). geotiff fetches only the internal
  *     tiles a window touches over HTTP range requests, so an 8 km domain costs a few MB out of a 52 MB file.
  *   • A domain may straddle a tile line (the Betrawati domain crosses 28.0 N), so the covering tiles are mosaicked on a
  *     single virtual sample grid before resampling.

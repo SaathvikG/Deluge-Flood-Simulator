@@ -1,7 +1,7 @@
 /**
  * Pittsburgh, 18 March 1936: the St. Patrick's Day crest, an evacuation, and the North Shore levee — what a wall
- * would have saved. Facts: public/presets/pittsburgh/meta.json (gauge, crests, the demo levee) and DEMO.md (the NWS
- * impact statements in Q1, the routing rule in Q10, the protected-land estimate in Q9, the limits in §6). The land the
+ * would have saved. Facts: public/presets/pittsburgh/meta.json (gauge, crests, the demo levee) and the NWS
+ * impact statements; the routing rule, the protected-land estimate and the limits are the app's own. The land the
  * wall keeps dry is read live ({kept}); the solver's own depths are not typed into captions.
  */
 import type { Story } from '../types';
@@ -28,7 +28,7 @@ export const PITTSBURGH_STORY: Story = {
       kicker: '18 March 1936',
       caption:
         'The St. Patrick’s Day flood: snowmelt and heavy rain drove the river to a record 46 ft. On the gauge now: {stage}. The rise is a time-lapse; the flood after it is solved at real speed.',
-      source: 'meta.json; DEMO.md Q8',
+      source: 'meta.json',
       durationMs: 9000,
       actions: [{ kind: 'raiseStage', feet: 46 }, { kind: 'play', speed: 300 }],
       until: { kind: 'stageArrived' },
@@ -39,7 +39,7 @@ export const PITTSBURGH_STORY: Story = {
       kicker: '46 ft at the Point',
       caption:
         'The Point, the North Shore stadiums and the Strip District go under. The National Weather Service’s impact statement for this crest: up to 15 ft of water in the Golden Triangle.',
-      source: 'NWS impact statements, Point gauge (PTTP1); DEMO.md Q1',
+      source: 'NWS impact statements, Point gauge (PTTP1)',
       durationMs: 10000,
       camera: { kind: 'scenario', zoom: 0.7, yawOffset: -0.25, seconds: 2.5, orbitDeg: 8 },
       actions: [{ kind: 'waterView', mode: 'depth' }],
@@ -49,7 +49,7 @@ export const PITTSBURGH_STORY: Story = {
       kicker: 'Getting out',
       caption:
         'Census roads: the fastest drive from downtown to the nearest dry shelter, avoiding any road under more than 30 cm of water — roughly where cars float — and re-planning as the water moves.',
-      source: 'DEMO.md Q10; Census TIGER/Line roads',
+      source: 'Census TIGER/Line roads',
       durationMs: 9000,
       actions: [{ kind: 'evacuate' }],
       until: { kind: 'route' },
@@ -61,7 +61,7 @@ export const PITTSBURGH_STORY: Story = {
       kicker: 'What a wall would have saved',
       caption:
         'The planner’s question: a 2.4 km floodwall along the North Shore, its top about a metre above the 1936 record. The flood is reset and the river rises again with the wall in place.',
-      source: 'Scenario demo levee, meta.json; DEMO.md beat 4',
+      source: 'Scenario demo levee, meta.json',
       durationMs: 9000,
       camera: { kind: 'levee', seconds: 2 },
       actions: [{ kind: 'waterView', mode: 'realistic' }, { kind: 'levee' }],
@@ -73,7 +73,7 @@ export const PITTSBURGH_STORY: Story = {
       kicker: 'Kept dry',
       caption:
         'Green is land that would be under water at this level without the wall: {kept}, recomputed from the live water about once a second. Gauge: {stage}.',
-      source: 'Protected-land estimate, DEMO.md Q9',
+      source: 'Protected-land estimate',
       durationMs: 12000,
       until: { kind: 'stageArrived' },
       maxWaitMs: 90_000,
@@ -83,7 +83,7 @@ export const PITTSBURGH_STORY: Story = {
       kicker: 'Read it honestly',
       caption:
         'Bare-earth terrain: no storm drains, underpasses or buildings in the elevation model, and no calibration against a measured flood. For exploring and explaining — not for engineering decisions.',
-      source: 'DEMO.md §6, Known limitations',
+      source: 'Known limitations',
       durationMs: 9000,
       camera: { kind: 'scenario', seconds: 2.5 },
     },

@@ -1,6 +1,6 @@
 # Deluge for business
 
-*For the owner and for prospective customers. October 2026.*
+*For the owner and for prospective customers.*
 
 Deluge is a flood simulator that runs in a browser tab: real USGS terrain, real buildings and streets, and the 2-D
 shallow-water equations solved on the GPU fast enough to change something and watch the flood again. This document
@@ -10,12 +10,28 @@ far its numbers can be trusted.
 Market figures, competitor notes, regulation and the loss-model sources come from
 [docs/research/business-case.md](docs/research/business-case.md) (confidence-tagged: [V] verified, [S] secondary,
 [M] memory, [I] illustrative). The glacier modelling is in [docs/research/glacier-hazard-chain.md](docs/research/glacier-hazard-chain.md).
-Every number in [§4](#4-three-worked-stories-with-the-apps-own-numbers) was produced by the app itself, on the
+Every number in [§4](#4-six-worked-stories-with-the-apps-own-numbers) was produced by the app itself, on the
 demo data that ships with it, and can be reproduced from the links given there.
+
+## Summary
+
+* **The problem.** Floods are the costliest disasters and mostly uninsured, yet the people deciding about one
+  specific place — a parcel, a portfolio, a wall, a hydropower plant — get a static score or a weeks-long consultant
+  study for a single design.
+* **The product.** An interactive flood model on real terrain, in the browser, that re-solves the flood in seconds
+  when the user changes something, and turns it into the numbers a decision needs: depth at the planned floor, when
+  the way out closes, how many people get out, loss and expected annual loss, and a benefit–cost ratio with its range.
+* **First customers.** Developers, site-selection teams and their lenders (Site check), then hydropower owners and
+  lenders in glacier valleys (the early-warning designer, which no mainstream vendor offers), then insurers,
+  municipalities, dam owners and coastal developers.
+* **Why it can be cheap and private.** The physics runs on the customer's own GPU from a static bundle: no backend, no
+  upload, near-zero serving cost, and the same code headless as a CLI and an HTTP API for batch work.
+* **How far to trust it.** Every number below was produced by the app on shipped demo data and can be reproduced;
+  [§8](#8-honest-limitations) states what the model leaves out before a customer finds it.
 
 **Contents:** [1 The problem](#1-the-problem) · [2 Who buys, and why](#2-who-buys-and-why) ·
 [3 What Deluge does that incumbents don't](#3-what-deluge-does-that-incumbents-dont) ·
-[4 Worked stories](#4-three-worked-stories-with-the-apps-own-numbers) · [5 Pricing](#5-pricing-hypotheses) ·
+[4 Worked stories](#4-six-worked-stories-with-the-apps-own-numbers) · [5 Pricing](#5-pricing-hypotheses) ·
 [6 Go-to-market](#6-go-to-market) · [7 Roadmap](#7-roadmap) · [8 Limitations](#8-honest-limitations) ·
 [9 Try it](#9-try-it)
 
@@ -62,7 +78,7 @@ licence. Lenders come with it, because the same assessment answers the lender's 
 
 Regulation is a weak lever in the US (the SEC climate rule is dead, California SB 261 is enjoined) and a slower one
 abroad (ISSB / IFRS S2 in 35 jurisdictions, CSRD narrowed) [S]; sell on avoided loss, lender and insurer questions
-and grant money, not compliance ([business-case.md §A.3](docs/research/business-case.md#a3-regulatory-status-as-of-oct-2026-state-it-accurately-in-sales-material)).
+and grant money, not compliance ([business-case.md §A.3](docs/research/business-case.md#a3-regulatory-status-as-of-2026-state-it-accurately-in-sales-material)).
 
 ## 3. What Deluge does that incumbents don't
 
@@ -98,10 +114,19 @@ model. It sits at the moment *before* the decision, when someone needs to try op
 7. **Built to be checked.** Open, cited damage curves (JRC 2017), hazard classes (AIDR, FD2321), named constants with
    their sources, mass conservation shown on screen, and every report carries its methods and limits.
 
-## 4. Three worked stories, with the app's own numbers
+## 4. Six worked stories, with the app's own numbers
 
-All three are set up by the in-app **Use cases** dialog or a `?usecase=` link (see [§9](#9-try-it)), on bundled demo
-data. They were run on this branch on a Windows desktop GPU in October 2026, through the dev harness
+| § | Buyer | Question | Headline result |
+|---|---|---|---|
+| 4.1 | Developer | Which of two Pittsburgh parcels? | A passes the 1 % screen but takes 4 m and loses its egress in the record flood; B needs nothing |
+| 4.2 | Insurer or lender | What does Harvey's worst hour do to a 19-asset portfolio? | 15 of 19 reached, $17.3 M physical, $23.6 M insured; a dry data centre still loses $204 k to a cut road |
+| 4.3 | Hydropower | How much warning does a glacier flood give each plant? | The existing alert reached none of the first five places; one gauge gives Chilime 14 min where it had none |
+| 4.4 | Developer, anywhere | Any US address against NOAA Atlas 14 rain | Meyerland's last dry route closes in a 2-year storm, long before the building is at risk |
+| 4.5 | Dam owner | What does an Edenville-type failure send down the valley? | A 4,520–12,080 m³/s band from eight relations; with the routed Froehlich 2008 breach the wave is 8 km down at 76 min |
+| 4.6 | Coastal developer | How often does the sea reach Fort Myers Beach? | EAL $6,090–$18 k a year today, $51 k–$76 k under 2050 SSP5-8.5 |
+
+All six are set up by the in-app **Use cases** dialog or a `?usecase=` link (see [§9](#9-try-it)), on bundled demo
+data. They were run on this branch on a Windows desktop GPU, through the dev harness
 (`window.__deluge`) and the app's own panels and exports; the scripts that drove them are summarised in each story.
 Re-running moves the last digit or two, and §4.1 notes one place where it moves much more.
 
@@ -240,7 +265,7 @@ alert (+22 min at Rasuwagadhi, +31 min at the best site, for Betrawati) is the m
 street address (geocoded by Nominatim), loads a 5 km live area around it from USGS 3DEP, Esri imagery, Census
 roads and (lower 48) NLCD 2021 land cover, drops a site on the point, and sweeps it through the **NOAA Atlas 14** 1-hour rain at 2, 10, 25, 100 and 500
 years — published return periods, so the expected annual loss needs nothing from the user. Run on this branch on a
-GTX 1660 Ti in October 2026 against the real services (e2e flow 22; default building: a 3-storey office, value from
+GTX 1660 Ti against the real services (e2e flow 22; default building: a 3-storey office, value from
 floor area, first floor 0.3 m):
 
 | Address | Atlas 14 1-hour rain, 2 / 10 / 25 / 100 / 500-yr | What the sweep says | EAL |
@@ -261,7 +286,7 @@ pluvial screen that ships an EAL anywhere in the US, not a substitute for the FI
 ### 4.5 Dam owner: what an Edenville-type failure sends down the valley (`?usecase=dam&nid=MI00549&breach=flood`)
 
 The National Inventory of Dams lists 92,625 dams, 16,972 of them high-hazard — a failure would probably cost a life
-(the October 2026 national export; the baked index keeps 12,786 of those among its 55,276 dams above the size
+(the 2026 national export; the baked index keeps 12,786 of those among its 55,276 dams above the size
 threshold). Their owners need breach inundation maps for an Emergency Action Plan, and the emergency
 managers below them need arrival times. Today that is a consultant's HEC-RAS study per dam. Deluge gives the screen
 in a minute: pick the dam, pick sunny-day or flood-induced, and the breach runs on the real valley.

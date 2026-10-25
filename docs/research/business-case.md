@@ -1,6 +1,6 @@
 # Deluge for Business: implementation-ready spec and business case
 
-*Research date: 2026-10-12. Scope: market, competitors, loss-model methods (with numeric tables ready to paste into TypeScript), building valuation, product concept, customer stories, pitch.*
+*Scope: market, competitors, loss-model methods (with numeric tables ready to paste into TypeScript), building valuation, product concept, customer stories, pitch.*
 
 **Confidence key:** [V] = verified against a primary source in this session (for example, values extracted directly from the JRC spreadsheet). [S] = secondary source (press, blog, law-firm alert, market-research summary). [M] = from domain memory, not re-verified this session, so **verify before shipping**. [I] = illustrative assumption I made up for a worked example.
 
@@ -48,7 +48,7 @@
 | **Municipalities / counties / engineers** | FEMA HMA/BRIC/FMA grants need a BCA; BRIC restored by court order, $1 B FY24/25 NOFO, applications closed 2026-07-23 [S] | Before/after mitigation loss, BCR at 7% and 3.1%, maps for public meetings | **5** |
 | **Hospitals / health systems** | CMS emergency-preparedness rule, continuity, water/power/access | Access routes, utility exposure, lead time | 4 |
 
-### A.3 Regulatory status as of Oct 2026 (state it accurately in sales material)
+### A.3 Regulatory status as of 2026 (state it accurately in sales material)
 
 - **US SEC climate rule:** the SEC voted in March 2025 to stop defending it, so it is effectively dead [M].
 - **California SB 261** (biennial climate-risk report, >$500 M revenue): the **Ninth Circuit enjoined enforcement on 2025-11-18** and heard oral argument on 2026-01-09. No merits ruling turned up in the search, so check the docket (No. 25-5327). SB 253 (emissions) proceeds, with a first deadline of 2026-08-10. Sources: https://www.whitecase.com/insight-alert/california-climate-disclosure-laws-ninth-circuit-temporarily-halts-sb-261-and-carb ; https://www.foley.com/insights/publications/2026/01/ninth-circuit-hears-oral-argument-in-challenge-to-california-climate-disclosure-l/

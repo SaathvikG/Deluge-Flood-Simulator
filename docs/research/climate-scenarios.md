@@ -4,7 +4,7 @@ What the **Future climate** control (Weather & rivers) and the Site check's **To
 where every number comes from. Implemented in [`src/climate`](../../src/climate) (pure tables and arithmetic), applied
 by [`src/app/climate.ts`](../../src/app/climate.ts) and [`src/app/simSync.ts`](../../src/app/simSync.ts), and shown
 by [`src/ui/climatePanel.ts`](../../src/ui/climatePanel.ts) and [`src/ui/siteClimate.ts`](../../src/ui/siteClimate.ts).
-Tested in `tests/climate`, end to end in `scripts/e2e.mjs` flow 18. Research done in October 2026.
+Tested in `tests/climate`, end to end in `scripts/e2e.mjs` flow 18.
 
 Tags as in the other research notes: **[V]** read in the primary source (IPCC / NOAA / USACE text, tables or API
 JSON), **[S]** secondary (abstract, agency summary, news), **[M]** a modelling assumption made here, **[C]** computed

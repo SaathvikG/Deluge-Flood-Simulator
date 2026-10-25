@@ -1,8 +1,22 @@
 # Deluge HTTP API
 
-*Status, October 2026: **built** — `deluge serve` ([`src/cli/server.ts`](../src/cli/server.ts),
+*Status: **built** — `deluge serve` ([`src/cli/server.ts`](../src/cli/server.ts),
 [`src/cli/api.ts`](../src/cli/api.ts)) serves the `deluge` CLI ([README → Batch / API](../README.md#batch--api)) as an
 HTTP job API on one machine's GPU. The sections marked **Not built yet** at the end are still a design.*
+
+**Contents:** [Quick start](#quick-start) · [Principles](#principles) · [Running it](#running-it) ·
+[Endpoints](#endpoints) · [Security](#security) · [Example](#example) · [OpenAPI](#openapi) ·
+[Not built yet](#not-built-yet-still-a-sketch)
+
+## Quick start
+
+1. Start the server on this machine (no token needed on loopback): `npx deluge serve`.
+2. Submit a job: `POST /v1/runs`, `/v1/portfolio-assessments` or `/v1/site-checks` with a JSON body. The answer is
+   `202` and a job id.
+3. Poll `GET /v1/jobs/{id}` until `status` is `succeeded`, then download its files from
+   `GET /v1/jobs/{id}/results/{file}`.
+
+A worked request and response are under [Example](#example).
 
 ## Principles
 
@@ -104,8 +118,8 @@ the CLI). The shared `scenario` object is the CLI's scenario options:
   "kind": "run",
   "status": "succeeded",
   "progress": { "fraction": 1, "case": "done" },
-  "createdAt": "2026-10-13T15:48:01.567Z", "startedAt": "2026-10-13T15:48:01.568Z", "finishedAt": "2026-10-13T15:48:07.166Z",
-  "expiresAt": "2026-11-12T15:48:07.166Z",
+  "createdAt": "<ISO 8601 time>", "startedAt": "<ISO 8601 time>", "finishedAt": "<ISO 8601 time>",
+  "expiresAt": "<ISO 8601 time>",
   "engine": { "version": "0.1.0", "commit": "afb11f7deff1", "gpu": "nvidia turing nvidia-geforce-gtx-1660-ti D3D12 …" },
   "request": { "preset": "pittsburgh", "scenario": { "minutes": 10, "stageFt": 46 }, "rasters": true },
   "command": ["deluge", "run", "--preset", "pittsburgh", "--quiet", "--minutes", "10", "--stage-ft", "46", "--out", "."],

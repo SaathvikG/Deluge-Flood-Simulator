@@ -1,7 +1,7 @@
 /// <reference types="node" />
 /**
  * NOAA Atlas 14 rain return periods (src/data/atlas14.ts): the PFDS point-answer parser on real captured responses
- * (tests/fixtures/atlas14/pfds-*.txt, fetched from hdsc.nws.noaa.gov in October 2026) and on malformed / hostile
+ * (tests/fixtures/atlas14/pfds-*.txt, fetched from hdsc.nws.noaa.gov in 2026) and on malformed / hostile
  * variants; the baked same-origin grid (public/atlas14/pf60m-pds.bin) against those PFDS answers; and the grid
  * decoder on truncated, oversized, lying and gzip-bomb inputs. No network: fetch is faked where it is needed.
  *

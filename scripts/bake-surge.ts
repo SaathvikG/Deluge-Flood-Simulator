@@ -15,7 +15,7 @@
  *   sea-level rise       https://api.tidesandcurrents.noaa.gov/dpapi/prod/webapi/product/slr_projections.json
  *                        ?station=<id>&units=metric&report_year=2022&affil=US  (Sweet et al. 2022, median, zeroed 2005)
  *
- * WHY BAKED, NOT LIVE. The CO-OPS APIs do send Access-Control-Allow-Origin: * (checked October 2026), so the page COULD
+ * WHY BAKED, NOT LIVE. The CO-OPS APIs do send Access-Control-Allow-Origin: * (checked in 2026), so the page COULD
  * call them — but 126 stations are 30 kB, a site check must work offline like every other ladder, and a baked table
  * adds no endpoint to the CSP. Re-bake when NOAA updates its EWL analysis.
  */

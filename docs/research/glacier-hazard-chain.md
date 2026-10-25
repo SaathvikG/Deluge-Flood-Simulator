@@ -1,6 +1,6 @@
 # Deluge — Glacier Hazard Chain: implementation-ready technical spec
 
-Research date: 12 October 2026. Method: web and literature review. Scope: sections A–I of the brief.
+Method: web and literature review. Scope: sections A–I of the brief.
 
 How to read the evidence tags used throughout:
 
@@ -216,7 +216,7 @@ a_M/h = (4/9) P^(4/5)        H_M/h = (5/9) P^(4/5)          (max amplitude / hei
 a(x)/h = (3/5) [P·X^(−1/3)]^(4/5),  H(x)/h = (3/4)[P·X^(−1/3)]^(4/5),  X = x/h  (decay)                   [V]
 ```
 
-[V] since Oct 2026 against Evers et al. 2019 (SFOE manual, 2nd ed. v2.1, eqs. 3.13–3.19). These are the FLUME (2-D)
+[V] against Evers et al. 2019 (SFOE manual, 2nd ed. v2.1, eqs. 3.13–3.19). These are the FLUME (2-D)
 equations; a lake spreads the wave (manual §4.2.1, Ruffini et al. 2019), and the dam is overtopped by the crest
 amplitude a, not the height H — see §G.9 for what the engine does with that.
 
@@ -594,7 +594,7 @@ the bake from OSM/DEM before display).
   CHF 200–500 M from a low-reliability page [S — do not show]. Blatten ≈ 46.42 N, 7.82 E (≈). A good "warning worked"
   counterexample but outside the Himalayan data pipeline.
 
-### G.9 Calibration of the chain engine against G.1 and G.3 (October 2026)
+### G.9 Calibration of the chain engine against G.1 and G.3
 
 What was changed, why, and what is left. Every number below is reproduced by `npx tsx scripts/bake-chain.ts &&
 npx tsx scripts/bake-chain-result.ts` and asserted in tests/hazard/calibration.test.ts.
@@ -645,7 +645,7 @@ speed of the avalanche-born debris flow itself (OPRI). Lowering n to 0.035 would
 exactly the fudge this calibration refused; what would justify it is a flood-stage resistance law or surveyed gorge
 sections. Chungthang is within its band.
 
-**Bed resistance: Ferguson's variable-power equation (second pass, October 2026).** The flood-stage resistance law
+**Bed resistance: Ferguson's variable-power equation (second pass).** The flood-stage resistance law
 the residual above asked for, implemented and tested; the result is a modest gain, not a fix.
 
 * *Law.* Ferguson (2007), "Flow resistance equations for gravel- and boulder-bed streams", WRR 43, W05427,
@@ -710,7 +710,7 @@ Nepal run with the VPE (0.17 % with Manning), 0.16 % (0.07 %) at Chamoli — sti
   sections — and this per-preset choice is a statement of where the model stands, not a finding that the Lachen Chu
   is rougher.
 
-**Third pass: the sources, the river and the observations (October 2026).** The second pass ended by naming four
+**Third pass: the sources, the river and the observations.** The second pass ended by naming four
 suspects for the residuals: (a) the source models, (b) the DEM's gorge sections, (c) the South Lhonak breach and the
 Teesta-III reservoir, (d) what the observed times actually are. Each was checked against evidence; four changes were
 adopted, each on physics or a measurement and never on the clock, and two were tried and refused.
@@ -843,7 +843,7 @@ The baked Chungthang median member is now the high-volume one (×1.25: 121.3 min
   2-D floodplain storage in the wide upper valleys against these 1-D DEM sections, and the debris load, which this
   router relaxes to a Takahashi equilibrium of ~0.04 at 2–4 % slopes.
 
-**Fourth pass: is Nepal's remaining gap in the routing? (October 2026).** Three candidates were checked — the wave
+**Fourth pass: is Nepal's remaining gap in the routing?** Three candidates were checked — the wave
 celerity of the 1-D scheme, the channel widths, the source timing — each against something published, never against
 the clock. Result: none closes it defensibly; **nothing was changed**, and every number in the tables above stands.
 
@@ -1125,7 +1125,7 @@ Qp but +3 m freeboard against displacement waves; honest, quantitative "what mit
 * Heller & Hager 2010, J. Waterway Port Coastal Ocean Eng. 136:145
 * Shugar et al. 2021, Science 373:300 — doi:10.1126/science.abh4455 (accepted MS read: eprints.whiterose.ac.uk/175202)
 * Sattar et al. 2022, Sci. Rep. 12:12421 — doi:10.1038/s41598-022-16337-6 (read)
-* Sattar et al. 2025, Science — doi:10.1126/science.ads2659 (via eos.org/thelandslideblog/sikkim-glof-october-2023, ncl.ac.uk press; accepted MS read Oct 2026: eprints.whiterose.ac.uk/224098)
+* Sattar et al. 2025, Science — doi:10.1126/science.ads2659 (via eos.org/thelandslideblog/sikkim-glof-october-2023, ncl.ac.uk press; accepted MS read: eprints.whiterose.ac.uk/224098)
 * Tiwari et al. 2022, Sci. Rep. 12:3733 — doi:10.1038/s41598-022-07491-y (read: Chamoli seismic timeline)
 * Cook et al. 2021, Science 374:87 — doi:10.1126/science.abj1227 (via the GFZ press release and The Landslide Blog)
 * Zhang, Yin, Li et al. 2022, J. Rock Mech. Geotech. Eng. 15:296 — doi:10.1016/j.jrmge.2022.04.003 (Chamoli RAMMS; μ/ξ via a secondary source)

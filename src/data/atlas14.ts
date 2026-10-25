@@ -2,13 +2,13 @@
  * NOAA Atlas 14 rain return periods for any U.S. point — 1-hour intensity at 2, 10, 25, 100 and 500 years.
  *
  * WHERE THE NUMBERS COME FROM. NOAA's Precipitation Frequency Data Server (PFDS, hdsc.nws.noaa.gov) answers point
- * queries, but it sends no Access-Control-Allow-Origin header (checked October 2026: a GET with an Origin header gets
+ * queries, but it sends no Access-Control-Allow-Origin header (checked in 2026: a GET with an Origin header gets
  * none back, and an OPTIONS preflight gets HTTP 500), so a browser page cannot read it. Instead, scripts/bake-atlas14.ts
  * resamples NOAA's own published Atlas 14 GIS grids (30″, partial-duration series, 60-minute duration — the same
  * estimates the PFDS serves) into one compact same-origin file, public/atlas14/pf60m-pds.bin, which this module
  * decodes and interpolates. NOAA Atlas 14 data are public domain ("no restrictions apply"; NOAA asks for
  * acknowledgement — the citation is LADDER_SOURCES['noaa-atlas14'] in src/loss/ladders.ts, shown in every report).
- * NOAA Atlas 15 has not superseded it: as of October 2026 only a Montana pilot is out, CONUS preliminary estimates
+ * NOAA Atlas 15 has not superseded it: as of 2026 only a Montana pilot is out, CONUS preliminary estimates
  * are "no earlier than September 2026" and published ones "no earlier than September 2027"
  * (water.noaa.gov/about/atlas15); Atlas 14 is the national standard.
  *

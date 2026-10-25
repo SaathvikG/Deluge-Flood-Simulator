@@ -66,7 +66,7 @@ test('the baked index holds the dams it should, with their NID numbers', () => {
 });
 
 test('the baked index keeps a reported normal storage of 0 (dry dams), apart from "not reported"', () => {
-  // Red Rock Detention Dam, Las Vegas: a flood-control detention basin, NID normal storage 0 (October 2026 export).
+  // Red Rock Detention Dam, Las Vegas: a flood-control detention basin, NID normal storage 0 (2026 export).
   const red = damById(real.index, 'NV10406');
   assert.ok(red, 'Red Rock Detention Dam');
   assert.equal(red.normalStorageAcFt, 0);

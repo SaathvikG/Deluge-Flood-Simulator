@@ -90,7 +90,7 @@ const [built] = await packager({
   derefSymlinks: true,
   appVersion: pkg.version,
   buildVersion: pkg.version,
-  appBundleId: 'io.github.rkottomt.deluge',
+  appBundleId: 'io.github.saathvikg.deluge',
   appCategoryType: 'public.app-category.education',
   darwinDarkModeSupport: true,
   // Built by `npm run app:icon` from the favicon in index.html. Packager also probes for macOS 26's newer

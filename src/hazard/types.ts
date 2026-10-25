@@ -281,7 +281,7 @@ export interface HazardChainSpec {
  *     "preset": "nepal",                        // preset id
  *     "profile": "chain.json",                  // the ChainFile it was routed on
  *     "clockZero": "2026-08-26T08:37:00+05:45", // copied from the ChainFile when the event is real; absent for what-ifs
- *     "generated": "2026-10-12",                // bake date (UTC), and the script that wrote the file
+ *     "generated": "YYYY-MM-DD",                // bake date (UTC), and the script that wrote the file
  *     "generator": "scripts/bake-chain-result.ts",
  *     "provenance": "modelled",                 // every number below is the model's, never an observation
  *     "label": "…",                             // one-line caption for the UI

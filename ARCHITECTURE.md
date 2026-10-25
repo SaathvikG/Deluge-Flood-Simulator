@@ -2,18 +2,80 @@
 
 Deluge solves the 2-D shallow-water equations on real terrain in a browser tab, on the GPU, fast enough to play with:
 draw a levee and watch the water go around it, raise a river to a historic crest, crank the rain, and watch an
-evacuation route re-plan as roads flood. This document explains how, and why it stays stable.
+evacuation route re-plan as roads flood. This document explains how it works, why it stays stable, and how each
+claim is checked.
 
-Contents: [1 Frame pipeline](#1-frame-pipeline) · [2 Module map](#2-module-map) ·
-[3 Numerical method](#3-numerical-method) · [4 Rivers, stages and crests](#4-rivers-stages-and-crests) ·
-[5 Data](#5-data) · [6 Rendering](#6-rendering) · [7 Evacuation routing](#7-evacuation-routing) ·
-[8 App loop and pacing](#8-app-loop-and-pacing) · [9 Validation](#9-validation) ·
-[10 Shipping: browser, desktop app and the test suites](#10-shipping-browser-desktop-app-and-the-test-suites) ·
-[11 Future work](#11-future-work)
+**Who this is for.** Engineers and reviewers who want the method behind the app. For what the app does and how to
+run it, start with the [README](README.md); for every comparison against real floods, see
+[docs/VALIDATION.md](docs/VALIDATION.md). Section numbers here are stable — source files cite them (e.g. "§3.11").
+
+**Reading paths:**
+
+* *The solver* — §1 (one frame), §3.1–3.6 (equations, scheme, limiter, forcing, mass ledger, time step), §9 (tests).
+* *GPU engineering* — §1, §3.7 (layout and hazard accumulators), §6 (rendering), §8 (pacing and measured budget).
+* *Hydrology and analyses* — §3.9 (debris flows), §3.10 (ensembles), §3.11 (buildings, roughness, drains), §4
+  (rivers and crests), §7 (evacuation and infrastructure).
+* *Shipping and security* — §5 (data and its budget), §10 (CSP, desktop build, regression suites).
+
+## The system at a glance
+
+```
+            ┌───────────────── data (src/data, src/dams, src/surge, src/hazard) ─────────────────┐
+            │ USGS 3DEP / Copernicus DEM · NAIP / Esri imagery · TIGER / OSM roads · buildings   │
+            │ land cover · NOAA Atlas 14 · NID dams · CO-OPS tide gauges · glacier hazard chain  │
+            └───────────────────────────────────────┬────────────────────────────────────────────┘
+                                                    │ terrain, forcing, boundaries
+  store (src/app/store.ts) ──SimSync──▶  GPU solver (src/sim, WGSL)  ──▶ hazard fields: max depth, max speed,
+  user edits, sliders,                   momentum + continuity passes      depth × speed, arrival, time wet
+  scenario, climate layer                exact mass ledger                       │
+                                              │                                  ▼
+                                              ▼                    analyses: loss & EAL, Site check, egress,
+                                     renderer (src/render)         ensembles, infrastructure, design comparison
+                                     terrain, water, hazard maps   (src/loss, src/routing, src/climate, src/project)
+                                              │                                  │
+                                              └────────────▶ UI (src/ui) ◀──────┘   ·   CLI / HTTP API (src/cli)
+```
+
+One solver and one set of analyses serve every front end: the interactive app, the headless sweeps and ensembles
+inside it, and the Node CLI and HTTP API, which run the same TypeScript on the GPU through Dawn.
+
+## Design principles
+
+* **Everything per substep stays on the GPU.** The CPU chooses `dt`, writes one small uniform and submits; statistics
+  come back asynchronously and never block a frame (§1, §3.7).
+* **Stability by construction, not by clamping.** Semi-implicit friction, a positivity-preserving limiter and
+  well-balanced face depths make the failure modes impossible rather than repaired (§3.2–3.3).
+* **Every drop is booked.** A per-cell ledger records exactly what each change did to the water, Float32 rounding
+  included, so the mass-balance error is a measurement, not an estimate (§3.5).
+* **Safeguards are falsifiable.** A "naive" mode removes them, and tests require that it blows up where the robust
+  scheme does not (§3.8).
+* **Optional physics costs nothing when off.** Debris rheology and the land-surface layers are separate pipeline
+  variants; switched off, the solver is bit-identical to the one without them (§3.9, §3.11).
+* **Report the residual.** Calibration changes physics, never a free parameter tuned to the clock, and every miss
+  against observation is published with its suspects (§3.9, §9, docs/VALIDATION.md).
+
+## Contents
+
+| § | Section | What it covers |
+| --- | --- | --- |
+| 1 | [Frame pipeline](#1-frame-pipeline) | What happens in one `requestAnimationFrame` |
+| 2 | [Module map](#2-module-map) | Where each piece of the system lives, and the grid conventions |
+| 3 | [Numerical method](#3-numerical-method) | Equations (3.1), scheme (3.2), limiter (3.3), forcing and boundaries (3.4), mass ledger (3.5), time step (3.6), GPU layout and hazard accumulators (3.7), the naive reference mode (3.8), debris-flow rheology (3.9), ensembles (3.10), buildings, roughness and drains (3.11) |
+| 4 | [Rivers, stages and crests](#4-rivers-stages-and-crests) | Stage boundaries, the stage ramp, the crest fill, the NWS check, protected land |
+| 5 | [Data](#5-data) | Elevation, conditioning, imagery and the close-up inset, roads, land cover, presets, the deploy budget, live areas |
+| 6 | [Rendering](#6-rendering) | The prep and main passes, hazard maps, adaptive resolution, the city (6.1) |
+| 7 | [Evacuation routing](#7-evacuation-routing) | Car routing, on foot (7.1), infrastructure dependencies (7.2), departures and the queue (7.3) |
+| 8 | [App loop and pacing](#8-app-loop-and-pacing) | The work budget, frame pacing, device-loss recovery, the measured budget (8.1) |
+| 9 | [Validation](#9-validation) | Analytic and accounting tests, e2e flows, grid convergence against a 16× finer run (9.1) |
+| 10 | [Shipping](#10-shipping-browser-desktop-app-and-the-test-suites) | The CSP (10.1), the desktop build (10.2), the regression suites (10.3) |
+| 11 | [Future work](#11-future-work) | What comes next, and why |
 
 ---
 
 ## 1. Frame pipeline
+
+**In short:** each frame runs all of its solver substeps in one compute pass, renders every other frame from a lazily
+exported copy of the state, and reads statistics back without ever waiting for the GPU.
 
 ```
  requestAnimationFrame
@@ -50,7 +112,14 @@ selection accounts for (§3.6).
 | `src/data/` | USGS 3DEP DEM, imagery and road loaders; hydro-conditioning (channel burning, water detection, ridge opening); baked presets; the synthetic sandbox; live areas (conditioning runs in a Web Worker). |
 | `src/dams/` | Dam-breach use case: the baked NID index and its strict decoder (`nidIndex.ts`), eight published breach relations and the low / central / high band (`breachRelations.ts`), the 21 historical failures they are scored on (`historicalFailures.ts`, Wahl 1998), the breach hydrograph (`breachModel.ts`), where the wave enters the map (`placement.ts`, `scenario.ts`). |
 | `src/surge/` | Coastal-surge use case: the baked NOAA CO-OPS extreme-water-level table (`stations.ts`) and the seaward-edge boundary with its ladder and gauge line (`coastal.ts`). |
-| `src/routing/` | Road graph, flood status per edge, multi-target Dijkstra with wet-road slowdowns and bridge handling. |
+| `src/hazard/` | Glacier hazard chain (§3.9): trigger → outflow hydrograph → 1-D routing down the baked valley (`routing.ts`) → arrival, peak and stage at every station, the hydrograph that enters the map, and the early-warning designer (`warning.ts`). Pure and deterministic; runs in a Web Worker. |
+| `src/routing/` | Road graph, flood status per edge, multi-target Dijkstra with wet-road slowdowns and bridge handling; evacuation on foot, departures after the alert and the bottleneck queue (§7). |
+| `src/loss/` | Impact and loss from the hazard fields: damage curves, values, hazard classes, access loss, sites / portfolio CSV, EAL / BCR, Site check (egress timing, event ladders, floor elevation, verdict), infrastructure dependencies, ensemble sampling and aggregation (§3.10). Pure, no DOM. |
+| `src/climate/` | Future-climate tables (AR6 warming, rain scaling, NOAA sea level, glacial-lake growth) and the forcing transforms. Pure, no DOM. |
+| `src/project/` | Saved projects: the `.deluge.json` format, its strict reader, the terrain edit log, `?project=` links, opt-in autosave, design-comparison arithmetic. Pure, no DOM. |
+| `src/story/` | Narrated stories as data, their strict validator, live caption tokens and the DOM-free beat runner. |
+| `src/validation/` | Scoring a run against observations: high-water marks, datums and units, polygon rasterisation, extent and damage scores (§9, docs/VALIDATION.md). |
+| `src/cli/` | The headless `deluge` CLI and its `deluge serve` HTTP job API, built from the app's own store, sync and loss code (README "Batch / API"). |
 | `src/ui/` | Panels, toolbar and tools, HUD, "Try it" strip (with the one-click demo levee), How it works, location picker. Plain DOM + one CSS file. |
 | `src/app/` | Orchestration: scene loading, store → solver sync, stage ramp and crest fill, protected-land analysis, frame driver, work budget / frame pacing, debug API (`window.__deluge`). |
 | `scripts/` | `bake-presets.ts` (bakes `public/presets/*`), `e2e.mjs` (end-to-end demo flows in headless Chromium on the real GPU), `bench.mjs` (performance benchmark, §8.1), `shot.mjs` (screenshot tool), and the three regression suites `perf.mjs`, `visual.mjs`, `security-test.mjs` (§10.3). |
@@ -65,6 +134,13 @@ world space in metres with X east, Y up, Z south.
 ---
 
 ## 3. Numerical method
+
+**In short:** a local-inertial shallow-water scheme with upwind advection on a staggered grid (3.1–3.2), made
+unconditionally positive by a donor-cell flux limiter (3.3), with forcing and boundaries designed not to inject
+momentum (3.4), an exact Float32 mass ledger (3.5), and a 2-D CFL time step that anticipates what a stale readback
+cannot see (3.6). The rest of the section covers how it is laid out on the GPU (3.7), how its safeguards are proven
+necessary (3.8), and three optional extensions: debris-flow rheology (3.9), ensembles (3.10) and land-surface layers
+(3.11).
 
 ### 3.1 Equations
 
@@ -199,29 +275,35 @@ and apply the same math to CPU mirrors of ground and walls, which picking and ro
 water in place for river crests (§4). The stats pass reduces the exported state per 16×16 block on the GPU, so a
 readback costs a few milliseconds of main-thread time at 1024².
 
-**Hazard accumulators.** What loss and impact models need beyond the current depth — per cell, the maximum speed while
-wet, the maximum depth × speed, the time the water first stood deeper than 0.15 m (`ARRIVAL_DEPTH`) and the total time
-it stayed that deep (`HazardFields` in `src/contracts.ts`) — is gathered by the export pass into one `vec4f` per cell
-of a storage buffer, updated in place (`shaders/exportState.ts`; Float64 mirror in `src/sim/hazard.ts`). Not per
-substep: that would add a 16-byte read, and on wet cells a write, to each of up to 256 substeps a frame (~20 % of a
-substep at 1024², by the accounting buffer's measured cost). The export already loads the previous export's depth, so
-the time a cell crosses 0.15 m is interpolated linearly between the two exports instead of stamped at the later one:
-arrival times land within one export interval of the per-substep answer and ~¼ of one on average (a dam-break front,
-`tests/sim/hazard.test.ts`, where every export is also replayed on the CPU and the front checked against Ritter). A
-cell that wets and dries again between two exports is missed, and the maxima are sampled at exports, as max depth
-always was. Cells dry now and at the last export with no flow skip the buffer entirely, so the export went from 0.21 to
-0.23 ms at 1024² on a river valley (0.30 ms with every cell wet; Dawn on D3D12), and nothing changes per substep.
-Exports otherwise follow the wall clock (a rendered frame, a readback), which under a headless sweep's render hold at
-3600× left 60–120 simulated seconds between samples: a flood front crossing a building was recorded at whatever
-moment happened to be sampled. So once `hazardSampleSeconds` (5 s) of simulated time have passed since the latest
-export (of any kind — counted across frames, so a throttled run of many short frames is sampled as densely as one
-long frame), a `step()` frame splits its substeps into compute passes and exports between them, in the same command buffer — each sample's export time comes
-from a small uniform block copied over the Sim uniform before its export pass (`copyBufferToBuffer`), and the GPU
-timing spans all the passes. Interactive play up to ~150× never advances 5 s in a frame; at high speed-ups it is one
-export per ~10 substeps, a few %. `tests/sim/exactStop.test.ts` checks the in-frame samples equal hand-made exports
-at the same substeps, bit for bit.
-`readHazardFields()` copies the buffer and the exported state to its own staging buffers on demand (~32 B/cell),
-independently of the stats readbacks; `hazardBuffer` hands it to the renderer (§6).
+**Hazard accumulators.** Loss and impact models need more than the current depth. Per cell they need the maximum
+speed while wet, the maximum depth × speed, the time the water first stood deeper than 0.15 m (`ARRIVAL_DEPTH`) and the
+total time it stayed that deep (`HazardFields` in `src/contracts.ts`).
+
+* **Where they live.** The export pass gathers them into one `vec4f` per cell of a storage buffer, updated in place
+  (`shaders/exportState.ts`; Float64 mirror in `src/sim/hazard.ts`).
+* **Why not per substep.** That would add a 16-byte read, and on wet cells a write, to each of up to 256 substeps a
+  frame (~20 % of a substep at 1024², by the accounting buffer's measured cost).
+* **Arrival is interpolated.** The export already loads the previous export's depth, so the time a cell crosses
+  0.15 m is interpolated linearly between the two exports instead of stamped at the later one. Arrival times land
+  within one export interval of the per-substep answer and ~¼ of one on average (a dam-break front,
+  `tests/sim/hazard.test.ts`, where every export is also replayed on the CPU and the front checked against Ritter). A
+  cell that wets and dries again between two exports is missed, and the maxima are sampled at exports, as max depth
+  always was.
+* **Dry cells cost nothing.** Cells dry now and at the last export with no flow skip the buffer entirely, so the export
+  went from 0.21 to 0.23 ms at 1024² on a river valley (0.30 ms with every cell wet; Dawn on D3D12), and nothing
+  changes per substep.
+* **Sampled on simulated time, not the wall clock.** Exports otherwise follow the wall clock (a rendered frame, a
+  readback), which under a headless sweep's render hold at 3600× left 60–120 simulated seconds between samples: a
+  flood front crossing a building was recorded at whatever moment happened to be sampled. So once
+  `hazardSampleSeconds` (5 s) of simulated time have passed since the latest export (of any kind — counted across
+  frames, so a throttled run of many short frames is sampled as densely as one long frame), a `step()` frame splits
+  its substeps into compute passes and exports between them, in the same command buffer. Each sample's export time
+  comes from a small uniform block copied over the Sim uniform before its export pass (`copyBufferToBuffer`), and the
+  GPU timing spans all the passes. Interactive play up to ~150× never advances 5 s in a frame; at high speed-ups it is
+  one export per ~10 substeps, a few %. `tests/sim/exactStop.test.ts` checks the in-frame samples equal hand-made
+  exports at the same substeps, bit for bit.
+* **Reading them.** `readHazardFields()` copies the buffer and the exported state to its own staging buffers on demand
+  (~32 B/cell), independently of the stats readbacks; `hazardBuffer` hands it to the renderer (§6).
 
 ### 3.8 The naive reference mode, and surviving it
 
@@ -244,6 +326,11 @@ check all freeze on the last physical readback rather than reading NaN depths as
 ---
 
 ### 3.9 Debris-flow rheology and the per-scenario speed cap
+
+**In short:** glacier-hazard scenarios replace Manning friction with a debris-flow law (Voellmy, O'Brien–Julien or
+Bingham). Rate-dependent terms go in the semi-implicit denominator; yield and Coulomb terms are applied as a
+"stop-or-reduce" projection, so deposits come to exact rest and stay well-balanced. Water scenarios are bit-identical
+to the solver without this code.
 
 `FloodSolver.setRheology(rheology, { uMax })` (`src/contracts.ts`, `src/hazard/types.ts` `Rheology`) swaps Manning for a
 debris-flow friction law in the momentum pass, uniform over the map (no sediment tracer yet). The app calls it when a
@@ -358,6 +445,10 @@ observations (gauge-loss times, not sightings). Chamoli and Chungthang were not 
 
 ### 3.10 Ensembles: flood probability under stated input uncertainty
 
+**In short:** N headless runs with inflow, rain, stage, Manning's n and the terrain nudged within stated bands (Latin
+hypercube from a seed). Each member's max depth is folded into a per-cell GPU tally for the probability map; one hazard
+readback per member feeds the loss model. The result is sensitivity to the stated bands, not a calibrated probability.
+
 A single run answers "does this street flood?". A lender, insurer or developer asks "in how many plausible versions of
 this event does it flood?". At 100–500× real time on a mid-range GPU, a dozen members of a 30-minute scenario take
 about a minute, in the tab, so Deluge runs the ensemble rather than selling one precomputed map.
@@ -449,6 +540,11 @@ probabilities at the flood's edges), and the bed perturbation's lake-at-rest / r
 ensemble on Pittsburgh: completes, scenario restored, legend and site card, legend-vs-pixels agreement).
 
 ### 3.11 Land surface: buildings as obstacles, a roughness map, storm drains
+
+**In short:** three optional layers — buildings (blocks where a footprint fills a cell, integral porosity where it
+does not, roof rain to the downspouts), a land-cover Manning's n map, and storm drains as a distributed sink at design
+capacity. Each is a compiled pipeline variant, so off means bit-identical and free. All three stay off by default
+because none improves every like-for-like validation score (*Defaults*, at the end of this section).
 
 Bare earth leaves out three things a city has: buildings the water has to go round, ground of different roughness,
 and storm sewers. `FloodSolver.setLandSurface({ obstacles, roughness, drainCapacity, porosity })` (`src/contracts.ts`
@@ -565,7 +661,7 @@ sampled onto a 512² raster over the area exactly as the bake samples the preset
 baked raster cell for cell), and `i₂` comes from the Atlas 14 grid the app already serves from its own origin
 (`src/data/atlas14.ts`), so a live US area gets the roughness map and drains like a preset. Best-effort, like the
 imagery: a failure leaves the area without land cover. Elsewhere live areas still have none: ESA WorldCover's S3
-bucket sends no CORS headers (checked 2026-10-13: no `Access-Control-Allow-Origin`, preflight 403).
+bucket sends no CORS headers (checked in 2026: no `Access-Control-Allow-Origin`, preflight 403).
 
 **GPU.** One `rgba32float` surface texture (roughness factor, drain capacity in m/s, downspout factor) bound to the
 momentum and continuity passes, one `rgba32float` porosity texture (φ, ψ east, ψ south, roof share) bound to the
@@ -711,6 +807,10 @@ design-size rain event, or a validation run that reproduces the event's duration
 
 ## 4. Rivers, stages and crests
 
+**In short:** river levels are imposed by stage discs where rivers cross the domain edge, with a small head across the
+confluence so the rivers keep flowing downstream; a crest is applied as a bounded-rate ramp in simulated time plus an
+in-place raise along the channels, so overbank flooding starts from every bank rather than as a wave from the edge.
+
 The Pittsburgh preset's river stage slider is in feet on the Point gauge (NWS PTTP1 / USGS 03085152): normal pool
 ≈ 16 ft, flood stage 22 ft, Agnes 1972 35.8 ft, the 1936 record 46 ft. Three stage discs sit where the Allegheny,
 Monongahela and Ohio cross the domain edge.
@@ -769,6 +869,10 @@ Monongahela and Ohio cross the domain edge.
   (`scripts/e2e.mjs` flow 12).
 
 ## 5. Data
+
+**In short:** every baked scene is built from public data (USGS 3DEP or Copernicus elevation, NAIP imagery, Census or
+OSM roads, land cover) and works offline; live areas fetch the same layers on demand, under hard time limits and with
+an honest offline path. The section ends with the deploy-size budget and why it sits where it does.
 
 * **Elevation:** USGS 3DEP ImageServer (1 m lidar where available, else ~10 m), Float32 GeoTIFF decoded with
   `geotiff`. Fallback: Mapzen Terrarium tiles on AWS Open Data. No-data filling, seam and zero-clamp repair.
@@ -836,8 +940,8 @@ Monongahela and Ohio cross the domain edge.
   feels**: presets load one at a time, so what anyone downloads is bounded by the largest single preset (15.9 MB), not
   by the directory. That cap stays at 25 MB. **The directory cap is a host-and-repo cost.** GitHub Pages publishes
   sites up to 1 GB and recommends the source repository stay under 1 GB, with a soft 100 GB/month of bandwidth
-  ([GitHub Pages limits](https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits), read
-  2026-09-19); at 120 MB the published site is 12 % of that limit and the largest single file is a 6.2 MB JPEG. What
+  ([GitHub Pages limits](https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits), read in
+  2026); at 120 MB the published site is 12 % of that limit and the largest single file is a 6.2 MB JPEG. What
   keeps the cap finite at all is git history: JPEG and Float32 blobs do not delta-compress, so each preset costs about
   its own size again forever, and the repository is already 189 MB of worktree plus 132 MB of `.git`.
 
@@ -852,35 +956,49 @@ Monongahela and Ohio cross the domain edge.
   shipping one preset at 960² instead of the 1024² every other preset runs at would have bought 0.5 MB of headroom for
   an inconsistency. 5 MB is one more glacier preset, not a US preset with a photo: the next one of those needs the
   insets argument above, or a deliberate raise of its own.
-* **Live areas** are cancellable. A download that stalls mid-transfer fails after 20 s without data, and the elevation
-  has a 90 s overall deadline (the error then says the service can't be reached). Dead venue wifi often leaves requests
-  hanging instead of failing: while no elevation has arrived, the loader checks every 9 s that the data hosts answer at
-  all (a 3 s no-cors probe; a slow export still answers it) and gives up with the offline message when they do not
-  (~12–15 s instead of 90 s). When the browser reports no network the load fails at once, and when the page's own probe
-  just found the hosts unreachable (the picker's "You're offline" → *Offline — try anyway*) the first check runs right
-  away; such failures are logged as warnings, not errors. Imagery, roads and the reverse-geocoded place name get 25 s once the elevation is ready
-  (Esri renders a 2048² export for 5–12 s before sending a byte); after that the area loads without them. Cancelling a
-  load with nothing on screen (a `?live=` link at startup) shows the offline default preset, points the address bar at
-  it, and offers a retry. A live area with no river crossing its edge has no stage control; there *Play the flood*
-  drops a 120 mm/hr storm cell over the view instead of only fast-forwarding.
+* **Live areas** are cancellable, and fail fast and honestly when the network is bad:
+  * **Deadlines.** A download that stalls mid-transfer fails after 20 s without data, and the elevation has a 90 s
+    overall deadline (the error then says the service can't be reached).
+  * **Dead wifi.** Venue wifi often leaves requests hanging instead of failing. While no elevation has arrived, the
+    loader checks every 9 s that the data hosts answer at all (a 3 s no-cors probe; a slow export still answers it)
+    and gives up with the offline message when they do not (~12–15 s instead of 90 s).
+  * **Known offline.** When the browser reports no network the load fails at once, and when the page's own probe just
+    found the hosts unreachable (the picker's "You're offline" → *Offline — try anyway*) the first check runs right
+    away; such failures are logged as warnings, not errors.
+  * **Optional layers.** Imagery, roads and the reverse-geocoded place name get 25 s once the elevation is ready (Esri
+    renders a 2048² export for 5–12 s before sending a byte); after that the area loads without them.
+  * **Cancelling.** Cancelling a load with nothing on screen (a `?live=` link at startup) shows the offline default
+    preset, points the address bar at it, and offers a retry.
+  * **No river.** A live area with no river crossing its edge has no stage control; there *Play the flood* drops a
+    120 mm/hr storm cell over the view instead of only fast-forwarding.
 
 ## 6. Rendering
 
-A prep compute pass derives vertex heights and filterable surface textures from the solver's state (every other frame
-by default: `stateVersion` tells it whether the water changed without making the solver export; the per-vertex bed is
-rebuilt only when `terrainVersion` changes); the main pass
-renders to MSAA 4× HDR (`rgba16float`, reversed-Z `depth32float`): sky, LOD terrain with imagery, water surface (depth
-absorption, Fresnel reflection, flow-advected ripples, muddy opaque floodwater on land that was dry at reset, a wet
-edge at the flood front), drawn walls with a screen-space minimum width, road and route ribbons coloured by flood
-status, markers and rain. Bloom and ACES tonemapping follow. Hazard maps (depth, max depth, speed, arrival time,
-AIDR 2017 hazard class) colour only land that was dry at reset (speed excepted); their colours are solved through the
-tone mapper so the screen matches the legend. Arrival and hazard class are read from the solver's hazard accumulators
-(§3.7) by the prep pass, drawn on the max-depth surface: minutes since reset (premultiplied by "the water got here",
-so filtering toward land it never reached keeps the right time and fades the colour out), and H1–H6 from the maxima of
-depth, speed and depth × speed, classified with WGSL generated from the legend's own threshold table. The ensemble's flood-probability view (§3.10) is a fourth field of the same prep pass: the share of members over the threshold, read from the ensemble tally, drawn on the deepest water any member reached. An
-adaptive resolution controller keeps frame time on target; the app also tells it how hard the solver is pushing for GPU
-time (§8), so it does not spend on pixels what the flood needs in substeps. Terrain and water are CDLOD meshes of
-32×32-quad patches sized to ~4 px per quad by default: vertex work was half of the renderer's GPU time.
+**In short:** a prep compute pass turns the solver's state into render-ready heights and textures, a main pass draws
+terrain, water and overlays into MSAA HDR, and the hazard maps are colour-solved through the tone mapper so the screen
+matches the legend.
+
+* **Prep pass.** A compute pass derives vertex heights and filterable surface textures from the solver's state —
+  every other frame by default: `stateVersion` tells it whether the water changed without making the solver export,
+  and the per-vertex bed is rebuilt only when `terrainVersion` changes.
+* **Main pass.** Renders to MSAA 4× HDR (`rgba16float`, reversed-Z `depth32float`): sky; LOD terrain with imagery; the
+  water surface (depth absorption, Fresnel reflection, flow-advected ripples, muddy opaque floodwater on land that was
+  dry at reset, a wet edge at the flood front); drawn walls with a screen-space minimum width; road and route ribbons
+  coloured by flood status; markers and rain. Bloom and ACES tonemapping follow.
+* **Hazard maps** (depth, max depth, speed, arrival time, AIDR 2017 hazard class) colour only land that was dry at
+  reset (speed excepted); their colours are solved through the tone mapper so the screen matches the legend.
+  * Arrival and hazard class are read from the solver's hazard accumulators (§3.7) by the prep pass and drawn on the
+    max-depth surface.
+  * Arrival is minutes since reset, premultiplied by "the water got here", so filtering toward land it never reached
+    keeps the right time and fades the colour out.
+  * H1–H6 come from the maxima of depth, speed and depth × speed, classified with WGSL generated from the legend's own
+    threshold table.
+  * The ensemble's flood-probability view (§3.10) is a fourth field of the same prep pass: the share of members over
+    the threshold, read from the ensemble tally, drawn on the deepest water any member reached.
+* **Adaptive resolution.** A controller keeps frame time on target; the app also tells it how hard the solver is
+  pushing for GPU time (§8), so it does not spend on pixels what the flood needs in substeps.
+* **Meshes.** Terrain and water are CDLOD meshes of 32×32-quad patches sized to ~4 px per quad by default: vertex work
+  was half of the renderer's GPU time.
 
 ### 6.1 The city (`src/render/buildings.ts`)
 
@@ -921,6 +1039,11 @@ octave before that cut, so nothing pops — it sinks. The cut is a quality-ladde
 adaptive controller thins the city on the way down and the cinematic tier draws all of it.
 
 ## 7. Evacuation routing
+
+**In short:** every road edge carries a live flood status, and a multi-target Dijkstra on travel time finds the
+nearest dry shelter as the water moves. Site check extends this with walking routes on time-dependent streets (7.1),
+the facilities a site depends on (7.2), and how many people actually get out by car before the last route closes
+(7.3).
 
 Each road edge is sampled about once per cell. On every readback (≤ 4 Hz) an edge is dry, wet (≥ 5 cm: passable at 30 %
 speed) or flooded (≥ 30 cm, roughly where cars float: impassable). Road stretches over water present at load are
@@ -996,20 +1119,24 @@ vs a 3 h 01 min window), and with a prepared population 89 %.
 
 ## 8. App loop and pacing
 
-The store is the single source of truth; `SimSync` pushes parameter changes into the solver. A work budget
-(`governor.ts`) caps substeps per frame (in half-substep steps) from measured frame time and GPU queue latency (median
-over ~1 s), with different targets while the user interacts (28 ms), watches (34 ms: about two frames of queue, the
-most that stays free of dropped frames) or automation runs, and cuts the cap by 40 % ahead of known jumps in GPU work
-(rain starting, a water reset, a solver switch) instead of waiting for the queue to back up; a render pacer drops to a
-heartbeat when nothing changes;
-and a frame ceiling detector notices browser 30 fps caps (Chrome Energy Saver, macOS Low Power Mode) so neither budget
-starves. The renderer's adaptive quality gets a *sim pressure* hint: while the solver is GPU-limited it holds the
-default level (it neither climbs above it nor keeps a better level claimed while the sim kept up), and while hands-off
-with the budget down to ≤ 3 substeps (a hot fanless laptop) it steps down, at most to 1 render pixel per CSS pixel, and
-recovers 20 s after the starvation ends. GPU device loss shows a recovery card and reloads by itself at most twice
-per 10 minutes (never within a minute of the last automatic reload); a live area or large grid that keeps losing the
-GPU restarts as the offline Pittsburgh preset, otherwise the card waits for the user. `window.__deluge` exposes the
-debug API used by `scripts/e2e.mjs`.
+**In short:** the solver and the renderer share one GPU, so a governor decides each frame how many substeps the flood
+gets and the renderer adapts its resolution around that, aiming for smooth frames first and simulated speed second.
+
+* **One source of truth.** The store holds the state; `SimSync` pushes parameter changes into the solver.
+* **The work budget** (`governor.ts`) caps substeps per frame (in half-substep steps) from measured frame time and GPU
+  queue latency (median over ~1 s). Targets differ while the user interacts (28 ms), watches (34 ms: about two frames
+  of queue, the most that stays free of dropped frames) or automation runs. It cuts the cap by 40 % ahead of known
+  jumps in GPU work (rain starting, a water reset, a solver switch) instead of waiting for the queue to back up.
+* **Pacing.** A render pacer drops to a heartbeat when nothing changes, and a frame-ceiling detector notices browser
+  30 fps caps (Chrome Energy Saver, macOS Low Power Mode) so neither budget starves.
+* **Sim pressure.** The renderer's adaptive quality gets a *sim pressure* hint. While the solver is GPU-limited it
+  holds the default level (it neither climbs above it nor keeps a better level claimed while the sim kept up); while
+  hands-off with the budget down to ≤ 3 substeps (a hot fanless laptop) it steps down, at most to 1 render pixel per
+  CSS pixel, and recovers 20 s after the starvation ends.
+* **Device loss.** GPU device loss shows a recovery card and reloads by itself at most twice per 10 minutes (never
+  within a minute of the last automatic reload). A live area or large grid that keeps losing the GPU restarts as the
+  offline Pittsburgh preset; otherwise the card waits for the user.
+* **Debug API.** `window.__deluge` exposes the debug API used by `scripts/e2e.mjs` (dev and flagged builds only, §10).
 
 ### 8.1 Performance budget (measured)
 
@@ -1047,6 +1174,10 @@ pass when switched), all three +16 %. The governor (§8) absorbs it as a few per
 frame rate. Not measured on the M4.
 
 ## 9. Validation
+
+**In short:** three kinds of evidence, kept apart on purpose — analytic and exact-accounting tests that the equations
+are solved correctly (this table), a grid-convergence study showing the demo grid's answer is not an artefact of its
+cell size (§9.1), and comparisons against observed floods ([docs/VALIDATION.md](docs/VALIDATION.md)).
 
 From `npm test` (tests run on the real GPU through Dawn); the grid-convergence rows from
 `npx tsx scripts/reference-run.ts` (§9.1), likewise on the real GPU:
@@ -1215,6 +1346,10 @@ land in `artifacts/reference-run/results.md` and `results.json`; the file header
 
 ## 10. Shipping: browser, desktop app and the test suites
 
+**In short:** one Content-Security-Policy, defined once and mirrored everywhere it is enforced (10.1); a desktop build
+that serves the same static bundle from a locked-down Electron main process (10.2); and three regression suites for
+frame rate, graphics and security that run against real production builds on the GPU (10.3).
+
 ### 10.1 Content-Security-Policy, one source of truth
 
 `src/data/csp.ts` holds the policy and the endpoint list; `vite.config.ts` writes it into `dist/index.html` as a
@@ -1235,28 +1370,34 @@ host appears in `src/data` without being added to the policy.
 
 ### 10.2 The desktop build (`electron/`)
 
-`npm run app:build` typechecks, builds the same static `dist/`, and packages it into `release/Deluge.app`: one
-`BrowserWindow`, no preload, no IPC, no Node in the renderer (`sandbox: true`, `contextIsolation: true`,
-`nodeIntegration: false`), no listening TCP port, and no `file://` — the build is served from a privileged
-`app://deluge/` scheme registered as `standard` + `secure`, which is what makes relative URLs, module workers,
-`fetch('./presets/…')` and `isSecureContext` (a WebGPU requirement) all work. Every response, 404s included, carries
-the CSP plus `frame-ancestors 'none'`, `X-Content-Type-Options`, `Referrer-Policy`, `Cross-Origin-Opener-Policy` and
-`Permissions-Policy`. The path served is resolved, dot-segment- and null-byte-checked, extension-allowlisted and
-confined to the asar root. Navigation off the origin, new windows, webviews and downloads are refused; the only
-external link the app will hand to the OS browser is the repository. Network requests are checked against the same
-endpoint list independently of CSP, which also covers the workers, and every certificate error is fatal. Every
-permission request is denied — including Screen Wake Lock, because the main process holds a `powerSaveBlocker`
-instead, which is stronger and needs no page to be visible. macOS fuses turn off `ELECTRON_RUN_AS_NODE`,
-`NODE_OPTIONS`, `--inspect` and `file://` extra privileges, require asar integrity and refuse to load an app from
-anywhere but the asar; a packaged build also refuses to start if its command line asks it to disarm any of this
-(`--ignore-certificate-errors`, `--disable-web-security`, `--remote-debugging-port`, …). Nothing a page writes
-survives a relaunch: the session's localStorage, IndexedDB, service workers, cache storage and — the one that
-actually matters, because a renderer can write real files there — the **Origin Private File System** are cleared
-before the window opens. Cookies are pointedly *not* on that list: the app sets none, and asking Electron to clear
-them opens the cookie store, which under the `EnableCookieEncryption` fuse creates a login-keychain item that an
-ad-hoc-signed rebuild no longer matches — so the next launch asks the presenter for their password. Measured both
-ways; `electron/main.js` records the evidence at the call. A renderer crash reloads with a back-off (three times inside a minute); the next
-crash shows a static recovery page with a Restart button, rather than leaving a blank window with no message.
+`npm run app:build` typechecks, builds the same static `dist/`, and packages it into `release/Deluge.app`.
+
+* **Process model.** One `BrowserWindow`, no preload, no IPC, no Node in the renderer (`sandbox: true`,
+  `contextIsolation: true`, `nodeIntegration: false`), no listening TCP port, and no `file://`.
+* **Origin.** The build is served from a privileged `app://deluge/` scheme registered as `standard` + `secure`, which
+  is what makes relative URLs, module workers, `fetch('./presets/…')` and `isSecureContext` (a WebGPU requirement) all
+  work.
+* **Headers.** Every response, 404s included, carries the CSP plus `frame-ancestors 'none'`, `X-Content-Type-Options`,
+  `Referrer-Policy`, `Cross-Origin-Opener-Policy` and `Permissions-Policy`.
+* **Paths.** The path served is resolved, dot-segment- and null-byte-checked, extension-allowlisted and confined to the
+  asar root.
+* **Navigation and network.** Navigation off the origin, new windows, webviews and downloads are refused; the only
+  external link the app will hand to the OS browser is the repository. Network requests are checked against the same
+  endpoint list independently of the CSP, which also covers the workers, and every certificate error is fatal.
+* **Permissions.** Every permission request is denied — including Screen Wake Lock, because the main process holds a
+  `powerSaveBlocker` instead, which is stronger and needs no page to be visible.
+* **Fuses.** macOS fuses turn off `ELECTRON_RUN_AS_NODE`, `NODE_OPTIONS`, `--inspect` and `file://` extra privileges,
+  require asar integrity and refuse to load an app from anywhere but the asar. A packaged build also refuses to start
+  if its command line asks it to disarm any of this (`--ignore-certificate-errors`, `--disable-web-security`,
+  `--remote-debugging-port`, …).
+* **No persistence.** Nothing a page writes survives a relaunch: the session's localStorage, IndexedDB, service
+  workers, cache storage and — the one that actually matters, because a renderer can write real files there — the
+  **Origin Private File System** are cleared before the window opens. Cookies are pointedly *not* on that list: the app
+  sets none, and asking Electron to clear them opens the cookie store, which under the `EnableCookieEncryption` fuse
+  creates a login-keychain item that an ad-hoc-signed rebuild no longer matches — so the next launch asks the presenter
+  for their password. Measured both ways; `electron/main.js` records the evidence at the call.
+* **Crash recovery.** A renderer crash reloads with a back-off (three times inside a minute); the next crash shows a
+  static recovery page with a Restart button, rather than leaving a blank window with no message.
 
 `npm run app:check` is the gate: 43 checks, the last 20 of them against the packaged, fused bundle. Because such a
 bundle deliberately cannot be automated from outside, it reports on itself through a hook that `package.mjs` stages

@@ -8,7 +8,7 @@ nid-index.bin   55,276 dams of the U.S. National Inventory of Dams: id, name, st
 
 SOURCE          National Inventory of Dams (NID), U.S. Army Corps of Engineers, with the Federal Emergency Management
                 Agency and the state and federal dam-safety agencies that report to it. National export, GeoPackage, public
-                fields: https://nid.sec.usace.army.mil/api/nation/gpkg (downloaded October 2026; 92,625 records).
+                fields: https://nid.sec.usace.army.mil/api/nation/gpkg (downloaded in 2026; 92,625 records).
 
 TERMS           The NID's public fields are public information published by USACE for download; some fields (for example
                 condition assessments of certain federal dams, Emergency Action Plan details and inundation maps) are
@@ -27,7 +27,7 @@ HOW IT WAS MADE scripts/bake-nid.ts (Node 22.13+, reads the GeoPackage with node
                     node --import tsx scripts/bake-nid.ts --download --cache=<dir>
                     node --import tsx scripts/bake-nid.ts --cache=<dir>
 
-WHY NOT LIVE    The NID API answers a browser page with no Access-Control-Allow-Origin header (checked October 2026: a
+WHY NOT LIVE    The NID API answers a browser page with no Access-Control-Allow-Origin header (checked in 2026: a
                 GET with an Origin header returns 200 with Access-Control-Allow-Credentials but no allowed origin, and the
                 CSV export returns 403), so a page cannot read it. The baked copy also keeps the content-security policy
                 free of a new endpoint and works offline.

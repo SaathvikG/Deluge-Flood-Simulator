@@ -56,7 +56,7 @@ const hasChain = (id: string) => fs.existsSync(path.join(ROOT, id, 'chain.json')
  *     it is the cap that protects the demo. The directory total is a host-and-repo cost, not a user-facing one.
  *   • THE HOST HAS ROOM. GitHub Pages (.github/workflows/pages.yml) publishes sites up to 1 GB and recommends the
  *     source repository stay under 1 GB, with a soft 100 GB/month of bandwidth
- *     (docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits, read 2026-09-19). At 120 MB
+ *     (docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits, read in 2026). At 120 MB
  *     the published site is 12 % of the limit and the largest single file is 6.2 MB.
  *   • THE REPO COST IS REAL AND IS THE REASON FOR A CAP AT ALL. These are JPEG and Float32 blobs: they do not
  *     delta-compress, so every preset costs about its own size again in git history forever. The worktree is 189 MB

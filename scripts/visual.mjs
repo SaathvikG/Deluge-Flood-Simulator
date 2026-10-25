@@ -86,7 +86,7 @@ const numEnv = (key, fallback) => {
 };
 
 // ── thresholds ──────────────────────────────────────────────────────────────────────────────────
-// Measured on the demo machine (MacBook Air M4, macOS 15) on 2026-09-17 with `node scripts/visual.mjs --calibrate`.
+// Measured on the demo machine (MacBook Air M4, macOS 15) with `node scripts/visual.mjs --calibrate`.
 // Each is "the worst value any scene actually produces" with margin, so a miss means something changed on screen.
 const THRESHOLDS = {
   /** Golden-image diff: fraction of baseline pixels that may differ perceptually. */

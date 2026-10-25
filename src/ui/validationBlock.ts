@@ -9,7 +9,7 @@
 import type { ValidationSummary, ValidationSummaryEntry } from '../validation/types';
 import { h, setText, type UIContext } from './dom';
 
-export const VALIDATION_DOC_URL = 'https://github.com/rkottomt/deluge-flood-sim/blob/main/docs/VALIDATION.md';
+export const VALIDATION_DOC_URL = 'https://github.com/SaathvikG/Deluge-Flood-Simulator/blob/main/docs/VALIDATION.md';
 
 export interface ValidationLine {
   label: string;

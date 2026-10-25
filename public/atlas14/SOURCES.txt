@@ -11,7 +11,7 @@ SOURCE          NOAA Atlas 14, Precipitation-Frequency Atlas of the United State
                 States), 11 (Texas) and 12 (Interior Northwest). NOAA / National Weather Service, Office of Water
                 Prediction, Hydrometeorological Design Studies Center (HDSC).
                 Grids: https://hdsc.nws.noaa.gov/pub/hdsc/data/<region>/<region><T>yr60ma.zip
-                (ESRI ASCII, 30 arc-seconds, NAD83, 60-minute depth in 1/1000 inch, -9 = no data), downloaded October 2026.
+                (ESRI ASCII, 30 arc-seconds, NAD83, 60-minute depth in 1/1000 inch, -9 = no data), downloaded in 2026.
                 Point service used to check the result: https://hdsc.nws.noaa.gov/pfds/ (PFDS).
 
 TERMS           Public domain. Each grid's FGDC metadata: "n/a, no restrictions apply and data is public domain."
@@ -34,7 +34,7 @@ NOT COVERED     Western Washington and Oregon (Atlas 14 Volume 12 covers only Id
                 Northwest; the coast is still on NOAA Atlas 2), the western Aleutians beyond 180 degrees, Guam and the
                 Pacific islands (Volume 5). The app reports "no NOAA Atlas 14 estimate" there and offers no rain ladder.
 
-WHY NOT LIVE    The PFDS sends no CORS headers (checked October 2026), so a browser page cannot read it. NOAA Atlas 15 will
-                supersede Atlas 14; as of October 2026 only a Montana pilot is published, with CONUS preliminary estimates
+WHY NOT LIVE    The PFDS sends no CORS headers (checked in 2026), so a browser page cannot read it. NOAA Atlas 15 will
+                supersede Atlas 14; as of 2026 only a Montana pilot is published, with CONUS preliminary estimates
                 "no earlier than September 2026" and published estimates "no earlier than September 2027"
                 (https://water.noaa.gov/about/atlas15). Re-bake from Atlas 15 grids once they are published.

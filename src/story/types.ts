@@ -7,7 +7,7 @@
  * unit-tested and imported by src/app/url.ts.
  *
  * FACTS. Every number in a caption comes from the repo's sourced docs (the preset's meta.json description and
- * observations, docs/research/*, BUSINESS.md, DEMO.md) and says where in `source`. Numbers the model computes (a
+ * observations, docs/research/*, BUSINESS.md) and says where in `source`. Numbers the model computes (a
  * modelled front time, the acres a wall keeps dry) are not typed into captions: they are read live through the
  * caption tokens below, so a recalibration of the model cannot leave a story quoting a stale figure.
  */

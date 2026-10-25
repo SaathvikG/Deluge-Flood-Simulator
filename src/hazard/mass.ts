@@ -161,7 +161,7 @@ function waveTypeOf(F: number, S: number, M: number, alpha: number): { type: Imp
  * Impulse wave in a lake from a mass movement (spec §C.2), from the VAW / Swiss Federal Office of Energy impulse-wave
  * manual: Evers, Heller, Fuchs, Hager & Boes, "Landslide-generated Impulse Waves in Reservoirs — Basics and
  * Computation", 2nd ed. v2.1 (SFOE, June 2023), which collects Heller & Hager 2010 (J. Waterway Port Coastal Ocean
- * Eng. 136(3):145–155) and Ruffini et al. 2019. Every coefficient below was checked against that text in Oct 2026 [V]:
+ * Eng. 136(3):145–155) and Ruffini et al. 2019. Every coefficient below was checked against that text [V]:
  *
  *   F = v_s/√(gh)   S = s/h   M = ρ_s·V_s/(ρ_w·b·h²)   P = F·S^½·M^¼·{cos[(6/7)α]}^½          (3.12)
  *   H_M = (5/9)·P^(4/5)·h        x_M = (11/2)·P^½·h        a = (4/5)·H                       (3.13, 3.14, 3.16)

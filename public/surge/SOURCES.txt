@@ -17,7 +17,7 @@ SOURCES         NOAA National Ocean Service, Center for Operational Oceanographi
                                          ?station=<id>&units=metric&report_year=2022&affil=US
                                          (Sweet et al. 2022, Global and Regional Sea Level Rise Scenarios for the United
                                          States, NOAA Technical Report NOS 01; medians, zeroed at 2005)
-                Downloaded October 2026. 126 stations are listed; Port Mansfield (8778490) returned no exceedance levels.
+                Downloaded in 2026. 126 stations are listed; Port Mansfield (8778490) returned no exceedance levels.
 
 TERMS           Public domain (U.S. Government work). Acknowledge NOAA/NOS/CO-OPS.
 
@@ -27,7 +27,7 @@ CHECK           Fort Myers (8725520) reproduces the Fort Myers preset's hand-tra
 
 HOW IT WAS MADE scripts/bake-surge.ts:   node --import tsx scripts/bake-surge.ts
 
-WHY BAKED       The CO-OPS APIs do send Access-Control-Allow-Origin: * (checked October 2026), so a page could call them;
+WHY BAKED       The CO-OPS APIs do send Access-Control-Allow-Origin: * (checked in 2026), so a page could call them;
                 the table is small, Site check must work offline like every other ladder, and baking adds no endpoint to
                 the content-security policy.
 

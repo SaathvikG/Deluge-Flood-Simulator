@@ -7,7 +7,7 @@
  *
  * Needs Node 22.13+ (node:sqlite reads the GeoPackage; nothing else is installed for it).
  *
- * WHY A BAKED INDEX. The NID API sends no Access-Control-Allow-Origin header to a browser page (checked October 2026),
+ * WHY A BAKED INDEX. The NID API sends no Access-Control-Allow-Origin header to a browser page (checked in 2026),
  * so the app cannot query it; the national export is published for download. NID data are public information
  * collected by USACE from federal and state dam-safety agencies; the public export leaves out the restricted fields.
  *

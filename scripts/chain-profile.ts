@@ -2,7 +2,7 @@
  * Pure profile operations of the hazard-chain bake (scripts/bake-chain.ts), split out so tests can exercise them
  * without the network: the monotone thalweg fit and the minimum channel floor.
  *
- * WHY THESE EXIST (calibration against the 2026 Lhende → Trishuli event, Oct 2026). The first bake fitted the bed with
+ * WHY THESE EXIST (calibration against the 2026 Lhende → Trishuli event). The first bake fitted the bed with
  * a plain isotonic regression. Pool-adjacent-violators returns a STAIRCASE: every run of DSM noise that rises
  * downstream is pooled into one flat block, so 158 of Nepal's 638 faces were exactly flat and the drops between them
  * reached 45 m per 100 m node. In the local-inertial router a flat face is driven only by its water-surface slope and

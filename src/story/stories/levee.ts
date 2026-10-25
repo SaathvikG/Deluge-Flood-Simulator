@@ -31,7 +31,7 @@ export const LEVEE_STORY: Story = {
       id: 'build',
       kicker: 'The design on the map',
       caption: 'The wall goes up and the river rises to the 1936 record behind it. Green is land it keeps dry: {kept}. Gauge: {stage}.',
-      source: 'Try it → Build a levee; protected-land estimate, DEMO.md Q9',
+      source: 'Try it → Build a levee; protected-land estimate',
       durationMs: 11000,
       actions: [{ kind: 'levee' }],
       until: { kind: 'stageArrived' },

@@ -2,7 +2,7 @@
  * "Should we build here?" — a developer's site due diligence on Pittsburgh's two demo parcels (the site use case,
  * src/ui/useCaseDefs.ts DEMO_SITES_PARAM): the Site check sweep, the verdict, the way out, an indicative floor level,
  * and the pick. Facts: the parcels and the building from useCaseDefs.ts and BUSINESS.md §4.1; the ladder's sources
- * from src/loss/ladders.ts; the limits from DEMO.md §6 and the Use cases brief.
+ * from src/loss/ladders.ts; the limits from the Use cases brief.
  *
  * Every number the sweep produces — depths, the egress times, the EAL, the floor levels, the loss — is read live from
  * Site check through the {site:…} tokens: the verdict on screen is the one this run computed, in the panel's own words.
@@ -54,7 +54,7 @@ export const SITE_STORY: Story = {
       id: 'a-egress',
       kicker: 'Parcel A · getting out',
       caption: '{site:a.egress} A road counts as cut at 0.3 m of water, where cars stop; the route is to the nearest dry shelter on Census roads.',
-      source: 'Site check egress; DEMO.md Q10',
+      source: 'Site check egress',
       durationMs: 10000,
     },
     {
@@ -95,7 +95,7 @@ export const SITE_STORY: Story = {
       kicker: 'Read it honestly',
       caption:
         'Bare-earth terrain, one 2-D run per level, return periods only where a source publishes them. Due-diligence screening: the questions to take to a surveyor and an engineer, not their answers.',
-      source: 'DEMO.md §6; Use cases brief, limits',
+      source: 'Use cases brief, limits',
       durationMs: 8000,
       actions: [{ kind: 'panel', section: 'site' }],
       highlight: [{ kind: 'ui', target: 'site' }],

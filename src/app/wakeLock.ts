@@ -29,7 +29,7 @@ export interface WakeLockHost {
   delay(fn: () => void, ms: number): void;
 }
 
-/** Observable state, for the HUD-less checks that automation and the DEMO checklist rely on. */
+/** Observable state, for the HUD-less checks that automation and the presenter checklist rely on. */
 export interface WakeLockStatus {
   /** The API exists in this browser. */
   supported: boolean;

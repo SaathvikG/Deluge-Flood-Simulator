@@ -2,9 +2,9 @@
  * CALIBRATION REGRESSION against the three real events the presets carry, on the BAKED valleys (public/presets/<id>/
  * chain.json) and the baked chain runs (chain-result.json, which tests/data/presets.test.ts re-derives from the engine).
  *
- * The bounds below are where the model honestly stands after the October 2026 calibration — not the observations'
+ * The bounds below are where the model honestly stands after the calibration — not the observations'
  * own tolerance. They exist to catch a regression (a re-bake or an engine change that moves the answers), and the
- * diagnostics print model against observation for every station. Residuals after the THIRD pass, Oct 2026 (research
+ * diagnostics print model against observation for every station. Residuals after the THIRD pass (research
  * spec §G.9: debris-flow surge source, the Trishuli's mean August flow, a sliding-block runout for Chamoli, Sattar et
  * al.'s 28 m drawdown and 00:35 arrival for South Lhonak); second-pass values in brackets:
  *   Nepal 2026       Betrawati front 65 min (ensemble 55–76) [70] vs 43 min (NDRRMA, the time its gauge was lost) /

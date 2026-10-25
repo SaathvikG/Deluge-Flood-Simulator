@@ -114,14 +114,15 @@ terms ("cars float", "second storey"), and a conservation number sitting next to
 
 ## Notes on the set (for you, not for Devpost)
 
-**Which build each shot came from.** Images 1–6 are the `graphics` branch (3D buildings, new sky, presentation mode).
-Images 7–14 are `global-presets` (which is where Asheville, Nashville, Houston, Boulder and Fort Myers actually live —
-`main` ships only Pittsburgh, Johnstown, Ellicott and the sandbox). No image in this gallery is from `main` alone.
-**Before you submit, make sure the build you link is a build these screenshots are honest about.**
+**Which build each shot came from.** Images 1–6 were captured on the `graphics` branch (3D buildings, new sky,
+presentation mode) and images 7–14 on `global-presets` (Asheville, Nashville, Houston, Boulder and Fort Myers). Both
+have since been merged: `main` now ships the 3D city and every one of these scenes, so a build of `main` is a build
+these screenshots are honest about. Check that the build you link is current before you submit.
 
-**Buildings are rendered, not solid.** On the `graphics` branch the 3D blocks are a rendering layer
-(`ARCHITECTURE.md §6.1`: "Buildings do not" enter the solver). Water flows through them, exactly as the bare-earth
-limitation in `DEMO.md §6` says. Don't let a caption imply the flood is routed around buildings.
+**Buildings are rendered, not solid, by default.** The 3D blocks are a rendering layer (`ARCHITECTURE.md §6.1`: by
+default buildings do not take part in the physics). Water flows through them, as the bare-earth limitation in
+`README.md` says, unless *Buildings block flow* is switched on under Advanced → *Land surface* — and every image here
+was taken with it off. Don't let a caption imply the flood is routed around buildings.
 
 **Why most city shots are the Depth view, not the photoreal one.** At these depths over aerial imagery the realistic
 water renders as a flat tan-grey film that a viewer cannot distinguish from a sandbar. The Depth hazard view is what

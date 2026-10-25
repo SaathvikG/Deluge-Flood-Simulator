@@ -35,7 +35,7 @@ export function usgs3depUrl(m: MercatorBBox, nx: number, ny: number): string {
   return (
     `${USGS_3DEP_EXPORT}?bbox=${f(m.xmin)},${f(m.ymin)},${f(m.xmax)},${f(m.ymax)}` +
     `&bboxSR=3857&imageSR=3857&size=${nx},${ny}&format=tiff&pixelType=F32` +
-    // Ask for the uncompressed TIFF the service already returns by default (verified 2026-09-17: same ETag and body
+    // Ask for the uncompressed TIFF the service already returns by default (verified: same ETag and body
     // with and without the parameter). Being explicit means a server-side default change fails the decoder's
     // compression check and falls back to Terrarium, instead of quietly handing an unbounded inflate hostile bytes —
     // and it keeps geotiff's WebAssembly LERC/ZSTD decoders (which the CSP blocks) off the path. FINDINGS SEC-03.

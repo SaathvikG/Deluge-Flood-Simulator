@@ -149,7 +149,7 @@ Nepal — betrawati (the `nepal` preset). Sources and terms
 ---------------------------------------------------------
 
 The only non-U.S. domain, and the only one whose forcing is a MODELLED scenario rather than a gauge record. All web
-sources accessed 19-20 September 2026. The full research trail is artifacts/nepal-research/BRIEF.md.
+sources accessed in 2026. The full research trail is artifacts/nepal-research/BRIEF.md.
 
   elevation.f32  Copernicus DEM GLO-30, tiles Copernicus_DSM_COG_10_N27_00_E085_00_DEM and
                  ..._N28_00_E085_00_DEM, read directly from the AWS Open Data bucket
@@ -188,7 +188,7 @@ sources accessed 19-20 September 2026. The full research trail is artifacts/nepa
                  are in meta.json under `bake.bareEarth`. THE SCENARIO TEXT ON SCREEN CARRIES ALL OF THAT, INCLUDING
                  THE SPLIT: that the filter only runs on ground flatter than 20 degrees, that 77 % of this domain is
                  steeper and ships as the raw surface model, that the filtered valley floor is still a metre or two
-                 high, and that street-level depths must not be read from it. (Until the 19-20 September 2026 audit
+                 high, and that street-level depths must not be read from it. (Until a 2026 audit
                  the on-screen sentence said only "filtered towards bare earth", which reads as the whole terrain; the
                  77 % lived in this file alone. A caveat a visitor never sees is not a caveat.)
 
@@ -202,7 +202,7 @@ sources accessed 19-20 September 2026. The full research trail is artifacts/nepa
                  repository. Esri World Imagery is never baked for any preset (its terms do not allow it); the app
                  uses it only for live, runtime-fetched areas. The preset therefore ships hypsometric relief plus
                  roads, and `files.imagery` is null.
-                 THE ON-SCREEN SENTENCE SAYS BOTH HALVES. Until the September 2026 audit it said "there is no aerial
+                 THE ON-SCREEN SENTENCE SAYS BOTH HALVES. Until a 2026 audit it said "there is no aerial
                  photograph here that this project may redistribute", which flatly contradicted the paragraph above:
                  redistributable imagery of this valley does exist and was not composed.
 
@@ -222,15 +222,14 @@ sources accessed 19-20 September 2026. The full research trail is artifacts/nepa
                  analysis, and neither claim appears in this app.
                  Numbers used on screen, each as published:
                    * about 20 million m3 of excess water down the Bhote Koshi / Trishuli / Narayani system - DHM Flood
-                     Forecasting Division technical report, 27 August 2026. THE INFLOW IS THE HAZARD CHAIN'S (since
-                     October 2026): scripts/bake-chain-result.ts turns the avalanche's melted ice (20.7 million m3 of
+                     Forecasting Division technical report, 27 August 2026. THE INFLOW IS THE HAZARD CHAIN'S: scripts/bake-chain-result.ts turns the avalanche's melted ice (20.7 million m3 of
                      water - matching that 20 million) into a debris flood, routes it down chain.json and writes the
                      ensemble median member's hydrograph at the north edge as the inflow, labelled "modelled ... not a
                      measured hydrograph"; chain-result.json carries that run's fronts, peaks, bands and lead times.
                      It replaced 11,100 m3/s held for 30 minutes (the volume divided by half an hour - arithmetic, not
                      a peak; WaterSource.stopAfter, still asserted in tests/sim). The 2-D clock is now the event's (t =
                      0 five minutes before the modelled front reaches the edge); the model's front at Betrawati is ~50 %
-                     LATER than the reported 09:20 (65 min against 43; 70 min before the third pass of October 2026,
+                     LATER than the reported 09:20 (65 min against 43; 70 min before the third pass,
                      75 min before the routing took Ferguson's boulder-bed resistance law, below), and the text says
                      so - research spec §G.9 has the diagnosis.
                    * Trishuli at Betrawati, DHM station 447 (dhm.gov.np/hydrology/hms-Single/52): warning level 4.1 m,
@@ -275,7 +274,7 @@ sources accessed 19-20 September 2026. The full research trail is artifacts/nepa
                      80 m above the channel surface beside it
                    * Shree Sivalaya Ni Ma.V    node 4969611375  27.9835489 N, 85.1913123 E  -> shelter at 929 m,
                      276 m above the channel surface beside it
-                 It said THREE until the September 2026 audit, and the third was wrong twice over. "Kalika Community
+                 It said THREE until a 2026 audit, and the third was wrong twice over. "Kalika Community
                  Hospital" was pinned to [85.18091, 28.02053], which is an untagged vertex of OSM way 443766738 (a
                  stream) 3.5 km north of the hospital and 753 m below it - a real hospital's name, on screen and in
                  the routing text, over a stream bank. The hospital's own node (4407834159, 27.9938874 N,
@@ -297,7 +296,7 @@ sources accessed 19-20 September 2026. The full research trail is artifacts/nepa
                  so a name can no longer drift away from the place it names.
 
   chain.json     THE VALLEY UPSTREAM OF THE DOMAIN, for the glacier hazard chain (src/hazard/types.ts ChainFile),
-                 baked 12 October 2026 by scripts/bake-chain.ts; meta.json `scenario.hazardChain` points at it. The
+                 baked by scripts/bake-chain.ts; meta.json `scenario.hazardChain` points at it. The
                  scenario that runs today is NOT changed by it (same single inflow, asserted by the tests).
                  Centreline: OpenStreetMap waterways (© OpenStreetMap contributors, ODbL 1.0), fetched with the OSM API
                  0.6 `map` call in 113 tiles of 0.03 deg along the corridor (cached under artifacts/nepal-build/chain-osm,
@@ -317,13 +316,13 @@ sources accessed 19-20 September 2026. The full research trail is artifacts/nepa
                  surface and the sections miss the conveyance below it. Sections: DEM transects perpendicular to the
                  river through the thalweg, every 15 m out to 1,500 m a side or until the ground stands 150 m above the
                  bed; stage table 0-60 m above the bed (area, top width, wetted perimeter). Manning n 0.05 throughout.
-                 BED RESISTANCE (since October 2026): the Nepal routing does not use that n. meta.json
+                 BED RESISTANCE: the Nepal routing does not use that n. meta.json
                  scenario.hazardChain.routing selects Ferguson's variable-power equation (Ferguson 2007, Water
                  Resources Research 43, W05427, doi:10.1029/2006WR005422; a1 = 6.5, a2 = 2.5) on a bed D84 of 0.5 m -
                  THIS BAKE'S ASSUMPTION (no surveyed D84 for these rivers was found; middle of the 0.3-1 m taken for
                  boulder-bed mountain rivers; not fitted to the arrival times). At flood depths it equals n ~ 0.044-
                  0.047; it moved the Betrawati front from 75 to 70 min (observed 43). Research spec §G.9.
-                 SOURCE AND RIVER (third pass, October 2026): the avalanche's flood leaves the impact as a debris-flow
+                 SOURCE AND RIVER (third pass): the avalanche's flood leaves the impact as a debris-flow
                  SURGE (peak at the front, linear recession; src/hazard/mass.ts surgeHydrograph) instead of a
                  breach-like gamma curve that peaked 11 min after the mass reached the river, and it runs on the
                  river's mean August flow (above). Betrawati 70 -> 65 min, Syafrubesi gauge 32 -> 29, Rasuwagadhi
@@ -370,7 +369,7 @@ Chungthang - Teesta Valley (the `chungthang` preset). Sources and terms
 -----------------------------------------------------------------------
 
 The second non-U.S. domain, built exactly as `nepal` is (scripts/bake-presets.ts, `global`): same services, same
-licences, same caveats, and every one of them is in the on-screen scenario text. Web sources accessed 12 October 2026.
+licences, same caveats, and every one of them is in the on-screen scenario text. Web sources accessed in 2026.
 
   elevation.f32  Copernicus DEM GLO-30, tile Copernicus_DSM_COG_10_N27_00_E088_00_DEM, AWS Open Data bucket, same
                  licence and credit as Nepal's, same bare-earth filter. 0.9 % of cells flagged (mean drop 3.6 m,
@@ -411,15 +410,14 @@ licences, same caveats, and every one of them is in the on-screen scenario text.
                  half the lake - was released, ~270 million m3 of sediment mobilised, and the flood reached Chungthang
                  and the 60 m Teesta-III dam (1,200 MW) about 00:35 and destroyed it (Sattar et al. 2025, Science,
                  doi:10.1126/science.ads2659; first read via Eos / The Landslide Blog and the Newcastle University
-                 release, since October 2026's third pass from the accepted manuscript, eprints.whiterose.ac.uk/224098:
+                 release, since the third pass, from the accepted manuscript, eprints.whiterose.ac.uk/224098:
                  the lake level fell 28 m, the 55 m breach was complete by ~22:24, the outflow peaked at 4.85e4 m3/s of
                  water at the lake, and their HEC-RAS run puts the flood at Chungthang at ~00:30 "in line with the
                  reported arrival time (~00:35)" - so 00:30, quoted here before, is a model result and 00:35 is the
                  report; how it was recorded is not stated). A later study puts the debris input at ~38 million m3 (Mohanty et al.
                  2026, Science Advances); the disagreement is real and is recorded, not resolved.
                  Peak at Chungthang: NO GAUGE. Published values are model reconstructions spanning 5,340 (Sattar et al.
-                 2025's own HEC-RAS run) to 14,673 m3/s (research spec §G.3); the text quotes that whole range. THE FORCING IS THE HAZARD CHAIN'S
-                 (since October 2026): scripts/bake-chain-result.ts runs the chain (impulse wave -> overtopping ->
+                 2025's own HEC-RAS run) to 14,673 m3/s (research spec §G.3); the text quotes that whole range. THE FORCING IS THE HAZARD CHAIN'S: scripts/bake-chain-result.ts runs the chain (impulse wave -> overtopping ->
                  breach -> 1-D routing down chain.json), takes the ensemble's median member and writes its routed
                  hydrograph at the north edge as the inflow, labelled "modelled ... not a measured hydrograph"; that
                  run's station fronts, peaks and ensemble bands are in chain-result.json. It replaced a parametric
@@ -467,7 +465,7 @@ Chamoli - Raini-Tapovan, Dhauliganga Valley (the `chamoli` preset). Sources and 
 -------------------------------------------------------------------------------------
 
 The third non-U.S. domain, built as `nepal` and `chungthang` are (scripts/bake-presets.ts, `global`): same services,
-same licences, same caveats, every one of them in the on-screen scenario text. Web sources accessed 12 October 2026.
+same licences, same caveats, every one of them in the on-screen scenario text. Web sources accessed in 2026.
 
   elevation.f32  Copernicus DEM GLO-30, tile Copernicus_DSM_COG_10_N30_00_E079_00_DEM, AWS Open Data bucket, same
                  licence and credit as Nepal's, same bare-earth filter: 1.7 % of cells flagged (mean drop 4.5 m, max
@@ -549,7 +547,7 @@ same licences, same caveats, every one of them in the on-screen scenario text. W
                  winter baseflow. Rheology: O'Brien-Julien quadratic, Cv 0.45, material Glenwood 1 (the fluid end of
                  O'Brien & Julien 1988's table), K 2,285; 25 m/s cap. The stiff end (Aspen Pit 1) and Voellmy mu 0.05
                  both STALL on the Dhauliganga's 2.3 % bed (measured on the GPU; mu 0.05 exceeds the slope outright).
-                 The avalanche's own motion (third pass, October 2026): a Voellmy-Salm sliding block from the
+                 The avalanche's own motion (third pass): a Voellmy-Salm sliding block from the
                  detachment (src/hazard/runout.ts) with mu 0.12, xi 2,500 m/s2 - the RAMMS back-analysis of this
                  event by Zhang, Yin, Li et al. 2022, J. Rock Mech. Geotech. Eng. 15:296-308,
                  doi:10.1016/j.jrmge.2022.04.003 (read through a secondary source; inside Allen et al. 2009's

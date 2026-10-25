@@ -128,7 +128,7 @@ export const CHAIN_DEFS: ChainDef[] = [
        * THE 2026 MECHANISM, per research spec §C.3 / §G.1: an ice-rock avalanche into the Lhende that turned into a
        * debris flood, after blocking the river for "a few minutes" at most (YAE/KU; an 18–19 h impoundment hypothesis
        * exists and is not the default).
-       *   mode        DIRECT FLOW (spec §C.3 branch 2), not a transient dam. Calibration, Oct 2026: s = 0 is where the
+       *   mode        DIRECT FLOW (spec §C.3 branch 2), not a transient dam. Calibration: s = 0 is where the
        *               avalanche met the river, and the DEM profile has no valley above it to pond, so a transient dam
        *               there "fills" for 10.5 h at baseflow and lets out 3.8 Mm³ at ~500 m³/s — the front reached
        *               Betrawati after ~15 h against the reported 43 min. Moving s = 0 upstream would invent a lake no
@@ -173,7 +173,7 @@ export const CHAIN_DEFS: ChainDef[] = [
        * 2-D rheology: O'Brien–Julien quadratic, "mud flood" Cv 0.3 with the Glenwood 1 material (spec §D.1; FLO-2D
        * default K). Not the Voellmy μ 0.05 / ξ 500 of the first version: its Coulomb term stops flow wherever the surface
        * slope is under μ·cosθ ≈ 2.9°, and the Trishuli floor in this domain falls ~2 %, so the 2-D surge stalled ~2 km
-       * into the map (solver engineer's headless runs, Oct 2026: front row at 450 s — water 456, Voellmy 401,
+       * into the map (solver engineer's headless runs: front row at 450 s — water 456, Voellmy 401,
        * quadratic Cv 0.3 436, Cv 0.45 336) [C]. The spec notes the yield/Coulomb terms matter little for debris floods
        * at Cv 0.1–0.35. uMax 25 m/s — ICIMOD timed ~20 m/s Rasuwagadhi → Betrawati. (The 1-D routing does not read
        * this: it carries its own Cv and Manning × n_td(Cv).)
@@ -338,7 +338,7 @@ export const CHAIN_DEFS: ChainDef[] = [
        *               iceFraction 0.2, fallHeight 150 m, pathLength 500 m are ASSUMPTIONS (order of magnitude for a
        *               lateral-moraine slope into the lake); none was published in the sources read.
        *   breach      weir + linear erosion (§B.3) with the spec's trigger-driven k = 100 m/h; finalDepth 28 m, the
-       *               lake-level drop Sattar et al. 2025 measured (it was the spec's ASSUMED 40 m until Oct 2026's
+       *               lake-level drop Sattar et al. 2025 measured (it was the spec's ASSUMED 40 m until the
        *               third pass), with r = 2, side slope 1, p = 1.5 defaults.
        *   wave        where the outlet lies relative to the slide, for the impulse wave's spreading (mass.ts
        *               impulseWave; Evers et al. 2019 manual §4.2.1). A LATERAL moraine runs along the lake's side, so
@@ -347,7 +347,7 @@ export const CHAIN_DEFS: ChainDef[] = [
        *               the lake is ~2.9 km long (EGU24-18788) so ~0.58 km wide (1.674 km² / 2.9 km). Impact taken at
        *               the centroid, half a width from the shore: distance √(1300² + 290²) ≈ 1,330 m, angle
        *               atan(1300 / 290) ≈ 77° — ASSUMPTIONS built from those numbers; the failure's exact place on
-       *               the shore was not in the sources read. Result (Oct 2026): wave height 15 m at the outlet
+       *               the shore was not in the sources read. Result: wave height 15 m at the outlet
        *               (≈ 20 m observed) where the flume equations gave 46 m.
        */
       trigger: {
@@ -364,7 +364,7 @@ export const CHAIN_DEFS: ChainDef[] = [
         },
         mass: { volume: 14.7e6, iceFraction: 0.2, fallHeight: 150, pathLength: 500 },
         /*
-         * finalDepth 28 m (third pass, Oct 2026): the lake LEVEL fell 28 m — Sattar et al. 2025 (accepted manuscript,
+         * finalDepth 28 m (third pass): the lake LEVEL fell 28 m — Sattar et al. 2025 (accepted manuscript,
          * eprints.whiterose.ac.uk/224098) [V]; the breach itself was cut 55 m into the moraine crest, which stood above
          * the lake. The 40 m before was the spec's assumption. With the default hypsometry it drains 43 Mm³ (Sattar:
          * 50 ± 1.8 Mm³, which includes water displaced by the 14.7 Mm³ slide — not modelled). k = 100 m/h agrees with
@@ -379,7 +379,7 @@ export const CHAIN_DEFS: ChainDef[] = [
       /*
        * ~270 Mm³ of sediment was mobilised (Sattar et al. 2025): a debris flood. 2-D rheology O'Brien–Julien quadratic,
        * "mud flood" Cv 0.3, Glenwood 1 (spec §D.1), not Voellmy μ 0.05 — whose Coulomb term stalls flow on surface
-       * slopes under ~2.9°, which lagged the 2-D front here as on the Trishuli (solver engineer's runs, Oct 2026) [C].
+       * slopes under ~2.9°, which lagged the 2-D front here as on the Trishuli (solver engineer's runs) [C].
        */
       rheology: { kind: 'quadratic', cv: 0.3, material: { ...MATERIAL_GLENWOOD_1 } },
       solver: { uMax: 25 },

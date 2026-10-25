@@ -73,7 +73,7 @@ const SECONDS = Number(argv.seconds ?? (QUICK ? 8 : 15));
 const SUSTAIN_S = Number(argv.sustain ?? (QUICK ? 0 : 60));
 
 // ── thresholds ──────────────────────────────────────────────────────────────────────────────────
-// Calibrated on the demo machine (MacBook Air M4, 16 GB, macOS 15) on 2026-09-17 with
+// Calibrated on the demo machine (MacBook Air M4, 16 GB, macOS 15) with
 // `node scripts/perf.mjs --calibrate --port=5603` — 11 cases, on battery, Low Power Mode off. The worst case
 // measured across all of them was: 60.0 fps mean, 52.6 fps p95-low, 16.7 ms p50, 19.0 ms p95, 23.1 ms p99,
 // zero frames over 34 ms, 4.1 ms CPU p95, 43.0 ms GPU p90, 55.9 ms input p95, 0.55 s TTI (15.8 s for the live

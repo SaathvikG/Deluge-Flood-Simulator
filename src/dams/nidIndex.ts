@@ -3,7 +3,7 @@
  * National Inventory of Dams (NID) for every dam big enough to make a breach flood worth mapping.
  *
  * WHERE IT COMES FROM. The NID API (nid.sec.usace.army.mil/api/…) answers requests from a browser page with no
- * Access-Control-Allow-Origin header (checked October 2026: a GET carrying an Origin header gets 200 with
+ * Access-Control-Allow-Origin header (checked in 2026: a GET carrying an Origin header gets 200 with
  * Access-Control-Allow-Credentials but no allowed origin, and the national CSV export answers 403), so the page cannot
  * read it — and the CSP stays without it. scripts/bake-nid.ts reads the NID's own national GeoPackage export
  * (nid.sec.usace.army.mil/api/nation/gpkg, the "public" fields only) and writes public/dams/nid-index.bin, which this

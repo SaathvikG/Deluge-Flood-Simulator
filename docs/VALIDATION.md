@@ -8,6 +8,23 @@ Everything in [ARCHITECTURE.md §9](../ARCHITECTURE.md#9-validation) proves the 
 dam break, lake at rest, exact mass ledger, grid convergence). None of that says the flood on screen is the flood
 that happened. This page does, as far as public data allows — and in several places the honest answer is "not well".
 
+**Contents:** [Results at a glance](#results-at-a-glance) · [Method](#method) · per scene:
+[Fort Myers](#fort-myers--hurricane-ian-28-september-2022) ·
+[Nashville 1 %](#nashville--cumberland-river-at-femas-1--level) ·
+[Nashville 2010](#nashville--the-cumberland-flood-of-13-may-2010) ·
+[Pittsburgh](#pittsburgh--three-rivers-at-femas-1--level) ·
+[Asheville](#asheville--hurricane-helene-27-september-2024) · [Houston](#houston--hurricane-harvey-august-2017) ·
+[Betrawati](#betrawati-nepal--the-trishuli-debris-flood-26-august-2026) ·
+[context-only scenes](#boulder-ellicott-city-johnstown--context-only) · [Chamoli and Chungthang](#chamoli-and-chungthang) ·
+[optional land-surface layers](#buildings-a-land-cover-roughness-map-and-storm-drains) ·
+[what is not covered](#what-these-numbers-do-not-cover) · [data and licences](#data-and-licences) ·
+[reproduce](#reproduce)
+
+**How to read the table.** *Like-for-like* means the model was run under the same conditions the observation records
+— the measured water level imposed, the peak compared with the peak — so the score is a fair test. A comparison that
+is not like-for-like is still reported, because it is the best data that exists for the scene, but it is context, not
+skill.
+
 ## Results at a glance
 
 | Scene | Observed data | Like-for-like? | Result |
@@ -385,7 +402,7 @@ caveats in ARCHITECTURE.md.
 Searched and not available for a domain: USGS STN marks for Helene in North Carolina (the event's STN records are in
 FL, SC and VA; USACE's Helene marks are a report, not a dataset), for the May 2010 Nashville flood, for the 2016
 Ellicott City flood and inside the Boulder domain; Copernicus EMS activations for Chamoli 2021 and Sikkim 2023.
-In October 2026 every one of the STN database's events was checked against every U.S. domain: only Harvey (Houston)
+In 2026 every one of the STN database's events was checked against every U.S. domain: only Harvey (Houston)
 and Ian (Fort Myers) have surveyed NAVD88 marks inside one — Irma's 506 and Helene's 321 marks have none inside the
 Fort Myers domain, and the Milton and Beryl events hold almost no marks at all. The STN does hold digitised historical
 marks inside two domains — "1972 Jun OH Flood" (Agnes) and "2004 Sep OH Flood" (Ivan) at Pittsburgh (8 and 5), and

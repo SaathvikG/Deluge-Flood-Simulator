@@ -257,7 +257,7 @@ export interface TideGaugeSlr {
 
 /**
  * NOAA 2022 relative SLR at tide gauges a preset stands on: the medians the CO-OPS API serves per station
- * (slr_projections, report_year 2022), read October 2026 [V]. That series is zeroed at 2005 (the report text says a 2000
+ * (slr_projections, report_year 2022), read in 2026 [V]. That series is zeroed at 2005 (the report text says a 2000
  * baseline; the 5-year difference is ~2–4 cm here). Naples (8725110) agrees within 1 cm.
  */
 export const TIDE_GAUGE_SLR: Readonly<Record<string, TideGaugeSlr>> = {
