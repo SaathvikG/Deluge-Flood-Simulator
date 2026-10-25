@@ -4,7 +4,7 @@
 The order tells the story: **hook → what it does → why you should believe it → how far it goes.**
 
 Every frame is the production build running live on the GPU (headless Chromium, WebGPU), captured by
-`artifacts/gallery-new/capture.mjs`. Each scene is set up by clicking the app's own buttons, then paused at an exact
+[`scripts/gallery-capture.mjs`](../../scripts/gallery-capture.mjs). Each scene is set up by clicking the app's own buttons, then paused at an exact
 simulated time, so every number in a caption is the one on screen.
 
 | # | File | Caption |
@@ -29,5 +29,5 @@ simulated time, so every number in a caption is the one on screen.
 * **Images 6 and 8 show the water reset.** Site check sweeps and ensembles run headless and put the user's scenario
   back afterwards, which is why the map in those two reads T+00:00:00 while the panel holds the results.
 * **The Houston portfolio is fictional:** 19 made-up assets on real building footprints (README *Use cases*).
-* **Re-capture** with `TORRENT_DEBUG_API=1 npm run demo`, then `node artifacts/gallery-new/capture.mjs [shot-id …]`.
-  `artifacts/` is git-ignored, so the script is not committed; copy it into `scripts/` if you want to keep it.
+* **Re-capture** with `TORRENT_DEBUG_API=1 npm run demo`, then `node scripts/gallery-capture.mjs [shot-id …]`; the
+  raw PNGs land in `artifacts/gallery-new/raw/`, and the script's header has the JPEG conversion command.
