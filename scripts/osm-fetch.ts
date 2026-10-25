@@ -22,7 +22,7 @@ import type { GeoBounds } from '../src/contracts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const REPO_ROOT = path.resolve(HERE, '..');
-export const USER_AGENT = 'Deluge-flood-sim/0.1 (offline flood simulator; one-off preset bake)';
+export const USER_AGENT = 'Torrent-flood-sim/0.1 (offline flood simulator; one-off preset bake)';
 const PAUSE_MS = 2000;
 /** Public Overpass instances, tried in order (overpass-api.de first: it is the reference instance). */
 export const OVERPASS_MIRRORS = [

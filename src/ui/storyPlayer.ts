@@ -345,7 +345,7 @@ export function createStoryPlayer(
     if (!pins.length) return;
     const cam = camera() as (ReturnType<typeof camera> & Partial<MatrixCamera>) | null;
     const t = terrain();
-    const canvas = document.getElementById('deluge-canvas') as HTMLCanvasElement | null;
+    const canvas = document.getElementById('torrent-canvas') as HTMLCanvasElement | null;
     if (cam && typeof cam.matrices === 'function' && t && canvas) {
       const rect = canvas.getBoundingClientRect();
       if (rect.width > 0 && rect.height > 0) {

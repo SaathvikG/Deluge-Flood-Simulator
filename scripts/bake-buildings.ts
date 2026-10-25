@@ -135,7 +135,7 @@ async function tileXml(id: string, b: GeoBounds, depth = 0): Promise<string[]> {
   if (depth > 3) throw new Error(`cannot split tile ${tileKey(b)} any further`);
   const url = `https://api.openstreetmap.org/api/0.6/map?bbox=${b.west.toFixed(5)},${b.south.toFixed(5)},${b.east.toFixed(5)},${b.north.toFixed(5)}`;
   const res = await fetch(url, {
-    headers: { 'User-Agent': 'Deluge-flood-sim/0.1 (offline flood simulator; one-off building footprint bake)' },
+    headers: { 'User-Agent': 'Torrent-flood-sim/0.1 (offline flood simulator; one-off building footprint bake)' },
   });
   const body = await res.text();
   if (res.status === 400 && /too many nodes/i.test(body)) {
@@ -196,7 +196,7 @@ async function cached(id: string, name: string, url: string): Promise<Buffer> {
   const file = path.join(dir, name);
   if (!REFRESH && fs.existsSync(file) && fs.statSync(file).size > 0) return fs.readFileSync(file);
   log(id, `  downloading ${name}…`);
-  const res = await fetch(url, { headers: { 'User-Agent': 'Deluge-flood-sim/0.1 (one-off building footprint bake)' } });
+  const res = await fetch(url, { headers: { 'User-Agent': 'Torrent-flood-sim/0.1 (one-off building footprint bake)' } });
   if (!res.ok) throw new Error(`${res.status} for ${url}`);
   const buf = Buffer.from(await res.arrayBuffer());
   fs.mkdirSync(dir, { recursive: true });

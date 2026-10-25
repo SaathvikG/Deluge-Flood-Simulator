@@ -1,5 +1,5 @@
 /**
- * The Impact panel section ("Deluge for Business"): what the flood on screen does to the buildings under it — and to
+ * The Impact panel section ("Torrent for Business"): what the flood on screen does to the buildings under it — and to
  * the user's own assets — in counts, dollars, hazard classes and warning time, with a before/after comparison when
  * a wall is built, and CSV / printable-report export. All the arithmetic is in src/loss (pure, unit-tested); this file
  * reads the flood, calls it, and lays the answer out.
@@ -319,7 +319,7 @@ export function createImpactSection(ctx: UIContext): ImpactSection {
     getCamera: () => bridge.scene?.getCamera?.() ?? null,
     getTerrain,
     getExaggeration: () => store.get().render.verticalExaggeration,
-    getCanvas: () => (typeof document !== 'undefined' ? (document.getElementById('deluge-canvas') as HTMLCanvasElement | null) : null),
+    getCanvas: () => (typeof document !== 'undefined' ? (document.getElementById('torrent-canvas') as HTMLCanvasElement | null) : null),
   });
   ctx.own(() => markers.destroy());
 
@@ -722,7 +722,7 @@ export function createImpactSection(ctx: UIContext): ImpactSection {
   function baseName(): string {
     const s = store.get();
     const t = run ? Math.round(run.sig.simTime / 60) : 0;
-    return safeFilename(`deluge-impact-${s.presetId ?? 'area'}-T${t}min`);
+    return safeFilename(`torrent-impact-${s.presetId ?? 'area'}-T${t}min`);
   }
 
   function exportCsv() {
@@ -767,7 +767,7 @@ export function createImpactSection(ctx: UIContext): ImpactSection {
 
   function exportHtml() {
     const el = report();
-    if (el) downloadText(reportHtmlDocument(el, `Deluge impact report — ${store.get().terrainName}`), `${baseName()}.html`, 'text/html');
+    if (el) downloadText(reportHtmlDocument(el, `Torrent impact report — ${store.get().terrainName}`), `${baseName()}.html`, 'text/html');
   }
 
   // ─── Store wiring ───────────────────────────────────────────────────────────────────────────────────────────

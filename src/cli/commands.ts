@@ -115,7 +115,7 @@ interface Prepared {
 /** --preset, checked against the presets on disk (also the API’s first check, src/cli/api.ts). */
 export function requirePreset(env: Pick<CliEnv, 'presetIds'>, o: ParsedOptions): string {
   const id = str(o, 'preset');
-  if (!id) throw new UsageError('--preset is required (see `deluge presets`)');
+  if (!id) throw new UsageError('--preset is required (see `torrent presets`)');
   if (!isPresetId(id) || !env.presetIds().includes(id)) throw new UsageError(`unknown preset "${id}" (one of ${env.presetIds().join(', ')})`);
   return id;
 }
@@ -400,7 +400,7 @@ export async function runCommand(env: CliEnv, o: ParsedOptions): Promise<number>
     if (!flag(o, 'no-rasters')) {
       for (const L of layers) {
         const file = `${outDir}/${L.file}`;
-        env.write(file, geotiffBytes(L.data, t.nx, t.ny, t.bounds, L.nodata, `Deluge ${p.presetId}: ${L.description} (${L.unit})`));
+        env.write(file, geotiffBytes(L.data, t.nx, t.ny, t.bounds, L.nodata, `Torrent ${p.presetId}: ${L.description} (${L.unit})`));
         rasters.push({ file: L.file, layer: L.name, unit: L.unit, nodata: L.nodata, dataType: L.data instanceof Uint8Array ? 'UInt8' : 'Float32', description: L.description });
       }
     }
@@ -419,7 +419,7 @@ export async function runCommand(env: CliEnv, o: ParsedOptions): Promise<number>
     const s = analysis.report?.summary ?? null;
     const st = snapshot?.stats ?? null;
     const summary = {
-      tool: 'deluge',
+      tool: 'torrent',
       version: env.version,
       command: 'run',
       generatedAt: env.now().toISOString(),
@@ -523,7 +523,7 @@ export async function portfolioCommand(env: CliEnv, o: ParsedOptions): Promise<n
       env.write(
         summaryPath,
         toJson({
-          tool: 'deluge',
+          tool: 'torrent',
           version: env.version,
           command: 'portfolio',
           generatedAt: env.now().toISOString(),
@@ -750,7 +750,7 @@ export async function siteCommand(env: CliEnv, o: ParsedOptions): Promise<number
     const t0 = performance.now();
     const region = regionForBounds(t.bounds);
     const report: Record<string, unknown> = {
-      tool: 'deluge',
+      tool: 'torrent',
       version: env.version,
       command: 'site',
       generatedAt: env.now().toISOString(),

@@ -16,9 +16,9 @@ import { ATLAS14_MAX_DOWNLOAD, decodeAtlas14Grid, gunzipCapped, type Atlas14Grid
 import { listPresets, loadPreset, setPresetBaseUrl, type PresetMeta } from '../data/presets';
 import { decodeNidIndex, NID_LIMITS, type NidIndex } from '../dams/nidIndex';
 
-/** public/presets of this checkout (overridable with DELUGE_PRESETS_DIR, e.g. for a packaged install). */
+/** public/presets of this checkout (overridable with TORRENT_PRESETS_DIR, e.g. for a packaged install). */
 export function presetsDir(): string {
-  const env = process.env.DELUGE_PRESETS_DIR;
+  const env = process.env.TORRENT_PRESETS_DIR;
   if (env) return path.resolve(env);
   return path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../public/presets');
 }

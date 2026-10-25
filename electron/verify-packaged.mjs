@@ -5,7 +5,7 @@
  * every network host unreachable, the pitch flows, and frame rate at the Air's own resolution.
  *
  * Nothing here can be driven from outside — that is the point of items 9 and 10 — so the packaged app reports on
- * itself through the smoke hook in electron/main.js, which only a bundle named "Deluge Verify" answers. That
+ * itself through the smoke hook in electron/main.js, which only a bundle named "Torrent Verify" answers. That
  * bundle comes off the same `electron/package.mjs` pipeline as the shipping one: same fuses, same asar, same
  * security configuration, different name and `dist/`.
  *
@@ -20,9 +20,9 @@ import path from 'node:path';
 
 const REPO = path.resolve(import.meta.dirname, '..');
 const OUT = path.join(REPO, 'artifacts/electron');
-const RELEASE = path.join(REPO, 'release/Deluge.app');
-const RELEASE_BIN = path.join(RELEASE, 'Contents/MacOS/Deluge');
-const VERIFY_NAME = 'Deluge Verify';
+const RELEASE = path.join(REPO, 'release/Torrent.app');
+const RELEASE_BIN = path.join(RELEASE, 'Contents/MacOS/Torrent');
+const VERIFY_NAME = 'Torrent Verify';
 
 const checks = [];
 let failures = 0;
@@ -98,7 +98,7 @@ function processTree(rootPid) {
 /* ---------------------------------------------------------------------------- build what we verify */
 
 if (!existsSync(RELEASE_BIN)) {
-  console.error('No release/Deluge.app — run `npm run app:build` first.');
+  console.error('No release/Torrent.app — run `npm run app:build` first.');
   process.exit(1);
 }
 await mkdir(OUT, { recursive: true });
@@ -179,7 +179,7 @@ for (const [id, arg, port] of [['9d', '--inspect=9229', 9229], [10, '--remote-de
 /* 11: asar integrity */
 {
   const dir = path.join(OUT, 'tamper');
-  const app = path.join(dir, 'Deluge.app');
+  const app = path.join(dir, 'Torrent.app');
   await rm(dir, { recursive: true, force: true });
   await mkdir(dir, { recursive: true });
   await cp(RELEASE, app, { recursive: true, verbatimSymlinks: true });
@@ -193,7 +193,7 @@ for (const [id, arg, port] of [['9d', '--inspect=9229', 9229], [10, '--remote-de
   writeFileSync(asar, buf);
   // Re-signed ad hoc so the *only* broken thing is the integrity hash, not the code signature.
   const resign = sh('codesign', ['--sign', '-', '--force', '--preserve-metadata=entitlements,requirements,flags,runtime', '--deep', app]);
-  const r = await runBriefly(path.join(app, 'Contents/MacOS/Deluge'), [], { ms: 8000 });
+  const r = await runBriefly(path.join(app, 'Contents/MacOS/Torrent'), [], { ms: 8000 });
   const refused = /Integrity check failed/i.test(r.out) || /FATAL.*asar/i.test(r.out);
   record(11, 'R11', 'a tampered app.asar refuses to start', refused, `re-signed=${resign.status === 0}; ${(r.out.match(/[^\n]*[Ii]ntegrity[^\n]*/) ?? ['no integrity message — IT STARTED'])[0].slice(0, 140)}`);
   await rm(dir, { recursive: true, force: true });
@@ -202,7 +202,7 @@ for (const [id, arg, port] of [['9d', '--inspect=9229', 9229], [10, '--remote-de
 /* 16: static scan. §V allows a finding to stand if it has a written justification — these are those. */
 const JUSTIFIED = {
   CSP_GLOBAL_CHECK:
-    'The scanner looks for a CSP in HTML inside the scanned tree; the wrapper directory has no HTML. Deluge sends the policy as a real response header from serveApp (checklist item 3 reads it back off a worker asset) and vite.config.ts also injects the same policy as a meta into dist/index.html.',
+    'The scanner looks for a CSP in HTML inside the scanned tree; the wrapper directory has no HTML. Torrent sends the policy as a real response header from serveApp (checklist item 3 reads it back off a worker asset) and vite.config.ts also injects the same policy as a meta into dist/index.html.',
   OPEN_EXTERNAL_JS_CHECK:
     'R9. openExternalSafe only ever passes an https URL whose origin+pathname exactly matches EXTERNAL_LINKS (one entry: the project repo), with no embedded credentials. Every other string is dropped and logged.',
   CERTIFICATE_ERROR_EVENT_JS_CHECK:
@@ -230,9 +230,9 @@ const JUSTIFIED = {
 /* 14: the packaged bundle carries no debug API */
 {
   const asar = readFileSync(path.join(RELEASE, 'Contents/Resources/app.asar'));
-  const hits = (asar.toString('latin1').match(/__deluge(?!\[)/g) ?? []).length;
-  const uiHits = (asar.toString('latin1').match(/__delugeUI/g) ?? []).length;
-  record(14, 'R12,SEC-07', 'no __deluge / __delugeUI anywhere in the packaged asar', hits === 0 && uiHits === 0, `${hits} + ${uiHits} occurrences`);
+  const hits = (asar.toString('latin1').match(/__torrent(?!\[)/g) ?? []).length;
+  const uiHits = (asar.toString('latin1').match(/__torrentUI/g) ?? []).length;
+  record(14, 'R12,SEC-07', 'no __torrent / __torrentUI anywhere in the packaged asar', hits === 0 && uiHits === 0, `${hits} + ${uiHits} occurrences`);
 }
 
 /* --------------------------------------------------- the packaged app, running, reporting on itself */
@@ -254,41 +254,41 @@ const SMOKE_PROD = `(async () => {
     adapter: adapter ? { vendor: adapter.info?.vendor ?? null, architecture: adapter.info?.architecture ?? null } : null,
     fps: Math.round((frames / elapsed) * 10) / 10,
     canvas: canvas ? { css: [canvas.clientWidth, canvas.clientHeight], backing: [canvas.width, canvas.height], dpr: devicePixelRatio } : null,
-    debugApi: typeof window.__deluge,
-    uiDebug: typeof document.getElementById('ui-root')?.__delugeUI,
+    debugApi: typeof window.__torrent,
+    uiDebug: typeof document.getElementById('ui-root')?.__torrentUI,
     text: (document.body.innerText || '').replace(/\\s+/g, ' ').slice(0, 500),
-    fatal: Boolean(document.getElementById('deluge-fatal')),
+    fatal: Boolean(document.getElementById('torrent-fatal')),
   };
 })()`;
 
 const SMOKE_FLOWS = `(async () => {
-  await window.__deluge.ready;
+  await window.__torrent.ready;
   const out = { steps: [] };
   const step = (name, value) => out.steps.push({ name, value });
-  await window.__deluge.loadPreset('pittsburgh');
-  step('pittsburgh loaded', window.__deluge.getState().presetId);
+  await window.__torrent.loadPreset('pittsburgh');
+  step('pittsburgh loaded', window.__torrent.getState().presetId);
   // Pitch beat 1: raise the rivers to the 1936 crest.
-  const crest = window.__deluge.stageOffsetForFeet(46);
-  window.__deluge.setStage(crest ?? 6, { instant: true });
-  window.__deluge.setPaused(false);
-  await window.__deluge.runFor(120);
-  step('crest volume m3', Math.round(window.__deluge.getStats().volume));
+  const crest = window.__torrent.stageOffsetForFeet(46);
+  window.__torrent.setStage(crest ?? 6, { instant: true });
+  window.__torrent.setPaused(false);
+  await window.__torrent.runFor(120);
+  step('crest volume m3', Math.round(window.__torrent.getStats().volume));
   // Pitch beat 2: 100 mm/hr of rain, fast-forwarded.
-  window.__deluge.setRain(100);
-  await window.__deluge.runFor(600);
-  step('after rain, flooded area m2', Math.round(window.__deluge.getStats().floodedArea));
+  window.__torrent.setRain(100);
+  await window.__torrent.runFor(600);
+  step('after rain, flooded area m2', Math.round(window.__torrent.getStats().floodedArea));
   // Pitch beat 3: build a levee and watch the protected area appear.
-  const s = window.__deluge.getSolver();
-  window.__deluge.selectTool('wall');
-  window.__deluge.drawWall([{ gx: (s.nx >> 1) - 60, gy: s.ny >> 1 }, { gx: s.nx >> 1, gy: (s.ny >> 1) + 40 }, { gx: (s.nx >> 1) + 60, gy: s.ny >> 1 }], 4);
-  for (let i = 0; i < 200 && !window.__deluge.getProtection()?.wallCells; i++) await window.__deluge.waitFrames(2);
-  step('levee wall cells', window.__deluge.getProtection()?.wallCells ?? 0);
+  const s = window.__torrent.getSolver();
+  window.__torrent.selectTool('wall');
+  window.__torrent.drawWall([{ gx: (s.nx >> 1) - 60, gy: s.ny >> 1 }, { gx: s.nx >> 1, gy: (s.ny >> 1) + 40 }, { gx: (s.nx >> 1) + 60, gy: s.ny >> 1 }], 4);
+  for (let i = 0; i < 200 && !window.__torrent.getProtection()?.wallCells; i++) await window.__torrent.waitFrames(2);
+  step('levee wall cells', window.__torrent.getProtection()?.wallCells ?? 0);
   // Pitch beat 4: evacuation routing reacts to the water.
-  step('road status', window.__deluge.getRoadStatusCounts());
-  const perf = window.__deluge.getPerf();
+  step('road status', window.__torrent.getRoadStatusCounts());
+  const perf = window.__torrent.getPerf();
   out.fps = Math.round(perf.fps * 10) / 10;
-  out.simClock = Math.round(window.__deluge.getSimClock());
-  out.errors = window.__deluge.errors.length;
+  out.simClock = Math.round(window.__torrent.getSimClock());
+  out.errors = window.__torrent.errors.length;
   return out;
 })()`;
 
@@ -300,7 +300,7 @@ async function smokeRun(bin, { script, args = [], dir, waitMs = 30_000, graceMs 
   await writeFile(scriptPath, script);
   section(`running packaged ${label}`);
   const child = spawn(bin, args, {
-    env: cleanEnv({ DELUGE_SMOKE_OUT: outDir, DELUGE_SMOKE_SCRIPT: scriptPath, DELUGE_SMOKE_WAIT_MS: String(waitMs) }),
+    env: cleanEnv({ TORRENT_SMOKE_OUT: outDir, TORRENT_SMOKE_SCRIPT: scriptPath, TORRENT_SMOKE_WAIT_MS: String(waitMs) }),
     cwd: REPO,
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -342,13 +342,13 @@ async function smokeRun(bin, { script, args = [], dir, waitMs = 30_000, graceMs 
     record('2-packaged', 'R4', 'packaged production build reports on itself', false, `no smoke report; ${log.slice(-300)}`);
   } else {
     const s = report.script;
-    record('2-packaged', 'R4', 'packaged app: app:// origin, secure context, real WebGPU adapter', s.origin === 'app://deluge' && s.secureContext === true && Boolean(s.adapter), `${s.origin}, adapter=${JSON.stringify(s.adapter)}`);
+    record('2-packaged', 'R4', 'packaged app: app:// origin, secure context, real WebGPU adapter', s.origin === 'app://torrent' && s.secureContext === true && Boolean(s.adapter), `${s.origin}, adapter=${JSON.stringify(s.adapter)}`);
     record('2-offline', 'R4', 'Pittsburgh loads from packaged assets with every host unreachable', !s.fatal && Boolean(s.canvas) && /Pittsburgh/i.test(s.text), `${s.fatal ? 'FATAL SCREEN' : 'scene up'}; "${s.text.slice(0, 120)}"`);
     const load = machineLoad();
     // Floor, not a target: this only has to show the packaged app renders at interactive speed. The demo number
     // (60 fps, 57-71x sim speed) comes from `npm run test:perf` on an otherwise idle machine.
     record('2-fps', 'R4', 'the packaged app renders at interactive speed', s.fps >= 30, `${s.fps} fps at ${s.canvas?.css?.join('x')} css / ${s.canvas?.backing?.join('x')} backing, dpr ${s.canvas?.dpr}; ${load.otherGpuClients} other GPU clients busy; ${load.power}`);
-    record('14-packaged', 'R12,SEC-07', 'no debug API in the packaged production renderer', s.debugApi === 'undefined' && s.uiDebug === 'undefined', `window.__deluge=${s.debugApi}, __delugeUI=${s.uiDebug}`);
+    record('14-packaged', 'R12,SEC-07', 'no debug API in the packaged production renderer', s.debugApi === 'undefined' && s.uiDebug === 'undefined', `window.__torrent=${s.debugApi}, __torrentUI=${s.uiDebug}`);
     const errs = (report.console ?? []).filter((c) => c.level === 'error');
     record('console-packaged', 'R2', 'no console errors in the packaged production build', errs.length === 0, errs.slice(0, 3).map((e) => e.message).join(' | ') || 'clean');
     const sec = report.security ?? {};
@@ -356,7 +356,7 @@ async function smokeRun(bin, { script, args = [], dir, waitMs = 30_000, graceMs 
     // `devTools: !app.isPackaged` on a packaged app, nothing has DevTools open, and no menu item can open them.
     record(13, 'R12', 'DevTools are off and no menu item can open them', report.packaged === true && sec.devToolsRequested === false && sec.devToolsOpened === false && !JSON.stringify(sec.menu ?? []).includes('toggleDevTools') && !JSON.stringify(sec.menu ?? []).toLowerCase().includes('developer'), `packaged=${report.packaged}, devTools requested=${sec.devToolsRequested}, open=${sec.devToolsOpened}; menu=${JSON.stringify(sec.menu)}`);
     record('2-prefs', 'R2', 'packaged webPreferences are the hardened ones', sec.sandbox === true && sec.contextIsolation === true && sec.nodeIntegration === false && sec.webSecurity === true && !sec.preload && sec.backgroundThrottling === false, JSON.stringify({ sandbox: sec.sandbox, contextIsolation: sec.contextIsolation, nodeIntegration: sec.nodeIntegration, webSecurity: sec.webSecurity, preload: sec.preload, backgroundThrottling: sec.backgroundThrottling }));
-    record('15-packaged', 'R13', 'the packaged app registers no URL scheme', sec.isDefaultProtocolClient === false, `isDefaultProtocolClient('deluge')=${sec.isDefaultProtocolClient}`);
+    record('15-packaged', 'R13', 'the packaged app registers no URL scheme', sec.isDefaultProtocolClient === false, `isDefaultProtocolClient('torrent')=${sec.isDefaultProtocolClient}`);
     record('powersave', 'R15', 'display sleep is blocked while the window is open', sec.displaySleepBlocked === true, `powerSaveBlocker active=${sec.displaySleepBlocked}; window ${sec.contentSize?.join('x')} @ ${sec.scaleFactor}x`);
     console.log(`  screenshot: ${path.relative(REPO, path.join(outDir, 'smoke.png'))}`);
   }

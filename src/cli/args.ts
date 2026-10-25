@@ -1,5 +1,5 @@
 /**
- * Argument parsing and help for the `deluge` CLI. Pure (unit-tested): `--name value`, `--name=value`, boolean switches,
+ * Argument parsing and help for the `torrent` CLI. Pure (unit-tested): `--name value`, `--name=value`, boolean switches,
  * a strict list of options per command — an unknown option or a missing value is a usage error (exit code 2), never
  * silently ignored, because a typo in a batch job should fail loudly rather than run the wrong scenario.
  */
@@ -27,9 +27,9 @@ export interface CommandSpec {
 export type ParsedOptions = Record<string, string | number | boolean | undefined>;
 
 const SCENARIO_OPTS: OptSpec[] = [
-  { name: 'preset', kind: 'string', arg: '<id>', help: 'Scenario to run (see `deluge presets`). Required.' },
+  { name: 'preset', kind: 'string', arg: '<id>', help: 'Scenario to run (see `torrent presets`). Required.' },
   { name: 'minutes', kind: 'number', arg: '<min>', help: 'Simulated minutes per run (2–240; default 30, the app’s sweep and ensemble default — 120 for a NOAA Atlas 14 rain level: the 1-hour storm and an hour of run-off).' },
-  { name: 'scenario', kind: 'string', arg: '<level>', help: 'A Site check ladder level by id: rp100, record1936, a14-100 (NOAA Atlas 14 100-yr 1-hour rain, rain only), x0.5 … (see `deluge presets --levels`).' },
+  { name: 'scenario', kind: 'string', arg: '<level>', help: 'A Site check ladder level by id: rp100, record1936, a14-100 (NOAA Atlas 14 100-yr 1-hour rain, rain only), x0.5 … (see `torrent presets --levels`).' },
   { name: 'stage-ft', kind: 'number', arg: '<ft>', help: 'River / sea stage as a gauge reading in feet (presets with a stage control).' },
   { name: 'rain', kind: 'number', arg: '<mm/hr>', help: 'Global rain rate, mm/hr (replaces the preset’s).' },
   { name: 'scale', kind: 'number', arg: '<k>', help: 'Multiply rain, storm cells and inflows by k.' },
@@ -46,19 +46,19 @@ const COMMON_OPTS: OptSpec[] = [
 export const COMMANDS: Record<string, CommandSpec> = {
   presets: {
     name: 'presets',
-    summary: 'List the scenarios that ship with Deluge (offline, no GPU needed).',
-    usage: 'deluge presets [--json] [--levels]',
+    summary: 'List the scenarios that ship with Torrent (offline, no GPU needed).',
+    usage: 'torrent presets [--json] [--levels]',
     options: [
       { name: 'json', kind: 'boolean', help: 'Machine-readable list on stdout.' },
       { name: 'levels', kind: 'boolean', help: 'Also list each preset’s Site check ladder (the ids --scenario takes).' },
       { name: 'help', kind: 'boolean', help: 'This help.' },
     ],
-    examples: ['deluge presets', 'deluge presets --levels', 'deluge presets --json > presets.json'],
+    examples: ['torrent presets', 'torrent presets --levels', 'torrent presets --json > presets.json'],
   },
   run: {
     name: 'run',
     summary: 'Run one scenario on the GPU and write max depth, max speed, arrival and hazard rasters (GeoTIFF, EPSG:3857) plus a summary JSON.',
-    usage: 'deluge run --preset <id> [scenario options] [--out <dir>]',
+    usage: 'torrent run --preset <id> [scenario options] [--out <dir>]',
     options: [
       ...SCENARIO_OPTS,
       { name: 'out', kind: 'string', arg: '<dir>', help: 'Output directory (default results/<preset>). Created if missing.' },
@@ -66,15 +66,15 @@ export const COMMANDS: Record<string, CommandSpec> = {
       ...COMMON_OPTS,
     ],
     examples: [
-      'deluge run --preset houston --minutes 60 --rain 173 --out results/harvey',
-      'deluge run --preset pittsburgh --stage-ft 46 --minutes 30 --out results/1936',
-      'deluge run --preset houston --climate 2050:ssp585 --out results/houston-2050',
+      'torrent run --preset houston --minutes 60 --rain 173 --out results/harvey',
+      'torrent run --preset pittsburgh --stage-ft 46 --minutes 30 --out results/1936',
+      'torrent run --preset houston --climate 2050:ssp585 --out results/houston-2050',
     ],
   },
   portfolio: {
     name: 'portfolio',
     summary: 'Assess a CSV of assets (asset_id, lat, lon or wkt, values …) against a scenario: per-asset depth, speed, hazard class, arrival, damage, loss, downtime, BI and insured loss — the in-app export’s columns — optionally with ensemble p10/p50/p90.',
-    usage: 'deluge portfolio --preset <id> --csv <assets.csv> [scenario options] [--members <n>] --out <results.csv>',
+    usage: 'torrent portfolio --preset <id> --csv <assets.csv> [scenario options] [--members <n>] --out <results.csv>',
     options: [
       ...SCENARIO_OPTS,
       { name: 'csv', kind: 'string', arg: '<file>', help: 'Assets CSV (the app’s portfolio format; comma, semicolon or tab). Required.' },
@@ -86,15 +86,15 @@ export const COMMANDS: Record<string, CommandSpec> = {
       ...COMMON_OPTS,
     ],
     examples: [
-      'deluge portfolio --preset houston --csv public/demo/houston-portfolio.csv --out results.csv',
-      'deluge portfolio --preset houston --csv assets.csv --members 12 --seed 7 --out results.csv --summary summary.json',
-      'deluge portfolio --preset pittsburgh --scenario rp100 --csv assets.csv --out - > results.csv',
+      'torrent portfolio --preset houston --csv public/demo/houston-portfolio.csv --out results.csv',
+      'torrent portfolio --preset houston --csv assets.csv --members 12 --seed 7 --out results.csv --summary summary.json',
+      'torrent portfolio --preset pittsburgh --scenario rp100 --csv assets.csv --out - > results.csv',
     ],
   },
   site: {
     name: 'site',
     summary: 'Site check of one planned building: depth, speed, hazard, arrival, egress, damage and loss for the scenario — or, with --sweep, across the preset’s ladder of flood levels with EAL, an indicative finished-floor elevation, mitigation options with BCR, and a verdict.',
-    usage: 'deluge site --preset <id> --at <lat,lon> [--use <occupancy>] [--floors <n>] [--sweep] [--out <report.json>]',
+    usage: 'torrent site --preset <id> --at <lat,lon> [--use <occupancy>] [--floors <n>] [--sweep] [--out <report.json>]',
     options: [
       ...SCENARIO_OPTS,
       { name: 'at', kind: 'string', arg: '<lat,lon>', help: 'The site (WGS84 degrees). Required.' },
@@ -121,21 +121,21 @@ export const COMMANDS: Record<string, CommandSpec> = {
       ...COMMON_OPTS,
     ],
     examples: [
-      'deluge site --preset pittsburgh --at 40.4425,-80.0085 --use office --floors 3 --sweep --out report.json',
-      'deluge site --preset pittsburgh --at 40.4425,-80.0085 --stage-ft 46',
-      'deluge site --preset houston --at 29.7725,-95.3837 --use warehouse --floors 1 --sweep',
-      'deluge site --preset houston --at 29.7725,-95.3837 --use warehouse --floors 1 --sweep --ladder scale --rp x0.5=10,x1=100',
-      'deluge site --preset houston --at 29.7725,-95.3837 --scenario a14-100',
+      'torrent site --preset pittsburgh --at 40.4425,-80.0085 --use office --floors 3 --sweep --out report.json',
+      'torrent site --preset pittsburgh --at 40.4425,-80.0085 --stage-ft 46',
+      'torrent site --preset houston --at 29.7725,-95.3837 --use warehouse --floors 1 --sweep',
+      'torrent site --preset houston --at 29.7725,-95.3837 --use warehouse --floors 1 --sweep --ladder scale --rp x0.5=10,x1=100',
+      'torrent site --preset houston --at 29.7725,-95.3837 --scenario a14-100',
     ],
   },
   serve: {
     name: 'serve',
     summary: 'Serve the commands above as an HTTP job API (docs/api.md): POST a run, portfolio or site check, poll the job, download its files. One job at a time on the GPU.',
-    usage: 'deluge serve [--host 127.0.0.1] [--port 8787] [--token-file <file>] [--data-dir <dir>] [--retention-hours <h>]',
+    usage: 'torrent serve [--host 127.0.0.1] [--port 8787] [--token-file <file>] [--data-dir <dir>] [--retention-hours <h>]',
     options: [
       { name: 'host', kind: 'string', arg: '<addr>', help: 'Address to listen on (default 127.0.0.1, this machine only). Any other address needs a token.' },
       { name: 'port', kind: 'number', arg: '<n>', help: 'TCP port (default 8787; 0 = any free port, printed on start).' },
-      { name: 'token-file', kind: 'string', arg: '<file>', help: 'File holding the bearer token clients must send (at least 16 characters). Or set DELUGE_API_TOKEN.' },
+      { name: 'token-file', kind: 'string', arg: '<file>', help: 'File holding the bearer token clients must send (at least 16 characters). Or set TORRENT_API_TOKEN.' },
       { name: 'data-dir', kind: 'string', arg: '<dir>', help: 'Where job records and result files live (default results/api).' },
       { name: 'retention-hours', kind: 'number', arg: '<h>', help: 'Delete a finished job and its files this long after it ends (default 720 = 30 days).' },
       { name: 'max-queue', kind: 'number', arg: '<n>', help: 'Jobs waiting for the GPU at most; more are refused with 503 (default 32).' },
@@ -143,8 +143,8 @@ export const COMMANDS: Record<string, CommandSpec> = {
       { name: 'help', kind: 'boolean', help: 'This help.' },
     ],
     examples: [
-      'deluge serve',
-      'DELUGE_API_TOKEN=$(openssl rand -hex 24) deluge serve --host 0.0.0.0 --port 8787 --data-dir /var/lib/deluge',
+      'torrent serve',
+      'TORRENT_API_TOKEN=$(openssl rand -hex 24) torrent serve --host 0.0.0.0 --port 8787 --data-dir /var/lib/torrent',
       'curl -s -X POST localhost:8787/v1/runs -H "content-type: application/json" -d \'{"preset":"houston","scenario":{"minutes":10}}\'',
     ],
     notes: ['Endpoints: GET /v1/presets · POST /v1/runs · POST /v1/portfolio-assessments · POST /v1/site-checks · GET /v1/jobs/<id> · GET /v1/jobs/<id>/results/<file> · DELETE /v1/jobs/<id>.'],
@@ -152,7 +152,7 @@ export const COMMANDS: Record<string, CommandSpec> = {
   dam: {
     name: 'dam',
     summary: 'Dam-breach outflow for a dam in the National Inventory of Dams (or one you describe): the peak from eight published breach relations as a low / central / high band, the hydrograph the app sends to the map, and the assumptions (offline, no GPU). With --history, how each relation did on 21 documented failures.',
-    usage: 'deluge dam (--nid <id> | --volume-m3 <m3> --head-m <m> [--height-m <m>]) [--breach sunny|flood] [--method central|low|high|parametric] [--json] [--out <hydrograph.csv>]',
+    usage: 'torrent dam (--nid <id> | --volume-m3 <m3> --head-m <m> [--height-m <m>]) [--breach sunny|flood] [--method central|low|high|parametric] [--json] [--out <hydrograph.csv>]',
     options: [
       { name: 'nid', kind: 'string', arg: '<id>', help: 'NID id of the dam (e.g. MI00549, Edenville Dam), from the index the app ships.' },
       { name: 'breach', kind: 'string', arg: '<sunny|flood>', help: 'Sunny-day (piping at normal pool; default) or flood-induced (overtopping at maximum pool, the NID spillway discharge under it).' },
@@ -167,7 +167,7 @@ export const COMMANDS: Record<string, CommandSpec> = {
       { name: 'quiet', kind: 'boolean', help: 'No notes on stderr.' },
       { name: 'help', kind: 'boolean', help: 'This help.' },
     ],
-    examples: ['deluge dam --nid MI00549 --breach flood', 'deluge dam --nid CA00035 --method high --out oroville-high.csv', 'deluge dam --volume-m3 3.1e8 --head-m 77.4 --height-m 86.9', 'deluge dam --history'],
+    examples: ['torrent dam --nid MI00549 --breach flood', 'torrent dam --nid CA00035 --method high --out oroville-high.csv', 'torrent dam --volume-m3 3.1e8 --head-m 77.4 --height-m 86.9', 'torrent dam --history'],
     notes: [
       'Screening for planning, not an Emergency Action Plan inundation study.',
       'The relations were fitted mostly to earth and rockfill dams; for concrete and masonry dams they are indicative only.',
@@ -189,7 +189,7 @@ export function parseOptions(spec: CommandSpec, argv: readonly string[]): Parsed
     const eq = a.indexOf('=');
     const name = eq > 0 ? a.slice(2, eq) : a.slice(2);
     const opt = byName.get(name);
-    if (!opt) throw new UsageError(`unknown option --${name} for \`deluge ${spec.name}\` (see deluge ${spec.name} --help)`);
+    if (!opt) throw new UsageError(`unknown option --${name} for \`torrent ${spec.name}\` (see torrent ${spec.name} --help)`);
     if (opt.kind === 'boolean') {
       if (eq > 0) {
         const v = a.slice(eq + 1).toLowerCase();
@@ -241,14 +241,14 @@ export function mainHelp(version: string): string {
   const cmds = Object.values(COMMANDS)
     .map((c) => `  ${c.name.padEnd(10)} ${c.summary}`)
     .join('\n');
-  return `deluge ${version} — headless batch runs of the Deluge flood simulator (GPU, offline)
+  return `torrent ${version} — headless batch runs of the Torrent flood simulator (GPU, offline)
 
-Usage: deluge <command> [options]
+Usage: torrent <command> [options]
 
 Commands:
 ${wrap(cmds, 2 + 11)}
 
-Run \`deluge <command> --help\` for its options. Everything runs on this machine's GPU through Dawn
+Run \`torrent <command> --help\` for its options. Everything runs on this machine's GPU through Dawn
 (the \`webgpu\` package); nothing is uploaded. Results are screening estimates, not engineering advice.
 
 Exit codes: 0 ok · 1 simulation or output failed · 2 bad arguments or input file · 3 no WebGPU adapter.

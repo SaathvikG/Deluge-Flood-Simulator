@@ -1,6 +1,6 @@
-# Deluge — architecture and numerical method
+# Torrent — architecture and numerical method
 
-Deluge solves the 2-D shallow-water equations on real terrain in a browser tab, on the GPU, fast enough to play with:
+Torrent solves the 2-D shallow-water equations on real terrain in a browser tab, on the GPU, fast enough to play with:
 draw a levee and watch the water go around it, raise a river to a historic crest, crank the rain, and watch an
 evacuation route re-plan as roads flood. This document explains how it works, why it stays stable, and how each
 claim is checked.
@@ -116,12 +116,12 @@ selection accounts for (§3.6).
 | `src/routing/` | Road graph, flood status per edge, multi-target Dijkstra with wet-road slowdowns and bridge handling; evacuation on foot, departures after the alert and the bottleneck queue (§7). |
 | `src/loss/` | Impact and loss from the hazard fields: damage curves, values, hazard classes, access loss, sites / portfolio CSV, EAL / BCR, Site check (egress timing, event ladders, floor elevation, verdict), infrastructure dependencies, ensemble sampling and aggregation (§3.10). Pure, no DOM. |
 | `src/climate/` | Future-climate tables (AR6 warming, rain scaling, NOAA sea level, glacial-lake growth) and the forcing transforms. Pure, no DOM. |
-| `src/project/` | Saved projects: the `.deluge.json` format, its strict reader, the terrain edit log, `?project=` links, opt-in autosave, design-comparison arithmetic. Pure, no DOM. |
+| `src/project/` | Saved projects: the `.torrent.json` format, its strict reader, the terrain edit log, `?project=` links, opt-in autosave, design-comparison arithmetic. Pure, no DOM. |
 | `src/story/` | Narrated stories as data, their strict validator, live caption tokens and the DOM-free beat runner. |
 | `src/validation/` | Scoring a run against observations: high-water marks, datums and units, polygon rasterisation, extent and damage scores (§9, docs/VALIDATION.md). |
-| `src/cli/` | The headless `deluge` CLI and its `deluge serve` HTTP job API, built from the app's own store, sync and loss code (README "Batch / API"). |
+| `src/cli/` | The headless `torrent` CLI and its `torrent serve` HTTP job API, built from the app's own store, sync and loss code (README "Batch / API"). |
 | `src/ui/` | Panels, toolbar and tools, HUD, "Try it" strip (with the one-click demo levee), How it works, location picker. Plain DOM + one CSS file. |
-| `src/app/` | Orchestration: scene loading, store → solver sync, stage ramp and crest fill, protected-land analysis, frame driver, work budget / frame pacing, debug API (`window.__deluge`). |
+| `src/app/` | Orchestration: scene loading, store → solver sync, stage ramp and crest fill, protected-land analysis, frame driver, work budget / frame pacing, debug API (`window.__torrent`). |
 | `scripts/` | `bake-presets.ts` (bakes `public/presets/*`), `e2e.mjs` (end-to-end demo flows in headless Chromium on the real GPU), `bench.mjs` (performance benchmark, §8.1), `shot.mjs` (screenshot tool), and the three regression suites `perf.mjs`, `visual.mjs`, `security-test.mjs` (§10.3). |
 | `electron/` | The macOS desktop wrapper (§10.2): `main.js` (one hardened main process), `endpoints.js` (the CSP and network allowlist, mirrored from `src/data/csp.ts`), `package.mjs` (asar + fuses + ad-hoc signature), `check-endpoints.mjs`, `verify-renderer.mjs` / `verify-packaged.mjs` (the release gate), `smoke.js` (verification builds only). |
 | `dev/` | Stand-alone harness pages per module: `render.html` (synthetic valley with analytic mock water, or `?preset=<id>` with the real solver), `sim.html`, `data.html`, `ui.html`; `tests/routing/harness.html` for routing. |
@@ -245,7 +245,7 @@ dt = Cr · dx / ( √2 · max over cells (√(g·h) + |u|) )
 **Why √2.** The scheme updates `q` from the old `η`, then `η` from the new `q` (staggered forward–backward). A von
 Neumann analysis for gravity waves gives amplification factors with `λ² − Tλ + s = 0`, `s = θ + (1−θ)·cos(k·dx)`; the
 worst mode is the 2-D checkerboard, which needs `8·C₁² ≤ 4θ` with `C₁ = √(g·h)·dt/dx`. Defining the 2-D Courant number
-`Cr = √2·C₁` makes the limit `Cr ≤ 1` for the plain scheme and `Cr ≤ √θ ≈ 0.89` with smoothing. Deluge targets 0.7 and
+`Cr = √2·C₁` makes the limit `Cr ≤ 1` for the plain scheme and `Cr ≤ √θ ≈ 0.89` with smoothing. Torrent targets 0.7 and
 never exceeds 0.85; because of the safety margins below, the HUD usually reads ≈ 0.55. A 1-D formula at 0.7 sits right
 on the 2-D limit (tests/sim/stability.test.ts guards this).
 
@@ -451,7 +451,7 @@ readback per member feeds the loss model. The result is sensitivity to the state
 
 A single run answers "does this street flood?". A lender, insurer or developer asks "in how many plausible versions of
 this event does it flood?". At 100–500× real time on a mid-range GPU, a dozen members of a 30-minute scenario take
-about a minute, in the tab, so Deluge runs the ensemble rather than selling one precomputed map.
+about a minute, in the tab, so Torrent runs the ensemble rather than selling one precomputed map.
 
 **What is perturbed** (`src/loss/ensemble.ts`; every default is editable in the Uncertainty section and stated in
 `PERTURBATION_NOTES`, which the panel shows):
@@ -563,7 +563,7 @@ porosity* (Sanders, Schubert & Gallegos 2008, *J. Hydrology* 362, sub-grid stora
 Resistance was the least accurate — water still flows through the blocks, just slowly — while block and hole were the
 most accurate wherever the mesh resolves the gaps between buildings, and porosity is the efficient choice on meshes
 too coarse for that. A 7.8 m grid is both: a warehouse fills dozens of cells, while many houses are 1–3 cells and the
-side yards between them are narrower than one. Deluge therefore uses the block for full cells and porosity for the
+side yards between them are narrower than one. Torrent therefore uses the block for full cells and porosity for the
 rest (`src/data/porosity.ts`):
 
 * the footprints are scan-converted on an 8 × 8 sub-grid per cell (0.98 m sub-cells on the US presets). A cell 90 % or
@@ -830,10 +830,10 @@ Monongahela and Ohio cross the domain edge.
   edge. As the stage ramps up, water in the channels connected to a stage disc is raised in place to the new level
   (`raiseWaterSurface`, booked as inflow), a few centimetres per step, so overbank flooding starts from every bank.
   Reset water replays the rise from normal pool.
-* **Checked against the National Weather Service.** NWS impact statements for gauge PTTP1, against Deluge holding each
+* **Checked against the National Weather Service.** NWS impact statements for gauge PTTP1, against Torrent holding each
   stage for 900 sim-s (bare-earth landmarks sampled on the grid):
 
-  | NWS impact | NWS stage | Deluge |
+  | NWS impact | NWS stage | Torrent |
   | --- | --- | --- |
   | Water surface at the Point | the gauge reading | within 3 cm of it at every stage from 28 to 46 ft |
   | Point State Park flooded to the Portal Bridge | 30 ft | dry at 30 ft, wet (0.11 m) at 31 ft |
@@ -1136,7 +1136,7 @@ gets and the renderer adapts its resolution around that, aiming for smooth frame
 * **Device loss.** GPU device loss shows a recovery card and reloads by itself at most twice per 10 minutes (never
   within a minute of the last automatic reload). A live area or large grid that keeps losing the GPU restarts as the
   offline Pittsburgh preset; otherwise the card waits for the user.
-* **Debug API.** `window.__deluge` exposes the debug API used by `scripts/e2e.mjs` (dev and flagged builds only, §10).
+* **Debug API.** `window.__torrent` exposes the debug API used by `scripts/e2e.mjs` (dev and flagged builds only, §10).
 
 ### 8.1 Performance budget (measured)
 
@@ -1370,11 +1370,11 @@ host appears in `src/data` without being added to the policy.
 
 ### 10.2 The desktop build (`electron/`)
 
-`npm run app:build` typechecks, builds the same static `dist/`, and packages it into `release/Deluge.app`.
+`npm run app:build` typechecks, builds the same static `dist/`, and packages it into `release/Torrent.app`.
 
 * **Process model.** One `BrowserWindow`, no preload, no IPC, no Node in the renderer (`sandbox: true`,
   `contextIsolation: true`, `nodeIntegration: false`), no listening TCP port, and no `file://`.
-* **Origin.** The build is served from a privileged `app://deluge/` scheme registered as `standard` + `secure`, which
+* **Origin.** The build is served from a privileged `app://torrent/` scheme registered as `standard` + `secure`, which
   is what makes relative URLs, module workers, `fetch('./presets/…')` and `isSecureContext` (a WebGPU requirement) all
   work.
 * **Headers.** Every response, 404s included, carries the CSP plus `frame-ancestors 'none'`, `X-Content-Type-Options`,

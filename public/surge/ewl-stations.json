@@ -1,5 +1,5 @@
 {
-  "format": "deluge-ewl-1",
+  "format": "torrent-ewl-1",
   "generated": "2026-10-13",
   "aeps": [0.99,0.5,0.1,0.02,0.01],
   "stations": [

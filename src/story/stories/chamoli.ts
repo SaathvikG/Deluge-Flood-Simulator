@@ -80,7 +80,7 @@ export const CHAMOLI_STORY: Story = {
     },
     {
       id: 'end',
-      kicker: 'Deluge',
+      kicker: 'Torrent',
       caption:
         'The debris flow’s routing and the 2-D flood ran in this browser tab, offline. Place a sensor near the source under Hazard chain → Early warning and read the minutes it buys.',
       source: 'README.md',

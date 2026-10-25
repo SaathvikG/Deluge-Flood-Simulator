@@ -256,7 +256,7 @@ test('device lost: the page reloads itself at most once per guard window', () =>
   const throwing = { getItem: () => { throw new Error('denied'); }, setItem: () => {} };
   assert.equal(claimAutoReload(throwing, 0), 'manual');
   // Older builds stored a single timestamp.
-  const old = new Map<string, string>([['deluge:gpu-lost-reload-at', '1000000']]);
+  const old = new Map<string, string>([['torrent:gpu-lost-reload-at', '1000000']]);
   const oldStorage = { getItem: (k: string) => old.get(k) ?? null, setItem: (k: string, v: string) => void old.set(k, v) };
   assert.equal(claimAutoReload(oldStorage, 1_030_000), 'manual', 'a legacy timestamp still guards');
 });

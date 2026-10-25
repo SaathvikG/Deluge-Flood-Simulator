@@ -1,7 +1,7 @@
-import type { DelugeDebug } from './debugApi';
+import type { TorrentDebug } from './debugApi';
 
 /**
- * `window.__deluge` must exist as soon as the entry module runs (automation awaits `__deluge.ready` right
+ * `window.__torrent` must exist as soon as the entry module runs (automation awaits `__torrent.ready` right
  * after the page's load event), but the real implementation only exists once the App module has been
  * imported dynamically. This installs a tiny forwarding facade synchronously:
  *   • `ready` resolves/rejects with the real API's ready (or with a startup failure),
@@ -10,13 +10,13 @@ import type { DelugeDebug } from './debugApi';
  *     descriptive error instead of "undefined is not a function".
  */
 export interface DebugHandle {
-  bind(impl: DelugeDebug): void;
+  bind(impl: TorrentDebug): void;
   /** Startup failed (e.g. WebGPU unavailable): reject `ready` and record the reason. */
   fail(reason: string): void;
 }
 
 export function installDebugHandle(): DebugHandle {
-  let impl: DelugeDebug | null = null;
+  let impl: TorrentDebug | null = null;
   const earlyErrors: string[] = [];
   let resolveReady!: () => void;
   let rejectReady!: (err: Error) => void;
@@ -26,7 +26,7 @@ export function installDebugHandle(): DebugHandle {
   });
   ready.catch(() => {}); // a failed start must not surface as an unhandled rejection
 
-  const facade = new Proxy({} as DelugeDebug, {
+  const facade = new Proxy({} as TorrentDebug, {
     get(_target, key) {
       if (key === 'ready') return ready;
       if (key === 'errors') return impl ? impl.errors : earlyErrors;
@@ -36,14 +36,14 @@ export function installDebugHandle(): DebugHandle {
       }
       if (typeof key === 'symbol' || key === 'then' || key === 'toJSON') return undefined;
       return () => {
-        throw new Error(`__deluge.${String(key)}: Deluge is still starting — await window.__deluge.ready first`);
+        throw new Error(`__torrent.${String(key)}: Torrent is still starting — await window.__torrent.ready first`);
       };
     },
     has(_target, key) {
       return key === 'ready' || key === 'errors' || (!!impl && key in impl);
     },
   });
-  window.__deluge = facade;
+  window.__torrent = facade;
 
   return {
     bind(real) {

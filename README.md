@@ -1,13 +1,13 @@
-# Deluge — real-time flood simulation on real terrain
+# Torrent — real-time flood simulation on real terrain
 
 ![Pittsburgh at the 1936 St. Patrick's Day crest: downtown, the North Shore and the Strip District under water](docs/hero-1936-crest.jpg)
 
-**Deluge is a flood simulator that runs live in a browser tab.** It loads real elevation data for a real place
+**Torrent is a flood simulator that runs live in a browser tab.** It loads real elevation data for a real place
 (USGS 3DEP in the US, Copernicus GLO-30 elsewhere) and solves the 2-D shallow-water equations on the GPU with WebGPU
 compute shaders, many times faster than real time. You can raise the rivers to the 1936 record crest, build a levee
 and see the land it keeps dry, turn up the rain, and watch an evacuation route re-plan as roads go under.
 
-On top of the simulation, Deluge answers the questions planners, developers, lenders and emergency managers ask: what
+On top of the simulation, Torrent answers the questions planners, developers, lenders and emergency managers ask: what
 a flood would cost, whether a parcel is safe to build on, how people get out, whether a wall is worth its price, how
 sure the answer is, and what changes by 2050.
 
@@ -85,7 +85,7 @@ Every built-in scenario runs with no network at all. Only live areas and the loc
 npm ci                        # the only step that needs the network
 ```
 
-**1 · Dev server** — hot reload, and `window.__deluge` in the console:
+**1 · Dev server** — hot reload, and `window.__torrent` in the console:
 
 ```bash
 npm run dev                   # http://localhost:5173
@@ -98,18 +98,18 @@ npm run demo                  # builds, then serves http://localhost:4173
 npm run demo -- --port 5000   # if 4173 is busy
 ```
 
-**3 · `Deluge.app`** — a macOS desktop build, for presenting without a terminal or a browser on screen:
+**3 · `Torrent.app`** — a macOS desktop build, for presenting without a terminal or a browser on screen:
 
 ```bash
-npm run app:build             # typecheck, build, package → release/Deluge.app (ad-hoc signed, ~330 MB)
-open release/Deluge.app
+npm run app:build             # typecheck, build, package → release/Torrent.app (ad-hoc signed, ~330 MB)
+open release/Torrent.app
 npm run app:dev               # the wrapper on the current build, without packaging
 ```
 
 The desktop wrapper (`electron/`) is an Electron main process kept deliberately small:
 
 * no preload script, no IPC, no Node in the renderer and no listening port;
-* it serves the same static build from a privileged `app://deluge/` origin and sends the CSP as real response
+* it serves the same static build from a privileged `app://torrent/` origin and sends the CSP as real response
   headers, including `frame-ancestors 'none'`, which a hosted copy cannot;
 * it allows network requests to the seven data endpoints only and denies every permission the page could ask for;
 * it holds the display awake from the main process, so the screen cannot sleep mid-presentation even on a Mac whose
@@ -118,7 +118,7 @@ The desktop wrapper (`electron/`) is an Electron main process kept deliberately 
 `npm run app:check` is its release gate. The app itself is not committed (`release/` is ignored), so build it on the
 machine that will present.
 
-**Keeping the screen awake in a browser.** Deluge requests a **Screen Wake Lock**, which keeps the display on in
+**Keeping the screen awake in a browser.** Torrent requests a **Screen Wake Lock**, which keeps the display on in
 Chrome and Brave with nothing to set up. Safari has no such API, so run `caffeinate -dis` in a Terminal tab instead.
 
 **Hosting it.** `npm run build` writes a static site to `dist/` with relative URLs, so any static host works,
@@ -495,7 +495,7 @@ It works in three transparent steps, with every default sourced and editable per
 
 **What it reports:** *X % of occupants out before the last route closes (p10–p90 of the departure curve)*, how many are
 still inside or still queuing, and *clearance time Y min vs route window Z min* — in the card, the verdict, the report
-and `deluge site` (`--occupants`, `--alert-min`, `--departure`, `--persons-per-car`, `--exit-lanes`).
+and `torrent site` (`--occupants`, `--alert-min`, `--departure`, `--persons-per-car`, `--exit-lanes`).
 
 **Example.** North Shore demo parcel A at the 1936 crest is a 6-storey apartment block: 2,494 occupants by the IBC
 load, 1,247 cars. The last route closes at T+3 min. With the alert at T+0, under 1 % get out; with the alert 3 h before
@@ -589,7 +589,7 @@ case in Wahl 1998 Table A1 with an observed peak, a volume, a head and a failure
 is "unknown", heads given only as a bound, and the two cases Wahl flags as unfit. That gives 21 failures from 7,400 m³
 (Ireland No. 5) to 310 million m³ (Teton), including Teton 1976, Lawn Lake 1982, Kelly Barnes 1977, Buffalo Creek 1972,
 Baldwin Hills 1963, Johnstown 1889 and Swift 1964. Errors are log₁₀(predicted / observed)
-(`tests/dams/breachRelations.test.ts`; `npx deluge dam --history` prints the table):
+(`tests/dams/breachRelations.test.ts`; `npx torrent dam --history` prints the table):
 
 | Relation | n | Mean error (bias) | RMS error | Within ×2 | Teton (pred / obs) |
 | --- | --- | --- | --- | --- | --- |
@@ -618,7 +618,7 @@ peak^−0.4, Manning flow in a wide channel), and labelled so. To see a case on 
 
 **On the map:**
 
-1. Deluge reads a 64 × 64 elevation probe around the dam to see which way the valley falls.
+1. Torrent reads a 64 × 64 elevation probe around the dam to see which way the valley falls.
 2. It loads the live area (12 km by default) with the dam near its upstream edge.
 3. It sends the hydrograph in as an **inflow at the toe of the dam** — the lowest ground within a few dam-heights of
    the NID point — delivering exactly its volume (`src/sim/forcing.ts`, as the glacier chain does).
@@ -638,7 +638,7 @@ on it as on any scene; the climate layer never scales the wave.
 * in the first 90 simulated minutes (16 s of wall time) the wave reached 0.5 / 1 / 2 / 3 / 5 / 8 km below the dam at
   3 / 6 / 13 / 25 / 56 / 76 min, 9.0–3.9 m deep in the channel (river included).
 
-The band for Edenville is **4,520–12,080 m³/s** (`npx deluge dam --nid MI00549 --breach flood`). The three routed
+The band for Edenville is **4,520–12,080 m³/s** (`npx torrent dam --nid MI00549 --breach flood`). The three routed
 breaches give 11,500–12,100 (the reservoir is wide and shallow, so its head holds up while the breach widens), and the
 five regressions 4,520–6,810. The central case is the lowest, Froehlich 1995's 4,520 m³/s, which is now what the map
 receives by default (flow 28 has not been re-run on it). No measured outflow for Edenville is quoted here.
@@ -771,7 +771,7 @@ projections; method, sources and gaps are in
 
 ### Project files and share links
 
-**Project** (a panel section) saves everything on screen as a `<name>.deluge.json` file and opens it again:
+**Project** (a panel section) saves everything on screen as a `<name>.torrent.json` file and opens it again:
 
 * the scene — a preset id, or the live-area request that reloads the same grid;
 * your scenario changes — river stage, rain, Manning's n and the other user-facing solver parameters, sources, storm
@@ -784,7 +784,7 @@ projections; method, sources and gaps are in
 a levee, a site and two designs on Pittsburgh is about 2,200). A larger one says so and asks for the file instead.
 Links never carry names or a portfolio.
 
-**The format** is versioned (`"format": "deluge-project", "version": 1`) and documented field by field in
+**The format** is versioned (`"format": "torrent-project", "version": 1`) and documented field by field in
 [src/project/format.ts](src/project/format.ts).
 
 * **Walls are stored as their edit log:** each drawn wall or levee is one polyline with a height per segment,
@@ -873,7 +873,7 @@ compare command yet.
 **FEMA BCA Toolkit appendix.** The report adds the same block and an *Appendix — FEMA BCA Toolkit inputs*: per design,
 the damages before and after mitigation per recurrence interval (the Toolkit's Damage-Frequency Assessment), the
 project useful life with its source, the construction cost and annual maintenance, the discount rate and the analysis
-year, with Deluge's own ΔEAL and BCR to check the Toolkit's answer against. It states plainly that it is **not a
+year, with Torrent's own ΔEAL and BCR to check the Toolkit's answer against. It states plainly that it is **not a
 FEMA-accepted BCA**: the damages are building structure and contents from a bare-earth screening model, for an
 engineer to check and transcribe.
 
@@ -883,7 +883,7 @@ useful life that is not a whole number of years from 1 to 200 drops its design.
 
 ### Autosave
 
-**Autosave** (off by default, under *Project → Privacy*) is the only thing in Deluge that writes to browser storage.
+**Autosave** (off by default, under *Project → Privacy*) is the only thing in Torrent that writes to browser storage.
 
 * When switched on, it keeps the project (never the portfolio) in this browser's localStorage and offers it back next
   time. Switching it off deletes the copy.
@@ -900,7 +900,7 @@ useful life that is not a whole number of years from 1 to 200 drops its design.
 
 An explicit shallow-water solver on real terrain wants to blow up. Rivers are deep and fast, floodplains are
 centimetre-thin films, walls and streets are one cell wide, and everything runs in Float32 on a GPU in parallel. Four
-ingredients keep Deluge stable, exact and fast (details in [ARCHITECTURE.md §3](ARCHITECTURE.md#3-numerical-method)):
+ingredients keep Torrent stable, exact and fast (details in [ARCHITECTURE.md §3](ARCHITECTURE.md#3-numerical-method)):
 
 1. **A CFL-adaptive time step with the 2-D Courant number,** `dt = Cr·dx / (√2·max(√(g·h) + |u|))`, computed from
    asynchronous readbacks inflated by what is known to be coming. A wave never jumps more than one cell per step.
@@ -938,9 +938,9 @@ every ~300 ms, never blocking: stats reduction pass ─▶ mapAsync ─▶ HUD +
 | [`src/routing`](src/routing) | road graph, flood status per edge, travel-time Dijkstra |
 | [`src/loss`](src/loss) | impact & loss: damage curves, values, hazard classes, access loss, sites / portfolio CSV, EAL / BCR, Site check (egress timing, event ladders, FFE, verdict), ensemble sampling and aggregation (pure, no DOM) |
 | [`src/climate`](src/climate) | future-climate tables (AR6 warming, rain scaling, NOAA sea level, lake growth) and the forcing transforms (pure, no DOM) |
-| [`src/project`](src/project) | saved projects: the `.deluge.json` format, its strict reader, the terrain edit log, `?project=` links, opt-in autosave, design-comparison arithmetic (pure, no DOM) |
+| [`src/project`](src/project) | saved projects: the `.torrent.json` format, its strict reader, the terrain edit log, `?project=` links, opt-in autosave, design-comparison arithmetic (pure, no DOM) |
 | [`src/ui`](src/ui) | panels, tools, HUD, How it works, location picker |
-| [`src/app`](src/app) | scene loading, store → solver sync, stage ramp, protected-land analysis, frame pacing, screen wake lock, debug API (`window.__deluge`, dev and flagged builds only) |
+| [`src/app`](src/app) | scene loading, store → solver sync, stage ramp, protected-land analysis, frame pacing, screen wake lock, debug API (`window.__torrent`, dev and flagged builds only) |
 
 ## Validation
 
@@ -979,9 +979,9 @@ flood. The full discussion:
 [ARCHITECTURE.md §9.1](ARCHITECTURE.md#91-grid-convergence-the-demo-grid-against-a-16-finer-reference).
 
 **3a · Checked against the National Weather Service.** NWS impact statements for the Point gauge (PTTP1), against
-Deluge holding each stage for 15 simulated minutes:
+Torrent holding each stage for 15 simulated minutes:
 
-| NWS impact | NWS stage | Deluge |
+| NWS impact | NWS stage | Torrent |
 | --- | --- | --- |
 | Point State Park flooded to the Portal Bridge | 30 ft | dry at 30 ft, wet at 31 ft |
 | PNC Park field flooded | 31 ft | dry at 31 ft, 1 m deep at 35 ft |
@@ -1001,7 +1001,7 @@ grading, Metro Nashville's May 2010 damage survey — by `npx tsx scripts/valida
 shown in the app's Scenario section. The full report, with the misses and why:
 [docs/VALIDATION.md](docs/VALIDATION.md).
 
-| Scene | Observed | Deluge |
+| Scene | Observed | Torrent |
 | --- | --- | --- |
 | Fort Myers, Hurricane Ian | 25 USGS high-water-mark sites (tide set to the gauged peak) | bias +0.07 m, RMSE 0.14 m, all within ±0.3 m |
 | Fort Myers / Nashville / Pittsburgh | FEMA 1 % zone at FEMA's 1 % level | CSI 88 % / 82 % / 61 % |
@@ -1012,26 +1012,26 @@ shown in the app's Scenario section. The full report, with the misses and why:
 
 ## Batch / API
 
-The same simulator without the browser, for portfolios, sweeps and scheduled jobs. `deluge` is a Node CLI
-([`src/cli`](src/cli), launched by [`bin/deluge.mjs`](bin/deluge.mjs)) that runs the app's own TypeScript — solver,
+The same simulator without the browser, for portfolios, sweeps and scheduled jobs. `torrent` is a Node CLI
+([`src/cli`](src/cli), launched by [`bin/torrent.mjs`](bin/torrent.mjs)) that runs the app's own TypeScript — solver,
 scenario wiring and loss model — on the machine's GPU through Dawn (the `webgpu` package the GPU tests use: D3D12 on
 Windows, Metal on macOS, Vulkan on Linux). It works offline and uploads nothing. After `npm ci`:
 
 ```bash
-npx deluge presets --levels                       # the ten scenarios and their Site check levels (no GPU)
-npx deluge run --preset houston --minutes 60 --rain 173 --out results/harvey
-npx deluge run --preset pittsburgh --stage-ft 46 --out results/1936
-npx deluge run --preset houston --climate 2050:ssp585 --out results/houston-2050
-npx deluge portfolio --preset houston --csv public/demo/houston-portfolio.csv --minutes 60 --out results.csv
-npx deluge portfolio --preset houston --csv assets.csv --members 12 --seed 7 --out results.csv --summary summary.json
-npx deluge site --preset pittsburgh --at 40.4425,-80.0085 --use office --floors 3 --sweep --out report.json
-npx deluge site --preset houston --at 29.7725,-95.3837 --scenario a14-100   # NOAA Atlas 14 100-yr 1-hour rain
-npx deluge dam --nid MI00549 --breach flood       # a dam breach's peak band and hydrograph (no GPU)
-npx deluge dam --history                          # the breach relations scored on 21 documented failures
-npx deluge <command> --help                       # every option
+npx torrent presets --levels                       # the ten scenarios and their Site check levels (no GPU)
+npx torrent run --preset houston --minutes 60 --rain 173 --out results/harvey
+npx torrent run --preset pittsburgh --stage-ft 46 --out results/1936
+npx torrent run --preset houston --climate 2050:ssp585 --out results/houston-2050
+npx torrent portfolio --preset houston --csv public/demo/houston-portfolio.csv --minutes 60 --out results.csv
+npx torrent portfolio --preset houston --csv assets.csv --members 12 --seed 7 --out results.csv --summary summary.json
+npx torrent site --preset pittsburgh --at 40.4425,-80.0085 --use office --floors 3 --sweep --out report.json
+npx torrent site --preset houston --at 29.7725,-95.3837 --scenario a14-100   # NOAA Atlas 14 100-yr 1-hour rain
+npx torrent dam --nid MI00549 --breach flood       # a dam breach's peak band and hydrograph (no GPU)
+npx torrent dam --history                          # the breach relations scored on 21 documented failures
+npx torrent <command> --help                       # every option
 ```
 
-(`npm run deluge -- …` works too.)
+(`npm run torrent -- …` works too.)
 
 **Shared scenario options:**
 
@@ -1105,11 +1105,11 @@ is with the GPU to itself; with other GPU jobs on the machine the same runs took
 Progress and notes go to stderr, results to files or stdout (`--out -`). Exit codes: 0 done, 1 the simulation or an
 output failed, 2 bad arguments or input file (checked before the GPU starts), 3 no WebGPU adapter.
 
-**HTTP job API.** `deluge serve` puts the same commands behind HTTP ([docs/api.md](docs/api.md) has the endpoints,
+**HTTP job API.** `torrent serve` puts the same commands behind HTTP ([docs/api.md](docs/api.md) has the endpoints,
 schemas, OpenAPI and security model):
 
 ```bash
-npx deluge serve                                   # http://127.0.0.1:8787, this machine only
+npx torrent serve                                   # http://127.0.0.1:8787, this machine only
 curl -s -X POST localhost:8787/v1/runs -H 'content-type: application/json' \
      -d '{"preset":"pittsburgh","scenario":{"stageFt":46,"minutes":10}}'      # → 202 {"id":"job_…","status":"queued",…}
 curl -s localhost:8787/v1/jobs/job_…                                         # status, progress, engine, files
@@ -1117,7 +1117,7 @@ curl -s -O localhost:8787/v1/jobs/job_…/results/max_depth_m.tif
 ```
 
 * **Endpoints.** `POST /v1/runs`, `/v1/portfolio-assessments` and `/v1/site-checks` map a JSON body onto exactly the
-  options of `deluge run`, `portfolio` and `site`, and run that command's handler in-process — no new physics, so an
+  options of `torrent run`, `portfolio` and `site`, and run that command's handler in-process — no new physics, so an
   API raster is the CLI's byte for byte (`tests/cli/server-gpu.test.ts`).
 * **Jobs.** They answer `202` with a job; one queue runs one job at a time on the GPU. `GET /v1/jobs/:id` polls it,
   `GET /v1/jobs/:id/results/<file>` downloads `summary.json`, `results.csv`, `report.json` or the GeoTIFFs, and
@@ -1127,7 +1127,7 @@ curl -s -O localhost:8787/v1/jobs/job_…/results/max_depth_m.tif
   functions, so a bad preset, level, stage, climate, site or CSV is a `400` at once — with a fixed sentence that never
   echoes the request.
 * **Security.** It binds 127.0.0.1 by default and refuses any other address without a bearer token
-  (`DELUGE_API_TOKEN` or `--token-file`). It checks the `Host` header against DNS rebinding, accepts only
+  (`TORRENT_API_TOKEN` or `--token-file`). It checks the `Host` header against DNS rebinding, accepts only
   `application/json`, and caps bodies (64 KiB; 12 MiB for a portfolio, whose CSV is then held to 5,000 rows and 5 M
   characters). It serves only the seven result names of a job's own directory, makes no outbound requests (no webhooks
   yet), and deletes finished jobs after `--retention-hours` (default 30 days).
@@ -1139,7 +1139,7 @@ curl -s -O localhost:8787/v1/jobs/job_…/results/max_depth_m.tif
 * `src/<module>/` — the app, one folder per module, integrated through [`src/contracts.ts`](src/contracts.ts) (the
   module table is under [How a frame works](#how-a-frame-works)).
 * `tests/<module>/` — `node:test` suites (sim, render and the CLI smoke test run on a real GPU through Dawn).
-* `src/cli/`, `bin/deluge.mjs` — the headless batch CLI and its HTTP job API, `deluge serve` ([Batch / API](#batch--api)).
+* `src/cli/`, `bin/torrent.mjs` — the headless batch CLI and its HTTP job API, `torrent serve` ([Batch / API](#batch--api)).
 * `scripts/bake-presets.ts` — bakes `public/presets/*` (raw downloads are cached in `artifacts/bake-cache`).
 * `scripts/e2e.mjs` — end-to-end demo flows in headless Chromium on the real GPU.
 * `scripts/bench.mjs` — the performance benchmark (`npm run demo`, then `npm run bench -- --scenario=pgh`).
@@ -1154,7 +1154,7 @@ curl -s -O localhost:8787/v1/jobs/job_…/results/max_depth_m.tif
 
 ## Testing
 
-Deluge ships seven test layers. The first two are pure CPU and run anywhere; the rest drive a real GPU through
+Torrent ships seven test layers. The first two are pure CPU and run anywhere; the rest drive a real GPU through
 headless Chromium (or a real Electron build) and need a machine with WebGPU — the demo MacBook Air.
 
 | Command | What it guards | Time |
@@ -1165,7 +1165,7 @@ headless Chromium (or a real Electron build) and need a machine with WebGPU — 
 | `npm run test:perf` | **No lag** — fps, frame times, sim speed, input latency, drift | ~10 min |
 | `npm run test:visual` | **No graphics glitches** — golden images + baseline-free detectors | ~20 min |
 | `npm run test:security` | **No security regressions** — the penetration test's cases, automated | ~8 min |
-| `npm run app:check` | **The desktop build** — 43 checks against a packaged, fused `Deluge.app` | ~12 min |
+| `npm run app:check` | **The desktop build** — 43 checks against a packaged, fused `Torrent.app` | ~12 min |
 
 **Setup.** On a machine that has never run them, install the browser once with `npx playwright install chromium`
 (Playwright itself is already a devDependency; the suites need its bundled Chromium for WebGPU). `npm run test:unit`
@@ -1200,7 +1200,7 @@ time-to-interactive; and — once — a 60-second sustain run checked for drift.
 
 **Two tiers of thresholds.** *Floors* mean "the demo is visibly broken" and are always fatal. *Targets* are what this
 machine measures today plus headroom; they are fatal on a quiet machine and advisory when the run is noisy. Every
-threshold is overridable, e.g. `DELUGE_PERF_MIN_FPS=50 npm run test:perf`.
+threshold is overridable, e.g. `TORRENT_PERF_MIN_FPS=50 npm run test:perf`.
 
 **Low Power Mode changes the answer.** The suite records the `pmset` power state and the busy processes with every
 run. On the demo Air the same scenario measured 162× sim speed with Low Power Mode off and 27× with it on, so a run
@@ -1215,7 +1215,7 @@ lines it printed before you go looking in the renderer.
 
 ### `npm run test:visual` — the graphics-glitch suite
 
-**Reproducible scenes.** Fourteen scenes are frozen into an exactly reproducible state through `window.__deluge`: the
+**Reproducible scenes.** Fourteen scenes are frozen into an exactly reproducible state through `window.__torrent`: the
 sim paused, advanced by an exact number of simulated seconds with `runFor`, the camera pose assigned rather than
 animated, and the adaptive quality ladder pinned so the render scale cannot drift. They are captured at 1470×956 @
 DPR 2. The scenes cover the default Pittsburgh view, the 1936 crest, the demo levee with its protected-land glow, all
@@ -1252,7 +1252,7 @@ runs of identical code against a 0.02 threshold (see [ARCHITECTURE.md §9](ARCHI
 ### `npm run test:security` — the security regression suite
 
 This suite builds the **released** bundle — a plain `vite build`, with no debug API — and drives it through the DOM
-only, because one of the things it checks is that `window.__deluge` is not there. Every third-party host is
+only, because one of the things it checks is that `window.__torrent` is not there. Every third-party host is
 intercepted, so the run is hermetic and behaves the same offline.
 
 It automates the findings of this project's own penetration test:
@@ -1273,7 +1273,7 @@ passing silently; `--strict` makes pending fatal.
 ### `npm run app:check` — the desktop build's release gate
 
 `electron/verify-renderer.mjs` then `electron/verify-packaged.mjs`: 43 checks (23 + 20) over the wrapper's rules —
-no Node, bridge or IPC in the renderer; the `app://deluge` origin and a real WebGPU adapter; the CSP on every
+no Node, bridge or IPC in the renderer; the `app://torrent` origin and a real WebGPU adapter; the CSP on every
 response; path-traversal attempts refused; navigation and new windows blocked; the network allowlist proven
 independently of the CSP; every permission denied; a self-signed data host rejected; the R11 fuse wire; a tampered
 `app.asar` refusing to start; no listening socket; no DevTools; no debug API in the packaged asar; and the
@@ -1281,18 +1281,18 @@ display-sleep blocker running.
 
 The packaged, fused app cannot be driven from outside (that is two of the checks), so it reports on itself through a
 hook that `electron/package.mjs` stages **only** into the differently named verification bundle. The shipped
-`Deluge.app` does not contain that code at all.
+`Torrent.app` does not contain that code at all.
 
 ### Driving the app from automation
 
-The e2e flows, `scripts/bench.mjs` and `scripts/shot.mjs --ready=…` all steer the app through `window.__deluge`, which
-a released build does not contain: it is compiled out unless the build sets `DELUGE_DEBUG_API=1` (`vite.config.ts`,
+The e2e flows, `scripts/bench.mjs` and `scripts/shot.mjs --ready=…` all steer the app through `window.__torrent`, which
+a released build does not contain: it is compiled out unless the build sets `TORRENT_DEBUG_API=1` (`vite.config.ts`,
 `src/env.d.ts`), so a copy handed to anyone else exposes no automation surface. `npm run dev` keeps it, and
 `npm run e2e` sets the variable before it builds, so neither needs anything extra. A server you start yourself for
 those tools needs it too:
 
 ```bash
-DELUGE_DEBUG_API=1 npm run demo   # same as npm run demo, plus window.__deluge for bench / shot
+TORRENT_DEBUG_API=1 npm run demo   # same as npm run demo, plus window.__torrent for bench / shot
 ```
 
 Routing timing bounds are asserted in `tests/routing/perf.test.ts` (normalised for machine load); `PERF=1` also checks
@@ -1304,7 +1304,7 @@ them in the real-data Pittsburgh test.
 which is off by default and deletes its copy when switched off). The app is static files plus the seven public data
 endpoints it fetches terrain, imagery, roads and place names from.
 
-* **No automation surface** in a released build: `window.__deluge` is compiled out.
+* **No automation surface** in a released build: `window.__torrent` is compiled out.
 * **A strict Content-Security-Policy:** `default-src 'none'` with `script-src 'self'` — no `unsafe-inline`, no
   `unsafe-eval` — and `connect-src` restricted to exactly those seven endpoints.
   [`src/data/csp.ts`](src/data/csp.ts) is the single source of truth, mirrored into the desktop wrapper and guarded by
@@ -1341,7 +1341,7 @@ endpoints it fetches terrain, imagery, roads and place names from.
 send a `Content-Security-Policy` header, and `frame-ancestors` is ignored in a `<meta>` tag, so a static host has no
 way to forbid it. The impact is limited to what a framed copy could do: there is nothing to click-jack into — no
 accounts, no state-changing requests, nothing persisted — so the worst case is a misleading presentation of a
-simulation. `Deluge.app` serves the same build with `frame-ancestors 'none'` as a real header
+simulation. `Torrent.app` serves the same build with `frame-ancestors 'none'` as a real header
 ([ARCHITECTURE.md §10](ARCHITECTURE.md#10-shipping-browser-desktop-app-and-the-test-suites)).
 
 ## Known limitations

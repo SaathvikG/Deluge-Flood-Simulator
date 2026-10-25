@@ -79,7 +79,7 @@ export const CHUNGTHANG_STORY: Story = {
     },
     {
       id: 'end',
-      kicker: 'Deluge',
+      kicker: 'Torrent',
       caption:
         'The outburst, the valley routing and the 2-D flood all ran in this browser tab, offline. Try a sensor upstream under Hazard chain → Early warning.',
       source: 'README.md',

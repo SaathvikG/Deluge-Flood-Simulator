@@ -10,7 +10,7 @@
  * Examples:
  *   node scripts/shot.mjs http://localhost:5181/dev/render.html artifacts/render.png --wait=2000
  *   node scripts/shot.mjs http://localhost:5173/ artifacts/app.png \
- *        --ready="window.__deluge.ready" --eval="window.__deluge.runFor(600)" --wait=500
+ *        --ready="window.__torrent.ready" --eval="window.__torrent.runFor(600)" --wait=500
  *
  * Prints every console message and page error. Exit code 1 if any page error or console.error occurred.
  * NOTE: must use channel 'chromium' (new headless) — the default headless shell only gets SwiftShader.

@@ -1,4 +1,4 @@
-# Deluge — Future-climate scenarios: sources and method
+# Torrent — Future-climate scenarios: sources and method
 
 What the **Future climate** control (Weather & rivers) and the Site check's **Today vs future** comparison do, and
 where every number comes from. Implemented in [`src/climate`](../../src/climate) (pure tables and arithmetic), applied
@@ -15,7 +15,7 @@ from tagged numbers.
 Businesses that build or lend for 30–50 years are asked "what does this site look like in 2050 / 2080?" (IFRS S2
 scenario analysis; lender and insurer questionnaires — see [business-case.md](business-case.md) §A.2–A.3).
 
-Deluge answers it by **scaling the forcing, not the flood**: today's storm, rain-fed river inflow or tide is scaled by
+Torrent answers it by **scaling the forcing, not the flood**: today's storm, rain-fed river inflow or tide is scaled by
 a published sensitivity to a future warming level, and the 2-D solver produces the flood. It is **not** a downscaled
 climate projection, it does not re-fit return periods, and it never scales a river **stage** (§C).
 
@@ -46,7 +46,7 @@ AR6 WG1 Table SPM.1 (relative to 1850–1900, best estimate [very likely range])
 
 Source: https://www.ipcc.ch/report/ar6/wg1/downloads/report/IPCC_AR6_WGI_SPM.pdf (same values in TS Box TS.1 Table 1).
 
-**Baseline.** Deluge's "Today" is the scenario as it ships, whose storms, gauge levels and return periods come from
+**Baseline.** Torrent's "Today" is the scenario as it ships, whose storms, gauge levels and return periods come from
 records of recent decades. Warming is therefore counted from AR6's recent-past reference period **1995–2014, 0.85 °C
 above 1850–1900** [V, AR6 SPM/TS]. For context: 2011–2020 was 1.09 [0.95–1.20] °C (land 1.59 °C) [V, SPM A.1.2];
 2015–2024 averaged 1.24 [1.11–1.35] °C and is warming at 0.27 °C/decade [S, Forster et al. 2025, ESSD 17:2641].
@@ -120,12 +120,12 @@ Station medians from the CO-OPS API (`slr_projections`, station 8725520, report_
 | High | 0.45 | 1.33 | 2.09 |
 
 Naples 8725110 agrees within 1 cm. **The API series is zeroed at 2005**, though the report text says a 2000 baseline
-(the difference is ~2–4 cm here) [V/M]; Deluge uses the API values from 2005 and interpolates linearly between years.
+(the difference is ~2–4 cm here) [V/M]; Torrent uses the API values from 2005 and interpolates linearly between years.
 
 **Pathway mapping.** Report pp. 20–21 [V]: 2 °C in 2081–2100 → 2100 GMSL median ~0.5 m, "consistent with the
 Intermediate-Low scenario"; 4 °C → ~0.7 m, "between the Intermediate-Low and Intermediate scenarios, with the upper
 end of the likely range approaching the Intermediate"; Intermediate-High and High need "deeply uncertain ice-sheet
-processes". Deluge maps **SSP2-4.5 → Intermediate-Low** and **SSP5-8.5 → Intermediate** — the latter deliberately at
+processes". Torrent maps **SSP2-4.5 → Intermediate-Low** and **SSP5-8.5 → Intermediate** — the latter deliberately at
 the cautious end of the 4–5 °C likely range [M] (an interpolated SSP5-8.5 median would be ≈ 0.92 m at Fort Myers in
 2100 [C]). Intermediate-High is a stress case the control does not offer.
 

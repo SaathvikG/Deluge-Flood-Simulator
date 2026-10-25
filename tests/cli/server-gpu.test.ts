@@ -1,5 +1,5 @@
 /**
- * `deluge serve` on the real GPU (like tests/cli/smoke.test.ts: needs a WebGPU adapter through Dawn): the server on an
+ * `torrent serve` on the real GPU (like tests/cli/smoke.test.ts: needs a WebGPU adapter through Dawn): the server on an
  * ephemeral port with the CLI's own engine, a 2-minute Houston run POSTed, polled and downloaded — and the binary run
  * with the same options gives the same files (rasters byte for byte, the summary but for its timestamps and timings),
  * because both run the same command handler and the readbacks are on simulated time.
@@ -16,12 +16,12 @@ import { gpuEngine, version } from '../../src/cli/main';
 import { startServer, type ApiServer } from '../../src/cli/server';
 
 const ROOT = path.resolve(import.meta.dirname, '../..');
-const BIN = path.join(ROOT, 'bin', 'deluge.mjs');
+const BIN = path.join(ROOT, 'bin', 'torrent.mjs');
 let tmp = '';
 let api: ApiServer;
 
 before(async () => {
-  tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'deluge-serve-gpu-'));
+  tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'torrent-serve-gpu-'));
   api = await startServer({ engine: gpuEngine(version()), dataDir: path.join(tmp, 'api'), port: 0 });
 });
 after(async () => {

@@ -2,7 +2,7 @@
  * Web Mercator (EPSG:3857) math and grid <-> geographic conversions.
  *
  * The simulation grid is linear in Web Mercator: cell columns are equally spaced in mercator X and rows are
- * equally spaced in mercator Y. At the ~1–20 km scale of a Deluge domain the mercator scale factor
+ * equally spaced in mercator Y. At the ~1–20 km scale of a Torrent domain the mercator scale factor
  * 1/cos(φ) varies by well under 0.1 % across the domain, so cells are square on the ground to that precision
  * and `cellSize = groundSize / n`.
  */

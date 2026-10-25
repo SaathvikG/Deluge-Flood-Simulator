@@ -1,7 +1,7 @@
 /// <reference types="node" />
 /**
  * Console plumbing for the CLI: results go to stdout (or files), everything a human watches — progress, notes,
- * warnings — goes to stderr, so `deluge portfolio … --out - > results.csv` stays clean.
+ * warnings — goes to stderr, so `torrent portfolio … --out - > results.csv` stays clean.
  */
 import fs from 'node:fs';
 import path from 'node:path';

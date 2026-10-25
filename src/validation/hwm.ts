@@ -4,7 +4,7 @@
  * Source: USGS Flood Event Viewer / STN Services, `https://stn.wim.usgs.gov/STNServices/HWMs/FilteredHWMs.json?Event=<id>`
  * (public domain, U.S. Geological Survey). One record per surveyed mark; several marks often share a site (both banks,
  * inside and outside a building). Elevations are `elev_ft` in the record's `verticalDatumName`, which for every mark
- * inside a Deluge domain is NAVD88 (international feet).
+ * inside a Torrent domain is NAVD88 (international feet).
  *
  * Which marks count — the rule is applied in code, the same for every event, and every rejected mark is kept in the
  * derived file with its reason so the report can show what was left out:

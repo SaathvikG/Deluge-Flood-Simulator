@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * Deluge LAG SUITE — "does it ever feel slow?", as a pass/fail gate.
+ * Torrent LAG SUITE — "does it ever feel slow?", as a pass/fail gate.
  *
  *   npm run test:perf                 # full run (~8 min): 6 scenarios x 2 viewports + a 60 s sustain check
  *   npm run test:perf -- --quick      # fast subset (~2 min): 2 scenarios, demo viewport, short windows
- *   node scripts/perf.mjs --url=https://example.com/deluge/   # measure an already-served copy
+ *   node scripts/perf.mjs --url=https://example.com/torrent/   # measure an already-served copy
  *
  * What it does, from a fresh clone with no other setup:
  *   1. builds the production bundle into a temp dist (unless --url is given),
@@ -23,9 +23,9 @@
  *   • floor  — always fatal. A miss here is a broken build, not a noisy laptop.
  *   • target — the number this machine actually hits today, with margin. Fatal on a quiet machine on AC power;
  *              ADVISORY (reported, exit 0) when the run is noisy: on battery, in Low Power Mode, or with other
- *              GPU/browser processes running. `--strict` makes targets fatal regardless; DELUGE_PERF_ADVISORY=1
+ *              GPU/browser processes running. `--strict` makes targets fatal regardless; TORRENT_PERF_ADVISORY=1
  *              makes them advisory regardless.
- * Every threshold is overridable by env var, e.g. DELUGE_PERF_MIN_FPS=50 npm run test:perf.
+ * Every threshold is overridable by env var, e.g. TORRENT_PERF_MIN_FPS=50 npm run test:perf.
  *
  * Power state (`pmset -g batt`, Low Power Mode) and machine load are recorded in the JSON report and printed,
  * because they move these numbers by more than the margins do.
@@ -65,9 +65,9 @@ const argv = Object.fromEntries(
 const QUICK = argv.quick === 'true';
 const STRICT = argv.strict === 'true';
 const CALIBRATE = argv.calibrate === 'true';
-const KEEP_DIST = argv['keep-dist'] === 'true' || process.env.DELUGE_TEST_KEEP_DIST === '1';
+const KEEP_DIST = argv['keep-dist'] === 'true' || process.env.TORRENT_TEST_KEEP_DIST === '1';
 const PORT = Number(argv.port ?? 5701);
-const EXTERNAL_URL = String(argv.url ?? process.env.DELUGE_TEST_URL ?? '');
+const EXTERNAL_URL = String(argv.url ?? process.env.TORRENT_TEST_URL ?? '');
 const JSON_OUT = String(argv.json ?? path.join(OUT_DIR, 'perf-results.json'));
 const SECONDS = Number(argv.seconds ?? (QUICK ? 8 : 15));
 const SUSTAIN_S = Number(argv.sustain ?? (QUICK ? 0 : 60));
@@ -81,40 +81,40 @@ const SUSTAIN_S = Number(argv.sustain ?? (QUICK ? 0 : 60));
 // trip them; floors are "the demo is visibly broken", not "the laptop is busy".
 const THRESHOLDS = {
   /** Mean rendered frames per second over the measurement window. */
-  fpsMean: { dir: 'min', env: 'DELUGE_PERF_MIN_FPS', target: 55, floor: 30, unit: 'fps' },
+  fpsMean: { dir: 'min', env: 'TORRENT_PERF_MIN_FPS', target: 55, floor: 30, unit: 'fps' },
   /** The fps you get 95% of the time (1000 / p95 frame interval). */
-  fpsP95Low: { dir: 'min', env: 'DELUGE_PERF_MIN_FPS_P95', target: 45, floor: 20, unit: 'fps' },
-  p50FrameMs: { dir: 'max', env: 'DELUGE_PERF_MAX_P50_MS', target: 18.5, floor: 34, unit: 'ms' },
-  p95FrameMs: { dir: 'max', env: 'DELUGE_PERF_MAX_P95_MS', target: 24, floor: 50, unit: 'ms' },
-  p99FrameMs: { dir: 'max', env: 'DELUGE_PERF_MAX_P99_MS', target: 34, floor: 80, unit: 'ms' },
+  fpsP95Low: { dir: 'min', env: 'TORRENT_PERF_MIN_FPS_P95', target: 45, floor: 20, unit: 'fps' },
+  p50FrameMs: { dir: 'max', env: 'TORRENT_PERF_MAX_P50_MS', target: 18.5, floor: 34, unit: 'ms' },
+  p95FrameMs: { dir: 'max', env: 'TORRENT_PERF_MAX_P95_MS', target: 24, floor: 50, unit: 'ms' },
+  p99FrameMs: { dir: 'max', env: 'TORRENT_PERF_MAX_P99_MS', target: 34, floor: 80, unit: 'ms' },
   /** Fraction of frame intervals slower than 34 ms (a dropped frame at 60 Hz) and 50 ms (visible hitch). */
-  slow34Frac: { dir: 'max', env: 'DELUGE_PERF_MAX_SLOW_FRAC', target: 0.03, floor: 0.25, unit: '' },
-  slow50Frac: { dir: 'max', env: 'DELUGE_PERF_MAX_HITCH_FRAC', target: 0.01, floor: 0.1, unit: '' },
+  slow34Frac: { dir: 'max', env: 'TORRENT_PERF_MAX_SLOW_FRAC', target: 0.03, floor: 0.25, unit: '' },
+  slow50Frac: { dir: 'max', env: 'TORRENT_PERF_MAX_HITCH_FRAC', target: 0.01, floor: 0.1, unit: '' },
   /** Simulated seconds advanced per wall second, as a fraction of what the scenario asked for (per-scenario target). */
-  simSpeedFrac: { dir: 'min', env: 'DELUGE_PERF_MIN_SIM_SPEED_FRAC', target: 0.9, floor: 0.25, unit: 'x' },
+  simSpeedFrac: { dir: 'min', env: 'TORRENT_PERF_MIN_SIM_SPEED_FRAC', target: 0.9, floor: 0.25, unit: 'x' },
   /** Absolute simulated seconds per wall second. Only asserted for the scenarios that force a high time scale. */
-  simSpeed: { dir: 'min', env: 'DELUGE_PERF_MIN_SIM_SPEED', target: 55, floor: 20, unit: 'x' },
+  simSpeed: { dir: 'min', env: 'TORRENT_PERF_MIN_SIM_SPEED', target: 55, floor: 20, unit: 'x' },
   /** Main-thread time inside the app's own frame callback. */
-  cpuFrameP95Ms: { dir: 'max', env: 'DELUGE_PERF_MAX_CPU_P95_MS', target: 12, floor: 30, unit: 'ms' },
+  cpuFrameP95Ms: { dir: 'max', env: 'TORRENT_PERF_MAX_CPU_P95_MS', target: 12, floor: 30, unit: 'ms' },
   /** Time from queue submit to onSubmittedWorkDone — how far the GPU runs behind the main thread. */
-  gpuLatP90Ms: { dir: 'max', env: 'DELUGE_PERF_MAX_GPU_LAT_MS', target: 70, floor: 140, unit: 'ms' },
+  gpuLatP90Ms: { dir: 'max', env: 'TORRENT_PERF_MAX_GPU_LAT_MS', target: 70, floor: 140, unit: 'ms' },
   /** Real pointer drag to the first frame that shows the new camera. */
-  inputLatP95Ms: { dir: 'max', env: 'DELUGE_PERF_MAX_INPUT_LATENCY_MS', target: 85, floor: 200, unit: 'ms' },
-  /** Navigation start to __deluge.ready (first frame with terrain and water). Overridden for the live scenario. */
-  ttiS: { dir: 'max', env: 'DELUGE_PERF_MAX_TTI_S', target: 9, floor: 25, unit: 's' },
+  inputLatP95Ms: { dir: 'max', env: 'TORRENT_PERF_MAX_INPUT_LATENCY_MS', target: 85, floor: 200, unit: 'ms' },
+  /** Navigation start to __torrent.ready (first frame with terrain and water). Overridden for the live scenario. */
+  ttiS: { dir: 'max', env: 'TORRENT_PERF_MAX_TTI_S', target: 9, floor: 25, unit: 's' },
   /**
    * Sustain run only, and ONE-SIDED: only degradation counts. A scenario that speeds up as the flood settles is
    * not a lag regression, so the checks below feed max(0, drop) rather than |change|.
    */
-  driftPct: { dir: 'max', env: 'DELUGE_PERF_MAX_DRIFT_PCT', target: 12, floor: 40, unit: '%' },
+  driftPct: { dir: 'max', env: 'TORRENT_PERF_MAX_DRIFT_PCT', target: 12, floor: 40, unit: '%' },
   /** Sim speed legitimately moves with the physics (more wet cells = more work), so it is judged far more loosely. */
-  simDriftPct: { dir: 'max', env: 'DELUGE_PERF_MAX_SIM_DRIFT_PCT', target: 45, floor: 75, unit: '%' },
+  simDriftPct: { dir: 'max', env: 'TORRENT_PERF_MAX_SIM_DRIFT_PCT', target: 45, floor: 75, unit: '%' },
   /** Frame-time p95 growth from the first chunk to the last: the clearest "it gets laggier the longer it runs". */
-  p95GrowthMs: { dir: 'max', env: 'DELUGE_PERF_MAX_P95_GROWTH_MS', target: 5, floor: 15, unit: 'ms' },
+  p95GrowthMs: { dir: 'max', env: 'TORRENT_PERF_MAX_P95_GROWTH_MS', target: 5, floor: 15, unit: 'ms' },
 };
 
 // An explicitly set env var wins over both the default above and any per-scenario override below, so a single
-// `DELUGE_PERF_MIN_FPS=50 npm run test:perf` really does apply to every scenario.
+// `TORRENT_PERF_MIN_FPS=50 npm run test:perf` really does apply to every scenario.
 for (const t of Object.values(THRESHOLDS)) {
   const v = process.env[t.env];
   if (v !== undefined && v !== '' && Number.isFinite(Number(v))) {
@@ -132,7 +132,7 @@ const SCENARIOS = {
     // Nothing forces the clock, so the scenario must hit its requested 60x exactly.
     thresholds: { simSpeedFrac: { target: 0.9, floor: 0.5 } },
     async setup(page) {
-      return page.evaluate(() => ({ requested: window.__deluge.getState().sim.timeScale }));
+      return page.evaluate(() => ({ requested: window.__torrent.getState().sim.timeScale }));
     },
   },
   crest: {
@@ -141,7 +141,7 @@ const SCENARIOS = {
     thresholds: { simSpeedFrac: { target: 0.9, floor: 0.5 } },
     async setup(page) {
       return page.evaluate(() => {
-        const d = window.__deluge;
+        const d = window.__torrent;
         const off = d.stageOffsetForFeet(46);
         d.setStageOffset(off);
         return { stageOffset: off, requested: d.getState().sim.timeScale };
@@ -158,7 +158,7 @@ const SCENARIOS = {
     thresholds: { simSpeedFrac: { target: 0.40, floor: 0.15 }, simSpeed: { target: 110, floor: 40 } },
     async setup(page) {
       return page.evaluate(() => {
-        const d = window.__deluge;
+        const d = window.__torrent;
         const off = d.stageOffsetForFeet(46);
         d.setStageOffset(off);
         d.setRain(100);
@@ -174,7 +174,7 @@ const SCENARIOS = {
     thresholds: { simSpeedFrac: { target: 0.30, floor: 0.12 }, simSpeed: { target: 85, floor: 30 } },
     async setup(page) {
       return page.evaluate(() => {
-        const d = window.__deluge;
+        const d = window.__torrent;
         const sc = d.getScenario();
         const inflows = (sc?.sources ?? []).filter((s) => s.type === 'inflow');
         for (const s of inflows) d.addSource({ ...s, id: `${s.id}-perf`, discharge: s.discharge * 3 });
@@ -189,7 +189,7 @@ const SCENARIOS = {
     thresholds: { simSpeedFrac: { target: 0.9, floor: 0.5 } },
     async setup(page, ctx) {
       await page.evaluate(() => {
-        const d = window.__deluge;
+        const d = window.__torrent;
         d.setStageOffset(d.stageOffsetForFeet(46));
         d.selectTool('wall');
       });
@@ -205,7 +205,7 @@ const SCENARIOS = {
       await page.mouse.up();
       await page.waitForTimeout(400);
       return page.evaluate(() => {
-        const d = window.__deluge;
+        const d = window.__torrent;
         d.selectTool('orbit');
         return { protection: d.getProtection(), requested: d.getState().sim.timeScale };
       });
@@ -221,9 +221,9 @@ const SCENARIOS = {
     thresholds: { ttiS: { target: 26, floor: 60 }, simSpeedFrac: { target: 0.9, floor: 0.5 } },
     async setup(page) {
       return page.evaluate(() => ({
-        preset: window.__deluge.getState().presetId,
-        name: window.__deluge.getState().terrainName,
-        requested: window.__deluge.getState().sim.timeScale,
+        preset: window.__torrent.getState().presetId,
+        name: window.__torrent.getState().terrainName,
+        requested: window.__torrent.getState().sim.timeScale,
       }));
     },
   },
@@ -314,12 +314,12 @@ async function buildAndServe(distDir, port, logFile) {
   const log = fs.createWriteStream(logFile);
   process.stdout.write(`[perf] building production bundle → ${path.relative(ROOT, distDir)} … `);
   // Production build in every respect that costs frames (minified, tree-shaken, real assets) but with the
-  // automation surface compiled in: SEC-07 strips window.__deluge from a released bundle, and this suite
+  // automation surface compiled in: SEC-07 strips window.__torrent from a released bundle, and this suite
   // measures through it. scripts/e2e.mjs does the same. The released build is what test:security checks.
   const build = spawn(process.execPath, [VITE_BIN, 'build', '--outDir', distDir], {
     cwd: ROOT,
     stdio: ['ignore', 'pipe', 'pipe'],
-    env: { ...process.env, DELUGE_DEBUG_API: '1' },
+    env: { ...process.env, TORRENT_DEBUG_API: '1' },
   });
   build.stdout.pipe(log, { end: false });
   build.stderr.pipe(log, { end: false });
@@ -379,7 +379,7 @@ async function networkReachable() {
 // ── in-page instrumentation ─────────────────────────────────────────────────────────────────────
 /** Installed once per page: frame times, main-thread cost, GPU queue latency, input latency, sim steps. */
 function instrument() {
-  const d = window.__deluge;
+  const d = window.__torrent;
   const I = (window.__perfSuite = {
     frames: [], // [tStart, cpuRenderMs]
     cpu: [], // main-thread ms inside driver.frame
@@ -461,12 +461,12 @@ function beginWindow() {
   I.cpu.length = 0;
   I.gpuLat.length = 0;
   I.steps.length = 0;
-  I.mark = { t: performance.now(), sim: window.__deluge.getSimClock(), frames: window.__deluge.getFrameCount() };
+  I.mark = { t: performance.now(), sim: window.__torrent.getSimClock(), frames: window.__torrent.getFrameCount() };
 }
 
 /** Close the measurement window and return the metrics. */
 function endWindow() {
-  const d = window.__deluge;
+  const d = window.__torrent;
   const I = window.__perfSuite;
   const dur = (performance.now() - I.mark.t) / 1000;
   const frames = I.frames.filter(([t]) => t >= I.mark.t);
@@ -561,7 +561,7 @@ async function canvasDragPoints(page, ctx) {
   const pts = await page.evaluate(({ w, h }) => {
     const onCanvas = (x, y) => {
       const el = document.elementFromPoint(x, y);
-      return !!el && (el.id === 'deluge-canvas' || el.tagName === 'CANVAS' || el.id === 'ui-root');
+      return !!el && (el.id === 'torrent-canvas' || el.tagName === 'CANVAS' || el.id === 'ui-root');
     };
     const out = [];
     for (const [fx, fy] of [
@@ -601,10 +601,10 @@ async function runCase(browser, baseUrl, scenarioId, viewportId, opts) {
   page.on('console', (m) => {
     if (m.type() === 'error' && !m.text().startsWith('Failed to load resource')) pageErrors.push(`console: ${m.text()}`);
   });
-  // TTI: record performance.now() at the moment __deluge.ready resolves (timeOrigin = navigation start).
+  // TTI: record performance.now() at the moment __torrent.ready resolves (timeOrigin = navigation start).
   await page.addInitScript(() => {
     const poll = () => {
-      const d = window.__deluge;
+      const d = window.__torrent;
       if (d && d.ready) d.ready.then(() => (window.__tti = performance.now())).catch(() => {});
       else setTimeout(poll, 4);
     };
@@ -614,7 +614,7 @@ async function runCase(browser, baseUrl, scenarioId, viewportId, opts) {
   const t0 = Date.now();
   await page.goto(url, { waitUntil: 'load', timeout: 120000 });
   await page.evaluate(async () => {
-    await window.__deluge.ready;
+    await window.__torrent.ready;
   });
   const ttiPage = await page.evaluate(() => window.__tti ?? null);
   const ttiWallS = (Date.now() - t0) / 1000;
@@ -655,7 +655,7 @@ async function runCase(browser, baseUrl, scenarioId, viewportId, opts) {
     };
   }
 
-  const appErrors = await page.evaluate(() => window.__deluge.errors?.slice?.(0) ?? []);
+  const appErrors = await page.evaluate(() => window.__torrent.errors?.slice?.(0) ?? []);
   await page.close();
   const simSpeedFrac =
     main.requestedSpeed > 0 && Number.isFinite(main.simSpeed) ? +(main.simSpeed / main.requestedSpeed).toFixed(3) : null;
@@ -728,8 +728,8 @@ function evaluate(row) {
 
 // ── main ────────────────────────────────────────────────────────────────────────────────────────
 const machine = await machineState();
-const ALLOW_LOW_POWER = argv['allow-low-power'] === 'true' || process.env.DELUGE_PERF_ALLOW_LOW_POWER === '1';
-const advisory = CALIBRATE || process.env.DELUGE_PERF_ADVISORY === '1' || (machine.noisy && !STRICT);
+const ALLOW_LOW_POWER = argv['allow-low-power'] === 'true' || process.env.TORRENT_PERF_ALLOW_LOW_POWER === '1';
+const advisory = CALIBRATE || process.env.TORRENT_PERF_ADVISORY === '1' || (machine.noisy && !STRICT);
 /**
  * Low Power Mode is not noise: macOS caps the GPU clocks, and this machine measured 162x sim speed with it off
  * against 27x with it on — six times the margin of any threshold here. A run in that state cannot tell a
@@ -738,7 +738,7 @@ const advisory = CALIBRATE || process.env.DELUGE_PERF_ADVISORY === '1' || (machi
  */
 const lowPowerAdvisory = machine.lowPowerMode && !STRICT && !ALLOW_LOW_POWER;
 
-console.log('\n=== Deluge lag suite ===');
+console.log('\n=== Torrent lag suite ===');
 console.log(`machine : ${machine.host} · ${machine.platform} · ${machine.cpus} cores · ${machine.memGB} GB`);
 console.log(`power   : ${machine.pmsetBatt.split('\n').slice(-1)[0].trim() || 'unknown'}${machine.lowPowerMode ? ' · LOW POWER MODE ON' : ''}`);
 console.log(`load    : ${machine.loadavg.join(' ')}${machine.busyProcesses.length ? ` · busy: ${machine.busyProcesses.join(', ')}` : ''}`);
@@ -903,7 +903,7 @@ try {
     JSON.stringify(
       {
         suite: 'perf',
-        schema: 'deluge-perf/1',
+        schema: 'torrent-perf/1',
         date: new Date().toISOString(),
         quick: QUICK,
         advisory,

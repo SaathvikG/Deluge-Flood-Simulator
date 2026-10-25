@@ -507,7 +507,7 @@ export function createPanel(ctx: UIContext): Panel {
           'div',
           { class: 'dl-evac-hint' },
           h('strong', null, 'Plan an evacuation'),
-          h('p', null, 'Choose ', h('b', null, 'Set start'), ' and click a home. Deluge drives the road network to the nearest shelter that is still dry — and re-plans live as streets go under.'),
+          h('p', null, 'Choose ', h('b', null, 'Set start'), ' and click a home. Torrent drives the road network to the nearest shelter that is still dry — and re-plans live as streets go under.'),
         ),
       );
     }

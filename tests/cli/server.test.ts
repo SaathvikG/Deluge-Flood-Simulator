@@ -1,5 +1,5 @@
 /**
- * `deluge serve` (src/cli/server.ts, src/cli/api.ts) without a GPU: the server on an ephemeral port with a stand-in
+ * `torrent serve` (src/cli/server.ts, src/cli/api.ts) without a GPU: the server on an ephemeral port with a stand-in
  * scene, driven over HTTP — jobs end to end, the API's files equal the CLI handler's for the same options, the checks
  * before queueing (fixed sentences, never an echo), idempotency, cancel / delete, retention, a restart, and the security
  * rules (auth, Host, body caps, content type, path traversal). The GPU path is tests/cli/server-gpu.test.ts.
@@ -117,7 +117,7 @@ const engine: Engine = {
   now: () => new Date(clock),
 };
 
-/** The CLI handler on the same stand-in, writing into a Map (what `deluge <cmd> …` would write). */
+/** The CLI handler on the same stand-in, writing into a Map (what `torrent <cmd> …` would write). */
 async function cliFiles(argv: string[], csv: string | null = null): Promise<Map<string, string | Uint8Array>> {
   const files = new Map<string, string | Uint8Array>();
   const [cmd, ...rest] = argv;
@@ -189,7 +189,7 @@ let tmp = '';
 let api: ApiServer;
 
 before(async () => {
-  tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'deluge-serve-'));
+  tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'torrent-serve-'));
   for (const id of ['houston', 'pittsburgh']) terrains.set(id, await loadPresetFromDisk(id));
   api = await startServer({ engine, dataDir: path.join(tmp, 'main'), port: 0 });
 });
@@ -225,7 +225,7 @@ test('POST /v1/runs: 202 + job, poll, download — the files are the CLI handler
   assert.equal(r.status, 202, r.text);
   assert.match(r.json.id, /^job_[0-9a-f]{24}$/);
   assert.equal(r.headers.location, `/v1/jobs/${r.json.id}`);
-  assert.deepEqual(r.json.command, ['deluge', 'run', '--preset', 'houston', '--quiet', '--minutes', '2', '--out', '.']);
+  assert.deepEqual(r.json.command, ['torrent', 'run', '--preset', 'houston', '--quiet', '--minutes', '2', '--out', '.']);
   const done = await waitFor(api, r.json.id);
   assert.equal(done.json.status, 'succeeded', done.text);
   assert.deepEqual(done.json.engine, { version: 'test', commit: null, gpu: 'fake GPU' });
@@ -269,7 +269,7 @@ test('POST /v1/portfolio-assessments and /v1/site-checks: the CSV and the report
   assert.equal(fs.existsSync(path.join(tmp, 'main', 'jobs', p.json.id, 'input.csv')), false, 'the CSV is deleted when the job ends');
 });
 
-test('GET /v1/presets is `deluge presets --json`', async () => {
+test('GET /v1/presets is `torrent presets --json`', async () => {
   const r = await request(api, 'GET', '/v1/presets');
   assert.equal(r.status, 200);
   const ids = r.json.presets.map((p: { id: string }) => p.id);

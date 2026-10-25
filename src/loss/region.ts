@@ -2,7 +2,7 @@
  * Which country's costs and which continent's damage curves apply to a domain, from its geographic bounds.
  *
  * Deliberately coarse: a handful of bounding boxes around the domain's CENTRE, checked smallest first (Nepal and Bhutan
- * sit inside India's box). It only has to tell apart the places Deluge has presets and cost tables for — the United
+ * sit inside India's box). It only has to tell apart the places Torrent has presets and cost tables for — the United
  * States, Nepal and India — and otherwise name a continent for the JRC curves. A domain near a border can be assigned
  * to the wrong side; the panel always prints the region it used, so that is visible rather than silent.
  */

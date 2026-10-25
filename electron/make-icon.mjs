@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Build `electron/icon.icns` from the app's own favicon, so Deluge.app is recognisable in the Dock and in
+ * Build `electron/icon.icns` from the app's own favicon, so Torrent.app is recognisable in the Dock and in
  * Cmd-Tab instead of showing the stock Electron atom.
  *
  * The favicon is an inline `data:image/svg+xml` URI in index.html — the single source of truth for the mark —
@@ -28,7 +28,7 @@ await page.setContent(
    img{width:824px;height:824px}</style>
    <div id="f"><img src="${href.replace(/"/g, '&quot;')}"></div>`,
 );
-const dir = await mkdtemp(path.join(tmpdir(), 'deluge-icon-'));
+const dir = await mkdtemp(path.join(tmpdir(), 'torrent-icon-'));
 const iconset = path.join(dir, 'icon.iconset');
 spawnSync('mkdir', ['-p', iconset]);
 const master = path.join(dir, 'master.png');

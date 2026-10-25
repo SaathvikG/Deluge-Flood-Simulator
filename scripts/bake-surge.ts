@@ -32,7 +32,7 @@ const MD = 'https://api.tidesandcurrents.noaa.gov/mdapi/prod/webapi';
 async function json<T>(url: string): Promise<T> {
   for (let attempt = 0; ; attempt++) {
     try {
-      const res = await fetch(url, { headers: { 'user-agent': 'deluge-bake (NOAA public data)' } });
+      const res = await fetch(url, { headers: { 'user-agent': 'torrent-bake (NOAA public data)' } });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return (await res.json()) as T;
     } catch (e) {

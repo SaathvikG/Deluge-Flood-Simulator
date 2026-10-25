@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 /**
- * Deluge GRAPHICS-GLITCH SUITE — "is anything on screen wrong?", as a pass/fail gate.
+ * Torrent GRAPHICS-GLITCH SUITE — "is anything on screen wrong?", as a pass/fail gate.
  *
  *   npm run test:visual                  # full run (~5 min): 14 deterministic scenes
  *   npm run test:visual -- --quick       # fast subset (~1.5 min): 4 scenes
  *   node scripts/visual.mjs --update     # re-record the committed baselines after an intended change
- *   node scripts/visual.mjs --url=https://example.com/deluge/   # check a hosted copy
+ *   node scripts/visual.mjs --url=https://example.com/torrent/   # check a hosted copy
  *
  * From a fresh clone with no extra setup it builds the production bundle, serves it, and drives it in headless
  * Chromium on the real GPU at the demo viewport (1470x956 @ DPR 2).
  *
  * DETERMINISM. Every scene is frozen before it is captured: the sim is paused, advanced by an exact number of
- * simulated seconds with `__deluge.runFor`, and the camera is assigned a fixed pose (no fly-to). The render pacer
+ * simulated seconds with `__torrent.runFor`, and the camera is assigned a fixed pose (no fly-to). The render pacer
  * then freezes its animation clock once nothing has changed for ~1.2 s (src/app/pacer.ts), so successive frames
  * are bit-identical apart from GPU noise — which is what makes both checks below meaningful.
  *
@@ -65,10 +65,10 @@ const argv = Object.fromEntries(
 const QUICK = argv.quick === 'true';
 const UPDATE = argv.update === 'true';
 const CALIBRATE = argv.calibrate === 'true';
-const ADVISORY = CALIBRATE || argv.advisory === 'true' || process.env.DELUGE_VISUAL_ADVISORY === '1';
-const KEEP_DIST = argv['keep-dist'] === 'true' || process.env.DELUGE_TEST_KEEP_DIST === '1';
+const ADVISORY = CALIBRATE || argv.advisory === 'true' || process.env.TORRENT_VISUAL_ADVISORY === '1';
+const KEEP_DIST = argv['keep-dist'] === 'true' || process.env.TORRENT_TEST_KEEP_DIST === '1';
 const PORT = Number(argv.port ?? 5702);
-const EXTERNAL_URL = String(argv.url ?? process.env.DELUGE_TEST_URL ?? '');
+const EXTERNAL_URL = String(argv.url ?? process.env.TORRENT_TEST_URL ?? '');
 const JSON_OUT = String(argv.json ?? path.join(OUT_DIR, 'visual-results.json'));
 const VIEWPORT = { width: 1470, height: 956, dpr: 2 };
 const numEnvRaw = (key, fallback) => {
@@ -78,7 +78,7 @@ const numEnvRaw = (key, fallback) => {
 /** Baselines are stored at 1/8 of device resolution: 367x239, a few hundred KB each, plenty to see a real change. */
 const BASELINE_SHRINK = 8;
 /** Hard ceiling on one scene, so a busy machine fails the run instead of hanging it. */
-const SCENE_TIMEOUT_MS = Number(argv['scene-timeout'] ?? numEnvRaw('DELUGE_VISUAL_SCENE_TIMEOUT_MS', 600000));
+const SCENE_TIMEOUT_MS = Number(argv['scene-timeout'] ?? numEnvRaw('TORRENT_VISUAL_SCENE_TIMEOUT_MS', 600000));
 
 const numEnv = (key, fallback) => {
   const v = process.env[key];
@@ -90,35 +90,35 @@ const numEnv = (key, fallback) => {
 // Each is "the worst value any scene actually produces" with margin, so a miss means something changed on screen.
 const THRESHOLDS = {
   /** Golden-image diff: fraction of baseline pixels that may differ perceptually. */
-  goldenDiffFrac: numEnv('DELUGE_VISUAL_TOLERANCE', 0.02),
+  goldenDiffFrac: numEnv('TORRENT_VISUAL_TOLERANCE', 0.02),
   /** Mean luminance of the frame (0..1). Below this the frame is black / the GPU produced nothing. Darkest
    *  scene measured 0.226 (the close-up shoreline, which is mostly water in shadow). */
-  minMeanLuma: numEnv('DELUGE_VISUAL_MIN_LUMA', 0.06),
+  minMeanLuma: numEnv('TORRENT_VISUAL_MIN_LUMA', 0.06),
   /** Standard deviation of luminance. Below this the frame is a flat colour — blank, not a scene. Flattest
    *  scene measured 0.129. */
-  minLumaStd: numEnv('DELUGE_VISUAL_MIN_LUMA_STD', 0.06),
+  minLumaStd: numEnv('TORRENT_VISUAL_MIN_LUMA_STD', 0.06),
   /**
    * Fraction of hot-magenta pixels allowed in a frame (the blown-up-cell sentinel colour, src/render/shaders/prep.ts).
    * Nothing a user can do reaches it; that the sentinel really is painted for non-finite state is covered by
    * tests/render/prep.test.ts.
    */
-  maxMagentaFrac: numEnv('DELUGE_VISUAL_MAX_MAGENTA', 0.0015),
+  maxMagentaFrac: numEnv('TORRENT_VISUAL_MAX_MAGENTA', 0.0015),
   /** Fraction of near-grey pixels above which the aerial imagery is presumed missing. Greyest scene with imagery
    *  measured 0.361 (the bridge close-up, which is mostly asphalt and concrete). */
-  maxGreyFrac: numEnv('DELUGE_VISUAL_MAX_GREY', 0.55),
+  maxGreyFrac: numEnv('TORRENT_VISUAL_MAX_GREY', 0.55),
   /**
    * Shoreline blockiness: the fraction of water-edge gradients pointing within 10° of an axis. A shoreline with no
-   * grid alignment at all would sit near 0.22 (20° of every 90°); a pure staircase is 1.0. Real Deluge shorelines
+   * grid alignment at all would sit near 0.22 (20° of every 90°); a pure staircase is 1.0. Real Torrent shorelines
    * measured 0.40-0.63 today — the flood edge does follow a 1024² DEM, and the close-up is the worst case. This is
    * a REGRESSION detector, not an absolute quality bar: it catches an edge that has collapsed onto the grid.
    */
-  maxShorelineAxisFrac: numEnv('DELUGE_VISUAL_MAX_STAIRSTEP', 0.75),
+  maxShorelineAxisFrac: numEnv('TORRENT_VISUAL_MAX_STAIRSTEP', 0.75),
   /** Flicker: fraction of pixels that change between repeat captures of a frozen scene. */
-  maxFlickerFrac: numEnv('DELUGE_VISUAL_MAX_FLICKER', 0.02),
+  maxFlickerFrac: numEnv('TORRENT_VISUAL_MAX_FLICKER', 0.02),
   /** Legend agreement: fraction of hazard-coloured water pixels whose nearest palette is the mode's own. */
-  minLegendAgreement: numEnv('DELUGE_VISUAL_MIN_LEGEND_AGREE', 0.9),
+  minLegendAgreement: numEnv('TORRENT_VISUAL_MIN_LEGEND_AGREE', 0.9),
   /** Hydrostatic check: fraction of wet cells holding water that nothing supports. Worst scene measured 0.00089. */
-  maxUnsupportedWaterFrac: numEnv('DELUGE_VISUAL_MAX_UNSUPPORTED', 0.004),
+  maxUnsupportedWaterFrac: numEnv('TORRENT_VISUAL_MAX_UNSUPPORTED', 0.004),
 };
 
 // ── scenes ──────────────────────────────────────────────────────────────────────────────────────
@@ -638,7 +638,7 @@ function flickerFrac(frames) {
  * Returns what it actually did, so the report can show (for instance) which camera fallback was used.
  */
 async function setupScene(spec) {
-  const d = window.__deluge;
+  const d = window.__torrent;
   await d.ready;
   const solver = d.getSolver();
   const nx = solver.nx;
@@ -780,7 +780,7 @@ async function setupScene(spec) {
  * last change (src/app/pacer.ts), and a frozen clock is what makes repeat captures comparable.
  */
 async function settle(maxMs) {
-  const d = window.__deluge;
+  const d = window.__torrent;
   const t0 = performance.now();
   let last = -1;
   while (performance.now() - t0 < maxMs) {
@@ -798,7 +798,7 @@ async function settle(maxMs) {
  * wall that was written into the wrong field. Also counts non-finite depths, which must be zero.
  */
 function simSanity() {
-  const d = window.__deluge;
+  const d = window.__torrent;
   const solver = d.getSolver();
   const snap = solver.getSnapshot();
   if (!snap) return null;
@@ -849,7 +849,7 @@ function simSanity() {
 
 /** The legend's own swatch colours, per hazard mode, read out of the DOM the user sees. */
 async function readLegendPalettes() {
-  const d = window.__deluge;
+  const d = window.__torrent;
   const parse = (css) => {
     const m = /rgba?\(([^)]+)\)/.exec(css);
     if (!m) return null;
@@ -943,12 +943,12 @@ async function buildAndServe(distDir, port, logFile) {
   fs.mkdirSync(path.dirname(logFile), { recursive: true });
   const log = fs.createWriteStream(logFile);
   process.stdout.write(`[visual] building production bundle → ${path.relative(ROOT, distDir)} … `);
-  // The released bundle has no window.__deluge (SEC-07); this suite freezes the scenes through it, so it builds
+  // The released bundle has no window.__torrent (SEC-07); this suite freezes the scenes through it, so it builds
   // the same production output with the automation surface compiled in, exactly as scripts/e2e.mjs does.
   const build = spawn(process.execPath, [VITE_BIN, 'build', '--outDir', distDir], {
     cwd: ROOT,
     stdio: ['ignore', 'pipe', 'pipe'],
-    env: { ...process.env, DELUGE_DEBUG_API: '1' },
+    env: { ...process.env, TORRENT_DEBUG_API: '1' },
   });
   build.stdout.pipe(log, { end: false });
   build.stderr.pipe(log, { end: false });
@@ -1005,7 +1005,7 @@ async function runScene(browser, baseUrl, scene, palettes) {
   const url = `${baseUrl}?preset=${scene.preset}`;
   await page.goto(url, { waitUntil: 'load', timeout: 120000 });
   await page.evaluate(async () => {
-    await window.__deluge.ready;
+    await window.__torrent.ready;
   });
   // Let the opening fly-in finish before the camera is pinned, so nothing is still gliding.
   await page.waitForTimeout(2500);
@@ -1044,10 +1044,10 @@ async function runScene(browser, baseUrl, scene, palettes) {
   let refShot = null;
   const refMode = scene.hazard ? (scene.mode === 'depth' ? 'maxDepth' : 'depth') : null;
   if (refMode) {
-    await page.evaluate((m) => window.__deluge.setWaterMode(m), refMode);
+    await page.evaluate((m) => window.__torrent.setWaterMode(m), refMode);
     await page.evaluate(settle, 5000);
     refShot = decodePNG(await page.screenshot({ type: 'png' }));
-    await page.evaluate((m) => window.__deluge.setWaterMode(m), scene.mode);
+    await page.evaluate((m) => window.__torrent.setWaterMode(m), scene.mode);
   }
   await page.close();
 
@@ -1139,7 +1139,7 @@ function checkScene(row, scene, golden) {
 
 // ── main ────────────────────────────────────────────────────────────────────────────────────────
 const machine = await machineState();
-console.log('\n=== Deluge graphics-glitch suite ===');
+console.log('\n=== Torrent graphics-glitch suite ===');
 console.log(`machine : ${machine.host} · ${machine.platform}`);
 console.log(`power   : ${machine.pmsetBatt.split('\n').slice(-1)[0].trim() || 'unknown'}${machine.lowPowerMode ? ' · LOW POWER MODE ON' : ''}`);
 console.log(`viewport: ${VIEWPORT.width}x${VIEWPORT.height} @ DPR ${VIEWPORT.dpr}`);
@@ -1177,7 +1177,7 @@ try {
     const p = await browser.newPage({ viewport: { width: VIEWPORT.width, height: VIEWPORT.height }, deviceScaleFactor: 1 });
     await p.goto(`${baseUrl}?preset=pittsburgh`, { waitUntil: 'load', timeout: 120000 });
     await p.evaluate(async () => {
-      await window.__deluge.ready;
+      await window.__torrent.ready;
     });
     palettes = await p.evaluate(readLegendPalettes);
     await p.close();
@@ -1325,7 +1325,7 @@ try {
     JSON.stringify(
       {
         suite: 'visual',
-        schema: 'deluge-visual/1',
+        schema: 'torrent-visual/1',
         date: new Date().toISOString(),
         quick: QUICK,
         update: UPDATE,

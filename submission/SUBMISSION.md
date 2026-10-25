@@ -1,4 +1,4 @@
-# Devpost submission — Deluge
+# Devpost submission — Torrent
 
 Paste-ready text for the Devpost form. Every claim below is checked against [README.md](../README.md),
 [ARCHITECTURE.md](../ARCHITECTURE.md) and [docs/VALIDATION.md](../docs/VALIDATION.md) in this repo. The image
@@ -46,8 +46,8 @@ Why each one is defensible, if a judge asks:
 | Tag group | What it actually is in the repo |
 | --- | --- |
 | `webgpu` `wgsl` `compute-shaders` | The solver is WGSL compute shaders — momentum and continuity passes in `src/sim/shaders/`. No WebGL fallback, no CPU solver in the product. |
-| `typescript` `vite` `node.js` | The whole app is TypeScript on Vite; Node 20.19+ / 22.12+ to build. Zero runtime frameworks. The same TypeScript runs headless as the `deluge` CLI on Node. |
-| `electron` | `electron/` wraps the same static build as `Deluge.app` — a privileged `app://deluge/` origin, no preload, no IPC, no listening port. |
+| `typescript` `vite` `node.js` | The whole app is TypeScript on Vite; Node 20.19+ / 22.12+ to build. Zero runtime frameworks. The same TypeScript runs headless as the `torrent` CLI on Node. |
+| `electron` | `electron/` wraps the same static build as `Torrent.app` — a privileged `app://torrent/` origin, no preload, no IPC, no listening port. |
 | `playwright` | Drives the end-to-end, performance, visual-regression and security suites on a real GPU through headless Chromium. |
 | `geotiff` `leaflet` | The only two runtime dependencies: GeoTIFF parses USGS elevation rasters, Leaflet is the *Pick any US location* map. |
 | `shallow-water-equations` `computational-fluid-dynamics` `numerical-analysis` `gpu-computing` | Local-inertial 2-D shallow water with upwind advection, a CFL-adaptive time step, semi-implicit friction, a positivity-preserving flux limiter and well-balanced face depths. |
@@ -59,24 +59,24 @@ Why each one is defensible, if a judge asks:
 ## Try it out
 
 **Link 1 — the code**
-`https://github.com/SaathvikG/Deluge-Flood-Simulator`
+`https://github.com/SaathvikG/Torrent`
 The full repo: solver, shaders, data pipeline, analyses, tests, desktop wrapper, and `ARCHITECTURE.md`.
 
 **Link 2 — run it**
-`https://deluge-flood-simulator.vercel.app/`
+`https://torrentsim.vercel.app/`
 `npm run build` emits a static site with relative URLs, so it runs from any static host (the repo also carries
 `.github/workflows/pages.yml` for GitHub Pages). **Deploy it before you paste this link, then open it once in Chrome to
 confirm.** A hosted copy needs a WebGPU browser (Chrome / Edge / Brave 113+, Safari 26+, Firefox 141+ on Windows or 147+
 on Apple silicon). If the deployment isn't live in time, drop this link rather than ship a 404.
 
-*Optional third:* `https://github.com/SaathvikG/Deluge-Flood-Simulator/blob/main/ARCHITECTURE.md` — the numerical
+*Optional third:* `https://github.com/SaathvikG/Torrent/blob/main/ARCHITECTURE.md` — the numerical
 method in full, including the validation tables.
 
 ---
 
 ## Elevator paragraph
 
-> Deluge loads real USGS elevation for a place in the United States and solves the 2-D shallow-water equations on your
+> Torrent loads real USGS elevation for a place in the United States and solves the 2-D shallow-water equations on your
 > GPU with WebGPU compute shaders, live in a browser tab. Raise the Allegheny and the Monongahela to the 1936 crest and
 > watch the Golden Triangle go under; draw a levee and see the land it keeps dry counted in acres; crank the rain to
 > Harvey levels; drop a pin and watch the evacuation route re-plan as roads flood. A million cells of momentum and
@@ -136,7 +136,7 @@ All measured, all in the repo.
 1. **Check the build you link.** Every feature in the gallery — the 3D city, Asheville, Nashville, Houston, Boulder
    and Fort Myers — is on `main`, so a build of `main` matches the screenshots.
 2. **Deploy before you link.** Link 2 only works once the hosted copy is live; open it in Chrome to confirm.
-3. **Mention the desktop path** in the long description. `npm run app:build` → `release/Deluge.app` (ad-hoc signed,
+3. **Mention the desktop path** in the long description. `npm run app:build` → `release/Torrent.app` (ad-hoc signed,
    ~330 MB) is the offline, no-terminal, no-browser way to present, and it is the same static build.
 4. **Mention the business layer** if the field allows: Site check, portfolios, ensembles, dam breaches, coastal surge
    and design comparison are described with worked numbers in [BUSINESS.md](../BUSINESS.md).

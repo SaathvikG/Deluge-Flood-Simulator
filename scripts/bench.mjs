@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Deluge performance benchmark (headless Chromium on the real Apple GPU).
+ * Torrent performance benchmark (headless Chromium on the real Apple GPU).
  *
  *   npm run demo                            (production build served on http://localhost:4173/), then:
  *   node scripts/bench.mjs --scenario=idle|pgh|johnstown [--w=1600 --h=1000 --dpr=1] [--seconds=20]
@@ -42,7 +42,7 @@ const logs = [];
 page.on('console', (m) => {
   const t = m.text();
   logs.push(`[${m.type()}] ${t}`);
-  if (m.type() === 'error' || m.type() === 'warning' || /deluge\]/.test(t)) console.log(`[console.${m.type()}] ${t.slice(0, 300)}`);
+  if (m.type() === 'error' || m.type() === 'warning' || /torrent\]/.test(t)) console.log(`[console.${m.type()}] ${t.slice(0, 300)}`);
 });
 page.on('pageerror', (e) => console.log(`[pageerror] ${e.message}`));
 
@@ -88,17 +88,17 @@ const tReady0 = Date.now();
 if (args.noblur) await page.addStyleTag({ content: '*{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}' });
 if (args.hideui) await page.addStyleTag({ content: '#ui-root{display:none!important}' });
 await page.evaluate(async () => {
-  await window.__deluge.ready;
+  await window.__torrent.ready;
 });
 const readyS = (Date.now() - tReady0) / 1000;
 await page.waitForTimeout(3000); // camera fly-in + shader warm-up
-if (args.quality) await page.evaluate((q) => window.__deluge.getRenderer().setQuality(q), String(args.quality));
-if (args.notimer) await page.evaluate(() => { window.__deluge.getRenderer().timer.querySet = null; });
-if (args.skip) await page.evaluate((k) => k.split(',').forEach((x) => window.__deluge.getRenderer().debugSkip.add(x)), String(args.skip));
+if (args.quality) await page.evaluate((q) => window.__torrent.getRenderer().setQuality(q), String(args.quality));
+if (args.notimer) await page.evaluate(() => { window.__torrent.getRenderer().timer.querySet = null; });
+if (args.skip) await page.evaluate((k) => k.split(',').forEach((x) => window.__torrent.getRenderer().debugSkip.add(x)), String(args.skip));
 
 /** Installs in-page instrumentation (frame times, substeps, latency) and returns nothing. */
 await page.evaluate(() => {
-  const d = window.__deluge;
+  const d = window.__torrent;
   const I = (window.__perf = { frames: [], steps: [], lat: [], caps: [], installedSolver: null });
   const r = d.getRenderer();
   const origRender = r.render.bind(r);
@@ -153,7 +153,7 @@ async function setup() {
   }
   if (SCENARIO === 'pgh') {
     return page.evaluate(() => {
-      const d = window.__deluge;
+      const d = window.__torrent;
       const off = d.stageOffsetForFeet(46);
       const s = d.getSolver();
       const snap = s.getSnapshot();
@@ -173,7 +173,7 @@ async function setup() {
   }
   if (SCENARIO === 'johnstown') {
     return page.evaluate(() => {
-      const d = window.__deluge;
+      const d = window.__torrent;
       const sc = d.getScenario();
       const src = sc.sources.filter((s) => s.type === 'inflow');
       for (const s of src) d.addSource({ ...s, id: `${s.id}-big`, discharge: s.discharge * 3 });
@@ -190,7 +190,7 @@ async function setup() {
 const setupInfo = await setup();
 if (args.fixed) {
   await page.evaluate((k) => {
-    const d = window.__deluge;
+    const d = window.__torrent;
     d.setAdaptiveBudget(false);
     d.store.set({ sim: { ...d.getState().sim, maxSubstepsPerFrame: k } });
   }, Number(args.fixed));
@@ -199,7 +199,7 @@ if (args.fixed) {
 /** Downtown flood fraction over time (pgh only): cells in the box dry at start with depth > 0.3 m. */
 async function floodTrack(maxMs) {
   return page.evaluate(async (maxMs) => {
-    const d = window.__deluge;
+    const d = window.__torrent;
     const P = window.__perf;
     const out = [];
     const t0 = P.t0;
@@ -234,11 +234,11 @@ async function measure(ms, tag) {
     P.gpuLat = [];
     P.steps = [];
     P.caps = [];
-    P.m0 = { t: performance.now(), sim: window.__deluge.getSimClock(), frames: window.__deluge.getFrameCount() };
+    P.m0 = { t: performance.now(), sim: window.__torrent.getSimClock(), frames: window.__torrent.getFrameCount() };
   });
   await page.waitForTimeout(ms);
   return page.evaluate((tag) => {
-    const d = window.__deluge;
+    const d = window.__torrent;
     const P = window.__perf;
     const t1 = performance.now();
     const dur = (t1 - P.m0.t) / 1000;
@@ -338,7 +338,7 @@ const GPUSLOW = Number(args.gpuslow ?? 0);
 if (GPUSLOW > 0) {
   // Emulate a thermally throttled GPU: extra useless compute work every frame (about GPUSLOW ms on this M4).
   await page.evaluate((k) => {
-    const d = window.__deluge;
+    const d = window.__torrent;
     const dev = d.app.gpu.device;
     const tex = dev.createTexture({ size: [1024, 1024], format: 'r32float', usage: GPUTextureUsage.STORAGE_BINDING });
     const mod = dev.createShaderModule({ code: `@group(0) @binding(0) var o: texture_storage_2d<r32float, write>;
@@ -372,7 +372,7 @@ if (GPUSLOW > 0) {
 if (SLOW > 0) {
   // Artificially slow frames (main-thread busy wait inside render) → governor/adaptive-quality reaction.
   await page.evaluate((slow) => {
-    const r = window.__deluge.getRenderer();
+    const r = window.__torrent.getRenderer();
     const prev = r.render;
     window.__perf.unslow = () => (r.render = prev);
     r.render = (s) => {
@@ -392,7 +392,7 @@ if (args.shot) {
   fs.mkdirSync(path.dirname(String(args.shot)), { recursive: true });
   await page.screenshot({ path: String(args.shot) });
 }
-const errs = await page.evaluate(() => window.__deluge.errors?.map?.((e) => e.message ?? String(e)) ?? []);
+const errs = await page.evaluate(() => window.__torrent.errors?.map?.((e) => e.message ?? String(e)) ?? []);
 report.errors = errs;
 console.log('[report]', JSON.stringify(report));
 if (args.out) fs.writeFileSync(String(args.out), JSON.stringify(report, null, 2));

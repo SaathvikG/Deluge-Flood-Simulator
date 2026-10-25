@@ -95,7 +95,7 @@ async function startServer() {
   const outDir = path.join(OUT, 'dist');
   const common = { root: ROOT, configFile: path.join(ROOT, 'vite.config.ts'), logLevel: 'warn', clearScreen: false };
   // The released bundle: no automation handles (SEC-07). Explicitly off even if the caller's shell sets it.
-  process.env.DELUGE_DEBUG_API = '0';
+  process.env.TORRENT_DEBUG_API = '0';
   console.log('[record] building the production bundle…');
   await build({ ...common, build: { outDir, emptyOutDir: true } });
   let port = Number(args.port ?? 5740);

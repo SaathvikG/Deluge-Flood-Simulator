@@ -1,5 +1,5 @@
 /**
- * Deluge wrapper — the one list of places this app is allowed to talk to.
+ * Torrent wrapper — the one list of places this app is allowed to talk to.
  *
  * ELECTRON_REQUIREMENTS.md R6 ("keep one source of truth for endpoints"). The web app's policy lives in
  * `src/data/csp.ts`; the main process cannot import TypeScript, so this module mirrors it and
@@ -93,4 +93,4 @@ export function isAllowedDataUrl(url) {
 }
 
 /** R9: the only external links the wrapper will ever hand to the OS browser. */
-export const EXTERNAL_LINKS = Object.freeze(['https://github.com/SaathvikG/Deluge-Flood-Simulator']);
+export const EXTERNAL_LINKS = Object.freeze(['https://github.com/SaathvikG/Torrent']);

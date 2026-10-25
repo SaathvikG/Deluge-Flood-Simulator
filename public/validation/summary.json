@@ -9,7 +9,7 @@
    "headline": {
     "label": "FEMA 1 % flood zone, at the 1 % river level (35.4 ft)",
     "value": "CSI 61 % · hit rate 65 % · false alarms 10 % · 1 % profile −0.38 m",
-    "note": "Share of FEMA’s mapped 1 % floodplain (of the rivers this scene forces) that Deluge floods at the same river level, and how much it floods outside it."
+    "note": "Share of FEMA’s mapped 1 % floodplain (of the rivers this scene forces) that Torrent floods at the same river level, and how much it floods outside it."
    },
    "metrics": {
     "fema.connected.csi": 0.6088,
@@ -41,7 +41,7 @@
    "headline": {
     "label": "FEMA 1 % flood zone, at the 1 % river level (48.5 ft)",
     "value": "CSI 82 % · hit rate 88 % · false alarms 7 % · 1 % profile +0.26 m",
-    "note": "Share of FEMA’s mapped 1 % floodplain (of the rivers this scene forces) that Deluge floods at the same river level, and how much it floods outside it."
+    "note": "Share of FEMA’s mapped 1 % floodplain (of the rivers this scene forces) that Torrent floods at the same river level, and how much it floods outside it."
    },
    "more": [
     {

@@ -34,7 +34,7 @@ export function createTopBar(ctx: UIContext, opts: { onTogglePanel(): void; isPa
   const brand = h(
     'div',
     { class: 'dl-island dl-brand' },
-    h('div', { class: 'dl-brand-mark' }, logoMark(28), h('span', { class: 'dl-wordmark' }, 'Deluge')),
+    h('div', { class: 'dl-brand-mark' }, logoMark(28), h('span', { class: 'dl-wordmark' }, 'Torrent')),
     h('span', { class: 'dl-vsep', 'aria-hidden': 'true' }),
     h('div', { class: 'dl-scene', 'data-tip': 'Current scenario', 'data-tip-side': 'bottom' }, name, liveBadge),
   );

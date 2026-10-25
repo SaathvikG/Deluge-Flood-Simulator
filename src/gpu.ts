@@ -2,7 +2,7 @@
  * Shared WebGPU device creation. Works in the browser (navigator.gpu) and in Node tests
  * (the `webgpu` package's GPU object). Always use this so tests and app get identical limits/features.
  */
-export interface DelugeGPU {
+export interface TorrentGPU {
   adapter: GPUAdapter;
   device: GPUDevice;
   /** True if float32 textures can be linearly filtered (feature 'float32-filterable'). */
@@ -26,7 +26,7 @@ export function joinAdapterInfo(parts: readonly (string | undefined)[]): string 
   return out.join(' ') || 'unknown adapter';
 }
 
-export async function createDelugeDevice(gpu: GPU): Promise<DelugeGPU> {
+export async function createTorrentDevice(gpu: GPU): Promise<TorrentGPU> {
   const adapter = await gpu.requestAdapter({ powerPreference: 'high-performance' });
   // The exact phrase src/app/unsupported.ts matches on to show the "no adapter" screen (NO_ADAPTER_MESSAGE).
   if (!adapter) throw new Error('No WebGPU adapter available (hardware acceleration off, a blocklisted GPU, or a VM)');

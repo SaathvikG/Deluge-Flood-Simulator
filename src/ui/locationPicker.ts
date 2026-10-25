@@ -507,7 +507,7 @@ export function createLocationPicker(ctx: UIContext): Modal {
   const modal = createModal({
     id: 'picker',
     title: 'Pick any US location',
-    subtitle: 'Deluge fetches live elevation, imagery and roads for a square area and floods it.',
+    subtitle: 'Torrent fetches live elevation, imagery and roads for a square area and floods it.',
     icon: 'globe',
     className: 'dl-picker',
     onRequestClose: () => ctx.setPanel('locationPicker', false),

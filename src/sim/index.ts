@@ -1,5 +1,5 @@
 /**
- * Deluge GPU shallow-water solver — module entry point.
+ * Torrent GPU shallow-water solver — module entry point.
  *
  * Numerics: shaders/momentum.ts (face discharges), shaders/continuity.ts (limiter + depth update + forcing),
  * pipeline + timestep + readback: Solver.ts, adaptive GPU budget: budget.ts, CPU cross-check: cpuReference.ts.

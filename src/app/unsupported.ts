@@ -11,7 +11,7 @@ export class WebGPUUnavailableError extends Error {
   }
 }
 
-const SCREEN_ID = 'deluge-fatal';
+const SCREEN_ID = 'torrent-fatal';
 
 interface FatalScreenOptions {
   title: string;
@@ -66,7 +66,7 @@ function showScreen(opts: FatalScreenOptions): HTMLElement {
       #${SCREEN_ID} button.secondary:hover { background: rgba(60, 150, 230, 0.15); color: #eaf6ff; }
     </style>
     <div class="card">
-      <div class="brand">${LOGO_SVG}<span>Deluge</span></div>
+      <div class="brand">${LOGO_SVG}<span>Torrent</span></div>
       <h1></h1>
       <p class="lead"></p>
       <p class="hint" hidden></p>
@@ -161,11 +161,11 @@ export function showWebGPUUnsupported(reason: string): void {
   const noAdapter = reason.includes(NO_ADAPTER_MESSAGE);
   const isBrave = typeof navigator !== 'undefined' && 'brave' in navigator;
   showScreen({
-    title: noAdapter ? 'No graphics adapter for Deluge' : 'This browser can’t run Deluge (yet)',
+    title: noAdapter ? 'No graphics adapter for Torrent' : 'This browser can’t run Torrent (yet)',
     lead: noAdapter
       ? 'This browser supports WebGPU, but it would not hand out a graphics adapter — so there is no GPU to solve ' +
         'the shallow-water equations on. That is almost always a setting or a driver, not the browser.'
-      : 'Deluge solves the shallow-water flood equations on your graphics card with WebGPU compute shaders. ' +
+      : 'Torrent solves the shallow-water flood equations on your graphics card with WebGPU compute shaders. ' +
         'WebGPU isn’t available here, so the simulation can’t start.',
     // The adapter-is-null case is not about which browser you have, so the per-browser hint is only for the other one.
     hint: noAdapter ? null : browserHint(typeof navigator === 'undefined' ? '' : navigator.userAgent, isBrave),
@@ -180,7 +180,7 @@ export function showWebGPUUnsupported(reason: string): void {
           <i>Hardware accelerated</i>. If it says <i>Disabled</i>, the reason is printed on that page.</li>
         <li>Close other GPU-heavy apps and tabs — a GPU that is out of memory can refuse a new adapter — then reload.</li>
         <li>Update the graphics driver; very old or blocklisted GPUs are refused on purpose.</li>
-        <li>Virtual machines, remote desktops and screen-sharing sessions often have no GPU to give. Run Deluge on the
+        <li>Virtual machines, remote desktops and screen-sharing sessions often have no GPU to give. Run Torrent on the
           machine itself.</li>
       </ul>`
       : `
@@ -206,7 +206,7 @@ export function showWebGPUUnsupported(reason: string): void {
 
 export function showFatalError(error: string): void {
   showScreen({
-    title: 'Deluge failed to start',
+    title: 'Torrent failed to start',
     lead: 'Something went wrong while setting up the GPU renderer. Reloading usually fixes transient GPU issues.',
     bodyHtml: '',
     details: error,
@@ -214,7 +214,7 @@ export function showFatalError(error: string): void {
 }
 
 /** sessionStorage key: when the page reloaded itself after losing the GPU device (JSON array of ms since epoch). */
-const AUTO_RELOAD_KEY = 'deluge:gpu-lost-reload-at';
+const AUTO_RELOAD_KEY = 'torrent:gpu-lost-reload-at';
 /** A device loss this soon after an automatic reload waits for the user (no reload loops). */
 export const AUTO_RELOAD_GUARD_MS = 60_000;
 /** At most AUTO_RELOAD_MAX automatic reloads per this window, however far apart the losses are. */
@@ -336,7 +336,7 @@ export function deviceLostLead(opts: {
   const driverReset =
     'The graphics driver reset, which can happen after sleep/wake, a driver hiccup or when GPU memory runs out.';
   if (plan === 'reload') {
-    return `${driverReset} The simulation lived on the GPU, so Deluge restarts to bring it back.`;
+    return `${driverReset} The simulation lived on the GPU, so Torrent restarts to bring it back.`;
   }
   if (!hasStorage) {
     return `${driverReset} The simulation lived on the GPU: reload to bring it back.`;
@@ -346,23 +346,23 @@ export function deviceLostLead(opts: {
   const soon = sinceAutoReloadMs !== null && sinceAutoReloadMs < AUTO_RELOAD_SETTLED_MS;
   if (plan === 'lighter') {
     const why = soon
-      ? `The graphics driver reset again ${ran} after Deluge restarted, so this area probably needs more GPU memory than is free.`
+      ? `The graphics driver reset again ${ran} after Torrent restarted, so this area probably needs more GPU memory than is free.`
       : ran
         ? `The graphics driver reset again. The scene ran for ${ran} after the last restart, so it is not obviously too heavy — but twice is twice.`
         : 'The graphics driver reset again after restarting, so this area may need more GPU memory than is free.';
-    return `${why} Deluge restarts with the offline ${lighterLabel ?? 'default'} scenario instead.`;
+    return `${why} Torrent restarts with the offline ${lighterLabel ?? 'default'} scenario instead.`;
   }
-  // 'manual': Deluge will not reload itself a third time, so say what it saw and let the user choose.
+  // 'manual': Torrent will not reload itself a third time, so say what it saw and let the user choose.
   const tail = lighterLabel
     ? `Reload this scene to try again, or start with the offline ${lighterLabel} scenario, which is the lightest one.`
     : 'Close other GPU-heavy tabs or apps, then reload. If it keeps happening, restart the browser.';
   if (soon) {
-    return `The graphics driver reset again, ${ran} after Deluge restarted. Close other GPU-heavy tabs or apps first. ${tail}`;
+    return `The graphics driver reset again, ${ran} after Torrent restarted. Close other GPU-heavy tabs or apps first. ${tail}`;
   }
   if (ran) {
-    return `The graphics driver reset again. The scene ran for ${ran} after the last restart, so this looks like another one-off rather than a scene this machine can’t handle — but Deluge doesn’t restart itself twice in a row. ${tail}`;
+    return `The graphics driver reset again. The scene ran for ${ran} after the last restart, so this looks like another one-off rather than a scene this machine can’t handle — but Torrent doesn’t restart itself twice in a row. ${tail}`;
   }
-  return `${driverReset} Deluge has already restarted itself as often as it will in one go. ${tail}`;
+  return `${driverReset} Torrent has already restarted itself as often as it will in one go. ${tail}`;
 }
 
 

@@ -2,7 +2,7 @@
  * Future-climate scenario tables (docs/research/climate-scenarios.md): pathway × horizon → global warming, regional
  * amplification, the extreme-rain multiplier, sea-level rise at a tide gauge and glacial-lake growth.
  *
- * WHAT THIS IS. Forcing scaling, not downscaled projections: Deluge keeps today's storm, river inflow or tide and scales
+ * WHAT THIS IS. Forcing scaling, not downscaled projections: Torrent keeps today's storm, river inflow or tide and scales
  * the forcing by a published sensitivity (extreme rain +α per °C of warming, the sea higher by a published scenario,
  * a glacial lake grown along its observed trend). The solver then produces the flood. Nothing here predicts how often
  * an event will happen, and no river STAGE is ever scaled (a stage is the answer the hydraulics give, not a forcing).
@@ -132,7 +132,7 @@ const shift = (w: Warming): Warming => ({
 });
 
 /**
- * The same relative to 1995–2014 — Deluge's "Today" (see BASELINE above): Table SPM.1 − 0.85 °C [C]
+ * The same relative to 1995–2014 — Torrent's "Today" (see BASELINE above): Table SPM.1 − 0.85 °C [C]
  * (SSP2-4.5 1.15 / 1.85 °C, SSP5-8.5 1.55 / 3.55 °C for 2041–2060 / 2081–2100).
  */
 export const AR6_WARMING_RECENT: Readonly<Record<ClimatePathway, { mid: Warming; long: Warming }>> = {

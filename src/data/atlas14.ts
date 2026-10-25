@@ -48,7 +48,7 @@ export function atlas14GridUrl(): string {
 
 // ─── The baked grid ──────────────────────────────────────────────────────────────────────────────────────────────────
 
-/** "DLA14PF1": Deluge Atlas 14 precipitation frequency, format 1. */
+/** "DLA14PF1": Torrent Atlas 14 precipitation frequency, format 1. */
 const MAGIC = [0x44, 0x4c, 0x41, 0x31, 0x34, 0x50, 0x46, 0x31];
 const HEADER_BYTES = 12;
 const TILE_HEADER_BYTES = 16;
@@ -128,7 +128,7 @@ export function decodeAtlas14Grid(buf: ArrayBuffer | Uint8Array): Atlas14Grid {
   const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
   if (bytes.byteLength > ATLAS14_LIMITS.maxBytes) throw new Error('Atlas 14 grid: file too large');
   if (bytes.byteLength < HEADER_BYTES) throw new Error('Atlas 14 grid: file too short');
-  for (let i = 0; i < MAGIC.length; i++) if (bytes[i] !== MAGIC[i]) throw new Error('Atlas 14 grid: not a Deluge Atlas 14 file');
+  for (let i = 0; i < MAGIC.length; i++) if (bytes[i] !== MAGIC[i]) throw new Error('Atlas 14 grid: not a Torrent Atlas 14 file');
   const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const nA = dv.getUint16(8, true);
   const nT = dv.getUint16(10, true);

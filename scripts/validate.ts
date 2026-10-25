@@ -21,7 +21,7 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { create, globals } from 'webgpu';
-import { createDelugeDevice } from '../src/gpu';
+import { createTorrentDevice } from '../src/gpu';
 import { loadPresetData, runScenario, stageDiscMask, type PresetData, type RunDef, type RunOutput } from './validation/run';
 import { EXTENT_CELL, FLOOD_M, GAUGE_SEARCH_M, HWM_SEARCH_M, WET_M, EMS_NEAR_M, scoreBfeProfile, scoreDamage, scoreEms, scoreFema, scoreGauges, scoreHwms, type DamageResult, type EmsResult, type FemaResult, type ModelFields, type PointResult } from '../src/validation/score';
 import { decodeBuildings, type CompactBuildings } from '../src/data/buildings';
@@ -132,7 +132,7 @@ export interface PresetResult {
   gauges?: PointResult & { run: string };
   fema?: Omit<FemaResult, 'cells'> & { run: string; likeForLike: boolean; level?: { ft: number; m: number; gauge: string; stageFt: number | null } };
   ems?: EmsResult & { run: string };
-  /** Deluge's water surface against FEMA's 1 % profile (Base Flood Elevation lines crossing the forced rivers). */
+  /** Torrent's water surface against FEMA's 1 % profile (Base Flood Elevation lines crossing the forced rivers). */
   bfe?: PointResult & { run: string };
   /** A parcel damage survey of a historic flood, building by building (src/validation/score.ts scoreDamage). */
   damage?: Omit<DamageResult, 'outcome' | 'centroids'> & { run: string; event: string; parcels: number; stageFt: number; gauge: string };
@@ -247,7 +247,7 @@ export function summarise(r: PresetResult): ValidationSummaryEntry {
       headline = {
         label: `FEMA 1 % flood zone, at the 1 % river level (${r.fema.level?.stageFt?.toFixed(1)} ft)`,
         value: `CSI ${pct(c.csi)} · hit rate ${pct(c.hitRate)} · false alarms ${pct(c.falseAlarmRatio)}${r.bfe?.wet.n ? ` · 1 % profile ${sgn(r.bfe.wet.bias)} m` : ''}`,
-        note: 'Share of FEMA’s mapped 1 % floodplain (of the rivers this scene forces) that Deluge floods at the same river level, and how much it floods outside it.',
+        note: 'Share of FEMA’s mapped 1 % floodplain (of the rivers this scene forces) that Torrent floods at the same river level, and how much it floods outside it.',
       };
     } else {
       const c = r.fema.all;
@@ -331,7 +331,7 @@ function markdown(results: PresetResult[], gpu: string): string {
     L.push(`Wetted: ${s.n} of ${pr.rows.length} · bias ${sgn(s.bias)} m · RMSE ${fmt(s.rmse)} m · MAE ${fmt(s.mae)} m · median ${sgn(s.median)} m · within ±0.3 m ${pct(s.within03)} · within ±1 m ${pct(s.within1)}${pr.dry ? ` · dry in the model: ${pr.dry}` : ''}`);
     if (pr.dry) L.push('', `All ${pr.all.n}, dry scored as WSE = ground (favours the model): bias ${sgn(pr.all.bias)} m, RMSE ${fmt(pr.all.rmse)} m, within ±0.3 m ${pct(pr.all.within03)}`);
     if (pr.rows.every((row) => !Number.isFinite(row.ground))) {
-      L.push('', '| Line | Where (grid) | FEMA BFE (m) | Deluge (m) | Deluge − FEMA (m) |', '| --- | --- | --- | --- | --- |');
+      L.push('', '| Line | Where (grid) | FEMA BFE (m) | Torrent (m) | Torrent − FEMA (m) |', '| --- | --- | --- | --- | --- |');
       for (const row of pr.rows) L.push(`| ${row.id} | ${row.name} | ${fmt(row.observed)} | ${fmt(row.modelled)} | ${sgn(row.residual)} |`);
       L.push('');
       return;
@@ -355,7 +355,7 @@ function markdown(results: PresetResult[], gpu: string): string {
       L.push(`| every 1 % zone in the domain | ${ext(r.fema.all)} |`);
       L.push('', `Share of the 0.2 % zone (shaded X) flooded: ${pct(r.fema.floodedIn02, 1)}`, '');
     }
-    if (r.bfe) pointTable(`FEMA 1 % profile: Deluge water surface at each Base Flood Elevation line crossing a forced river (run \`${r.bfe.run}\`)`, r.bfe);
+    if (r.bfe) pointTable(`FEMA 1 % profile: Torrent water surface at each Base Flood Elevation line crossing a forced river (run \`${r.bfe.run}\`)`, r.bfe);
     if (r.damage) {
       const d = r.damage;
       const b = d.buildings;
@@ -436,12 +436,12 @@ function extentShot(p: PresetData, cells: Uint8Array, r: PresetResult): Shot {
   const f = r.fema!;
   const s = f.connected;
   const title = f.likeForLike
-    ? `${r.name}: FEMA 1 % zone vs Deluge at the 1 % river level (${f.level?.stageFt} ft at ${f.level?.gauge})`
+    ? `${r.name}: FEMA 1 % zone vs Torrent at the 1 % river level (${f.level?.stageFt} ft at ${f.level?.gauge})`
     : `${r.name}: FEMA 1 % zone vs the shipped scenario — context, not like-for-like`;
   const html = `<!doctype html><meta charset="utf-8"><style>${PAGE_CSS}</style><div class="wrap" id="shot" style="width:640px">
 <h1>${title}</h1><p>CSI ${pct(s.csi, 1)} · hit rate ${pct(s.hitRate, 1)} · false-alarm ratio ${pct(s.falseAlarmRatio, 1)} · flooded = max depth ≥ ${FLOOD_M} m · ${(nx * cellSize / 1000).toFixed(1)} km across, north up</p>
 <img src="data:image/png;base64,${png}" style="width:640px;height:640px;display:block;margin-top:8px;image-rendering:auto">
-<div class="legend"><span><i style="background:#2563eb"></i>both flooded</span><span><i style="background:#f59e0b"></i>FEMA 1 % only (miss)</span><span><i style="background:#db2777"></i>Deluge only (false alarm)</span><span><i style="background:#7da5c8"></i>permanent water / river at t = 0</span><span><i style="background:#cdbdfb"></i>1 % zone not connected to the forced water (left out)</span></div></div>`;
+<div class="legend"><span><i style="background:#2563eb"></i>both flooded</span><span><i style="background:#f59e0b"></i>FEMA 1 % only (miss)</span><span><i style="background:#db2777"></i>Torrent only (false alarm)</span><span><i style="background:#7da5c8"></i>permanent water / river at t = 0</span><span><i style="background:#cdbdfb"></i>1 % zone not connected to the forced water (left out)</span></div></div>`;
   return { file: `${p.id}-fema-extent.png`, html, width: 672, height: 760 };
 }
 
@@ -502,10 +502,10 @@ function emsShot(p: PresetData, obs: ObservedFile, maxDepth: Float32Array, r: Pr
   const png = encodePng(rgba, W, H).toString('base64');
   const e = r.ems!;
   const html = `<!doctype html><meta charset="utf-8"><style>${PAGE_CSS}</style><div class="wrap" id="shot" style="width:640px">
-<h1>${p.meta.name}: Deluge's debris flood vs Copernicus EMS damage grading (${ems.activation} AOI${String(ems.aoi).padStart(2, '0')})</h1>
+<h1>${p.meta.name}: Torrent's debris flood vs Copernicus EMS damage grading (${ems.activation} AOI${String(ems.aoi).padStart(2, '0')})</h1>
 <p>Reaches ${pct(e.buildingHitRate, 1)} of the buildings EMS graded destroyed or damaged · road cells: hit rate ${pct(e.roads.hitRate, 1)}, false-alarm ratio ${pct(e.roads.falseAlarmRatio, 1)} · ${(W * cellSize / 1000).toFixed(1)} km across, north up · outside the analysed area is faded</p>
 <img src="data:image/png;base64,${png}" style="width:640px;height:${Math.round((640 * H) / W)}px;display:block;margin-top:8px;image-rendering:pixelated">
-<div class="legend"><span><i style="background:#7fa1e6"></i>Deluge flood (max depth ≥ ${FLOOD_M} m)</span><span><i style="background:#7da5c8"></i>river at t = 0</span><span><i style="background:#1e3a8a"></i>destroyed/damaged building, reached</span><span><i style="background:#f59e0b"></i>destroyed/damaged building, not reached</span><span><i style="background:#78350f"></i>road graded destroyed/damaged</span></div>
+<div class="legend"><span><i style="background:#7fa1e6"></i>Torrent flood (max depth ≥ ${FLOOD_M} m)</span><span><i style="background:#7da5c8"></i>river at t = 0</span><span><i style="background:#1e3a8a"></i>destroyed/damaged building, reached</span><span><i style="background:#f59e0b"></i>destroyed/damaged building, not reached</span><span><i style="background:#78350f"></i>road graded destroyed/damaged</span></div>
 <p style="margin-top:6px">Damage grading © European Union, 2026, Copernicus Emergency Management Service.</p></div>`;
   return { file: `${p.id}-ems.png`, html, width: 672, height: Math.round((640 * H) / W) + 170 };
 }
@@ -545,10 +545,10 @@ function damageShot(p: PresetData, obs: ObservedFile, maxDepth: Float32Array, da
   const png = encodePng(rgba, nx, ny).toString('base64');
   const d = r.damage!;
   const html = `<!doctype html><meta charset="utf-8"><style>${PAGE_CSS}</style><div class="wrap" id="shot" style="width:640px">
-<h1>${p.meta.name}: Deluge at the May 2010 crest (${d.stageFt} ft) vs Metro Nashville's damage survey</h1>
+<h1>${p.meta.name}: Torrent at the May 2010 crest (${d.stageFt} ft) vs Metro Nashville's damage survey</h1>
 <p>Buildings on damaged parcels reached ${pct(d.buildings.hitRate, 1)} · buildings flooded but not recorded ${pct(d.buildings.falseAlarmRatio, 1)} · CSI ${pct(d.buildings.csi, 1)} · flooded = max depth ≥ ${FLOOD_M} m · ${(nx * cellSize / 1000).toFixed(1)} km across, north up</p>
 <img src="data:image/png;base64,${png}" style="width:640px;height:640px;display:block;margin-top:8px;image-rendering:auto">
-<div class="legend"><span><i style="background:#9fb6ea"></i>Deluge flood</span><span><i style="background:#7da5c8"></i>river at t = 0</span><span><i style="background:#b9b4b0"></i>parcel recorded damaged</span><span><i style="background:#1e3a8a"></i>building on a damaged parcel, flooded</span><span><i style="background:#f59e0b"></i>on a damaged parcel, dry in the model</span><span><i style="background:#db2777"></i>flooded, not recorded</span></div>
+<div class="legend"><span><i style="background:#9fb6ea"></i>Torrent flood</span><span><i style="background:#7da5c8"></i>river at t = 0</span><span><i style="background:#b9b4b0"></i>parcel recorded damaged</span><span><i style="background:#1e3a8a"></i>building on a damaged parcel, flooded</span><span><i style="background:#f59e0b"></i>on a damaged parcel, dry in the model</span><span><i style="background:#db2777"></i>flooded, not recorded</span></div>
 <p style="margin-top:6px">Damage survey: Metro Nashville (MetroGIS, Metro Stormwater, Metro Codes). Buildings © OpenStreetMap contributors (ODbL).</p></div>`;
   return { file: `${p.id}-may2010-damage.png`, html, width: 672, height: 800 };
 }
@@ -580,7 +580,7 @@ ${ticks.map((t) => `<line x1="${X(t)}" y1="${Y(lo)}" x2="${X(t)}" y2="${Y(hi)}" 
 <rect x="${X(lo)}" y="${Y(hi)}" width="${X(hi) - X(lo)}" height="${Y(lo) - Y(hi)}" fill="none" stroke="#9aa4b1"/>
 ${pts.map((q) => (q.dry ? `<circle cx="${X(q.o)}" cy="${Y(q.m)}" r="5" fill="#fff" stroke="#db2777" stroke-width="2"><title>${q.id}</title></circle>` : `<circle cx="${X(q.o)}" cy="${Y(q.m)}" r="5" fill="#2563eb" fill-opacity=".85" stroke="#fff"><title>${q.id}</title></circle>`)).join('')}
 <text x="${(X(lo) + X(hi)) / 2}" y="${H - 10}" text-anchor="middle" font-size="12" fill="#1d232b">${xLabel}</text>
-<text transform="translate(16 ${(Y(lo) + Y(hi)) / 2}) rotate(-90)" text-anchor="middle" font-size="12" fill="#1d232b">Deluge peak water level (m NAVD88)</text>
+<text transform="translate(16 ${(Y(lo) + Y(hi)) / 2}) rotate(-90)" text-anchor="middle" font-size="12" fill="#1d232b">Torrent peak water level (m NAVD88)</text>
 </svg>`;
   const s = pr.wet;
   const html = `<!doctype html><meta charset="utf-8"><style>${PAGE_CSS}</style><div class="wrap" id="shot" style="width:${W}px">
@@ -654,7 +654,7 @@ async function main(): Promise<void> {
   if (!scoreOnly) {
     Object.assign(globalThis, globals);
     instance = create([]);
-    const d = await createDelugeDevice(instance);
+    const d = await createTorrentDevice(instance);
     device = d.device;
     gpuName = d.description ?? 'Dawn';
     device.onuncapturederror = (ev) => console.error('[webgpu]', (ev as GPUUncapturedErrorEvent).error?.message);
@@ -695,9 +695,9 @@ async function main(): Promise<void> {
       if (femaCells && result.fema) shots.push(extentShot(p, femaCells, result));
       if (damage && result.damage && plan.damageRun) shots.push(damageShot(p, obs, outputs.get(plan.damageRun)!.maxDepth, damage, result));
       if (result.ems && plan.emsRun) shots.push(emsShot(p, obs, outputs.get(plan.emsRun)!.maxDepth, result));
-      if (result.hwm) shots.push(scatterShot(`${id}-hwm`, `${p.meta.name}: Deluge vs USGS high-water marks`, `${obs.hwm?.event} · run: ${plan.runs(obs).find((r) => r.id === result.hwm?.run)?.description}`, result.hwm));
-      if (result.bfe && result.bfe.rows.length) shots.push(scatterShot(`${id}-bfe-profile`, `${p.meta.name}: Deluge vs FEMA's 1 % profile`, `water surface at each Base Flood Elevation line crossing a forced river · run: ${plan.runs(obs).find((r) => r.id === result.bfe?.run)?.description}`, result.bfe, 'FEMA Base Flood Elevation (m NAVD88)'));
-      if (result.gauges) shots.push(scatterShot(`${id}-gauges`, `${p.meta.name}: Deluge vs USGS gauge peaks`, `Helene 2024 · run: ${plan.runs(obs).find((r) => r.id === result.gauges?.run)?.description}`, result.gauges));
+      if (result.hwm) shots.push(scatterShot(`${id}-hwm`, `${p.meta.name}: Torrent vs USGS high-water marks`, `${obs.hwm?.event} · run: ${plan.runs(obs).find((r) => r.id === result.hwm?.run)?.description}`, result.hwm));
+      if (result.bfe && result.bfe.rows.length) shots.push(scatterShot(`${id}-bfe-profile`, `${p.meta.name}: Torrent vs FEMA's 1 % profile`, `water surface at each Base Flood Elevation line crossing a forced river · run: ${plan.runs(obs).find((r) => r.id === result.bfe?.run)?.description}`, result.bfe, 'FEMA Base Flood Elevation (m NAVD88)'));
+      if (result.gauges) shots.push(scatterShot(`${id}-gauges`, `${p.meta.name}: Torrent vs USGS gauge peaks`, `Helene 2024 · run: ${plan.runs(obs).find((r) => r.id === result.gauges?.run)?.description}`, result.gauges));
     }
   }
   summary.generated = new Date().toISOString();

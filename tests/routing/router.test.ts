@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRouter, type DelugeRouteResult } from '../../src/routing/index';
+import { createRouter, type TorrentRouteResult } from '../../src/routing/index';
 import { SPEED_BY_CLASS, WET_SPEED_FACTOR } from '../../src/routing/constants';
 import { formatDistance, formatDuration } from '../../src/routing/format';
 import type { RouteResult, Shelter } from '../../src/contracts';
@@ -75,9 +75,9 @@ function assertRouteGeometry(city: City, r: RouteResult, start: { gx: number; gy
 
 /**
  * The structured fields agree with the state and with the message sentence built from them, so a UI can
- * use either (see DelugeRouteResult).
+ * use either (see TorrentRouteResult).
  */
-function assertStructured(r: DelugeRouteResult): void {
+function assertStructured(r: TorrentRouteResult): void {
   if (r.state === 'ok') {
     assert.equal(r.reason, null);
     assert.equal(r.advice, '');

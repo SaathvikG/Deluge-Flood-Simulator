@@ -66,7 +66,7 @@ export function buildReport(i: ReportInput): HTMLElement {
 
   sections.push(
     h('header', { class: 'dl-rep-head' },
-      h('div', { class: 'dl-rep-kicker' }, 'Deluge — flood impact screening for sites and assets'),
+      h('div', { class: 'dl-rep-kicker' }, 'Torrent — flood impact screening for sites and assets'),
       h('h1', null, i.sig.terrainName || 'Scenario'),
       h('p', { class: 'dl-rep-meta' },
         `Simulated time ${formatClock(i.sig.simTime)} · generated ${i.generatedAt.toISOString().slice(0, 16).replace('T', ' ')} UTC · ` +

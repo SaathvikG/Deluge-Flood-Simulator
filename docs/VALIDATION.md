@@ -1,7 +1,7 @@
 # Validation against real floods
 
 An insurer's or a lender's first question about a flood model is *how does it compare to the real flood?* This page
-answers it for every scene Deluge ships, with the observed data that exists for each one, the same solver the app runs,
+answers it for every scene Torrent ships, with the observed data that exists for each one, the same solver the app runs,
 and numbers that are reproduced by one command and pinned by a regression test.
 
 Everything in [ARCHITECTURE.md §9](../ARCHITECTURE.md#9-validation) proves the solver solves its equations (analytic
@@ -41,7 +41,7 @@ skill.
 | Raini–Tapovan (Chamoli), Chungthang | none in the domain | — | no observed extent or marks exist; the hazard chain is checked against published arrival times and peaks in `tests/hazard` |
 
 The short reading: **where a scene is forced by the measured water level and the terrain controls the rest — a
-storm-surge stillwater, a river at a known stage — Deluge puts the water where the surveys and FEMA put it, to tens of
+storm-surge stillwater, a river at a known stage — Torrent puts the water where the surveys and FEMA put it, to tens of
 centimetres and 80–90 % CSI. Where the answer depends on how much water a river carries (Asheville) or on days of rain
 the scene does not simulate (Houston), it is low by one to two metres. Against the one surveyed record of a whole
 city's damage (Nashville, May 2010), the river at its gauged crest reaches nearly every damaged building the river
@@ -106,7 +106,7 @@ exports. Every run's mass error is below 2·10⁻⁸.
 Ian's surge put 12.92 ft on the Fort Myers tide gauge (NOAA 8725520), its record. The run raises the three sea
 boundaries to that level through the app's ramp and holds it an hour.
 
-![Deluge vs USGS high-water marks, Fort Myers](validation/ftmyers-hwm.png)
+![Torrent vs USGS high-water marks, Fort Myers](validation/ftmyers-hwm.png)
 
 | | Value |
 | --- | --- |
@@ -124,7 +124,7 @@ level across the domain, whether the DEM is registered to the marks. It does: th
 (observed WSE minus DEM ground), consistent with the surveyed heights above ground. A flat bathtub at the gauge level
 would score similarly; Ian's surge in an 8 km domain behind the river mouth was close to one.
 
-![FEMA 1 % zone vs Deluge at FEMA's 1 % stillwater, Fort Myers](validation/ftmyers-fema-extent.png)
+![FEMA 1 % zone vs Torrent at FEMA's 1 % stillwater, Fort Myers](validation/ftmyers-fema-extent.png)
 
 At FEMA's 1 % stillwater (14.07 ft on the gauge, above the slider's 13.7 ft top — the run sets it directly):
 
@@ -140,7 +140,7 @@ over the terrain.
 
 ## Nashville — Cumberland River at FEMA's 1 % level
 
-![FEMA 1 % zone vs Deluge at the 1 % river level, Nashville](validation/nashville-fema-extent.png)
+![FEMA 1 % zone vs Torrent at the 1 % river level, Nashville](validation/nashville-fema-extent.png)
 
 | | Value |
 | --- | --- |
@@ -150,7 +150,7 @@ over the terrain.
 | Water surface vs 1 % profile (10 BFE lines) | **bias +0.26 m, RMSE 0.27 m**, 7 of 10 within ±0.3 m |
 | 0.2 % zone flooded | 2.4 % |
 
-![Deluge vs FEMA's 1 % profile, Nashville](validation/nashville-bfe-profile.png)
+![Torrent vs FEMA's 1 % profile, Nashville](validation/nashville-bfe-profile.png)
 
 The best riverine agreement of the set. The modelled surface is 0.1–0.4 m above FEMA's profile everywhere; the misses
 (orange) are low pockets of the east-bank floodplain that FEMA maps below the 1 % level but that the model's water
@@ -169,7 +169,7 @@ The run raises the stage to the gauged 52.55 ft through the app's ramp and holds
 above 50 ft for about a day, so the like-for-like comparison is the steady flood at that level: holds of 30, 60, 120
 and 240 min flood the same 172 footprints and the same land to 0.2 %, so 30 min (the FEMA run's hold) is steady.
 
-![Deluge at the May 2010 crest vs Metro Nashville's damage survey](validation/nashville-may2010-damage.png)
+![Torrent at the May 2010 crest vs Metro Nashville's damage survey](validation/nashville-may2010-damage.png)
 
 **How it is scored** (`src/validation/score.ts` scoreDamage). The survey lists damaged parcels only, so on its own it
 could only say what the model reaches, never what it floods wrongly. The population that makes it two-sided is every
@@ -187,7 +187,7 @@ and what it could not; it never scores the model's own water.
 Of the 431 buildings on damaged parcels, **300 (70 %) stand above the crest or behind higher ground**, and only 82
 (19 %) touch FEMA's 1 % zone. The model floods 45 % of the damaged parcels' land.
 
-**Reading it.** Where the Cumberland could reach at its crest, Deluge reaches it: 129 of 131 damaged buildings, and
+**Reading it.** Where the Cumberland could reach at its crest, Torrent reaches it: 129 of 131 damaged buildings, and
 the 22 buildings it floods that the city did not record (14 % of what it floods) are on the same waterfront (not
 separated here: no visible damage from the street, a parcel the survey did not reach, or a model error). Inside the
 reach this is close to a bathtub test (8 buildings in reach stay dry); the level, not the hydraulics, decides it.
@@ -203,7 +203,7 @@ were fixed before the comparison, and the crest-reach mask comes from the DEM an
 
 ## Pittsburgh — Three Rivers at FEMA's 1 % level
 
-![FEMA 1 % zone vs Deluge at the 1 % river level, Pittsburgh](validation/pittsburgh-fema-extent.png)
+![FEMA 1 % zone vs Torrent at the 1 % river level, Pittsburgh](validation/pittsburgh-fema-extent.png)
 
 | | Value |
 | --- | --- |
@@ -212,10 +212,10 @@ were fixed before the comparison, and the crest-reach mask comes from the DEM an
 | Hit rate / false-alarm ratio / frequency bias | 65.1 % / 9.6 % / 0.72 |
 | Water surface vs 1 % profile (24 BFE lines) | **bias −0.38 m, RMSE 0.71 m**, 7 of 24 within ±0.3 m, 19 within ±1 m |
 
-![Deluge vs FEMA's 1 % profile, Pittsburgh](validation/pittsburgh-bfe-profile.png)
+![Torrent vs FEMA's 1 % profile, Pittsburgh](validation/pittsburgh-bfe-profile.png)
 
 **Why it misses.** The profile table explains the map. FEMA's 1 % surface rises 2.4 m across the domain, from 726 ft
-on the Ohio at the west edge to 733–734 ft up the Allegheny and Monongahela. Deluge's surface is almost flat: 222.2 m
+on the Ohio at the west edge to 733–734 ft up the Allegheny and Monongahela. Torrent's surface is almost flat: 222.2 m
 on the Ohio to 222.4–222.6 m upstream, because the stage boundaries hold the three rivers within ±0.2 m of the gauge
 level (`WaterSource.offsetScale`, ARCHITECTURE.md §4) — a 1 % *discharge* through these channels would need a much
 steeper surface. So the model is 0.6–0.9 m high on the Ohio and 0.7–1.4 m low upstream, and the orange misses are
@@ -229,9 +229,9 @@ The scene runs both rivers at their Helene peak discharge (French Broad 3,200 m�
 water level is compared with the USGS peak stage at the two gauges inside the domain, converted with the gauge datums
 NWIS lists in NAVD88.
 
-![Deluge vs USGS gauge peaks, Asheville](validation/asheville-gauges.png)
+![Torrent vs USGS gauge peaks, Asheville](validation/asheville-gauges.png)
 
-| Gauge | Observed peak | Deluge | Deluge − observed |
+| Gauge | Observed peak | Torrent | Torrent − observed |
 | --- | --- | --- | --- |
 | 03451500 French Broad River at Asheville | 24.82 ft + 1949.93 ft datum = **601.90 m** | 600.46 m | **−1.44 m** |
 | 03451000 Swannanoa River at Biltmore | 27.33 ft + 1976.37 ft datum = **610.73 m** | 609.51 m | **−1.22 m** |
@@ -260,7 +260,7 @@ The scene is *Harvey's worst hour*: 173 mm/hr over the whole domain with Buffalo
 Barker releases behind it. This comparison is therefore **not like-for-like**, and is reported because the marks are
 the best observed data this domain has.
 
-![Deluge vs USGS high-water marks, Houston](validation/houston-hwm.png)
+![Torrent vs USGS high-water marks, Houston](validation/houston-hwm.png)
 
 | | Value |
 | --- | --- |
@@ -289,7 +289,7 @@ Copernicus EMS mapped this event (activation EMSR927); its AOI 03 (Bidur) covers
 the domain. The grading product (monitoring 1, PeruSAT-1 27 Aug and Resurs-P 28 Aug) has no flood-extent polygon,
 but it grades every building and road segment: destroyed, damaged, possibly damaged, or no visible damage.
 
-![Deluge's debris flood vs Copernicus EMS damage grading, Betrawati](validation/nepal-ems.png)
+![Torrent's debris flood vs Copernicus EMS damage grading, Betrawati](validation/nepal-ems.png)
 
 | | Value |
 | --- | --- |
@@ -432,5 +432,5 @@ npx tsx scripts/validate.ts --score-only   # re-score the saved fields without a
 published metric moves by more than ±0.10 m (levels), ±3 points (shares and skill scores), ±0.05 (frequency bias) or
 ±1 (counts of dry marks). It is not an accuracy gate — several numbers above are poor and say so — it makes a physics
 change show its effect on agreement with reality. After an intended change, re-run `scripts/validate.ts` and update
-this page. `DELUGE_VALIDATION=pittsburgh,ftmyers` runs a subset; `DELUGE_VALIDATION=0` skips it. The metric
+this page. `TORRENT_VALIDATION=pittsburgh,ftmyers` runs a subset; `TORRENT_VALIDATION=0` skips it. The metric
 arithmetic, datum conversion and mark screening are unit-tested in `tests/validation/`.

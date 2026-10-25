@@ -1,15 +1,15 @@
 /// <reference types="node" />
 /**
  * A Dawn WebGPU device for the batch CLI — the same route the GPU tests take (tests/helpers/gpu.ts): the `webgpu` npm
- * package's GPU object and src/gpu.ts createDelugeDevice, so the CLI gets exactly the app's limits and features.
+ * package's GPU object and src/gpu.ts createTorrentDevice, so the CLI gets exactly the app's limits and features.
  *
  * The GPU instance must stay referenced for the life of the process (a collected Dawn instance tears itself down and
  * the next async callback crashes), hence the module-level handle.
  */
-import { createDelugeDevice, type DelugeGPU } from '../gpu';
+import { createTorrentDevice, type TorrentGPU } from '../gpu';
 
 let instance: GPU | null = null;
-let pending: Promise<DelugeGPU> | null = null;
+let pending: Promise<TorrentGPU> | null = null;
 
 /** Thrown when no WebGPU adapter exists (exit code 3). */
 export class NoGpuError extends Error {
@@ -22,7 +22,7 @@ export class NoGpuError extends Error {
 /** Uncaptured WebGPU errors seen so far (a validation error is a bug: the CLI reports it and fails). */
 export const gpuErrors: string[] = [];
 
-export function getGpu(): Promise<DelugeGPU> {
+export function getGpu(): Promise<TorrentGPU> {
   pending ??= (async () => {
     let webgpu: typeof import('webgpu');
     try {
@@ -32,9 +32,9 @@ export function getGpu(): Promise<DelugeGPU> {
     }
     Object.assign(globalThis, webgpu.globals);
     instance = webgpu.create([]);
-    let gpu: DelugeGPU;
+    let gpu: TorrentGPU;
     try {
-      gpu = await createDelugeDevice(instance);
+      gpu = await createTorrentDevice(instance);
     } catch (err) {
       throw new NoGpuError(err instanceof Error ? err.message : String(err));
     }

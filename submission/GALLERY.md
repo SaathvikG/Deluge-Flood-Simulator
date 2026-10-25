@@ -1,4 +1,4 @@
-# Devpost image gallery — Deluge
+# Devpost image gallery — Torrent
 
 14 images, `submission/gallery/`, all 2400 × 1600 JPEG (3:2), largest 1.3 MB.
 Upload in this order; Devpost uses the first image as the project's cover.
@@ -24,7 +24,7 @@ terms ("cars float", "second storey"), and a conservation number sitting next to
 
 ## 3 · `03-evacuation-replans.jpg`
 
-> **Drop an evacuation start and Deluge drives the Census road graph to the nearest shelter that is still dry,**
+> **Drop an evacuation start and Torrent drives the Census road graph to the nearest shelter that is still dry,**
 > re-planning as streets go under. Here: 2.6 km, 5 minutes, out to Hill District high ground — with the river still
 > rising from 40 ft to 46 ft.
 
@@ -32,14 +32,14 @@ terms ("cars float", "second storey"), and a conservation number sitting next to
 
 ## 4 · `04-no-safe-route.jpg`
 
-> **When the start point itself is under 2 m of water, Deluge refuses to draw a route:** "don't drive into floodwater —
+> **When the start point itself is under 2 m of water, Torrent refuses to draw a route:** "don't drive into floodwater —
 > shelter in place on higher floors."
 
 *Proves:* it says no. An honest failure state instead of a confident wrong answer.
 
 ## 5 · `05-shallow-water-equations.jpg`
 
-> **How it works, inside the app:** the 2-D shallow-water equations Deluge actually solves, term by term, down to the
+> **How it works, inside the app:** the 2-D shallow-water equations Torrent actually solves, term by term, down to the
 > semi-implicit flux update. Local-inertial scheme after Bates et al. (2010) and de Almeida et al. (2012), keeping the
 > convective acceleration term the pure local-inertial model drops.
 
@@ -138,7 +138,7 @@ shared with other work at the time, so the corner reads 41-60 fps on most frames
 the closest, heaviest 3D camera in the set. If a judge asks, that is the answer: a bigger viewport, not a different
 solver. If you would rather the question never came up, drop image 4 and submit 13 — see the note below.
 
-**Not included, deliberately:** no desktop/`Deluge.app` screenshot. An Electron window shows the identical UI, so it
+**Not included, deliberately:** no desktop/`Torrent.app` screenshot. An Electron window shows the identical UI, so it
 would have been the weakest image in the set; the offline/desktop story is carried in `SUBMISSION.md` text instead.
 
 **Rejects** stay in `submission/raw-moments/` and `submission/raw-cities/`. The two that were cut from the shortlist:

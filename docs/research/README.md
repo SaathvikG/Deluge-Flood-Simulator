@@ -12,7 +12,7 @@ are current.
 | [climate-scenarios.md](climate-scenarios.md) | Future climate: warming by pathway, rain scaling, sea-level rise, glacial-lake growth, today-vs-future EAL | `src/climate/`, README *Future climate* |
 | [business-case.md](business-case.md) | Market, competitors, regulation, and the loss-model methods and tables | `src/loss/`, [BUSINESS.md](../../BUSINESS.md) |
 
-Background research behind Deluge v2. Every number is tagged with how far it was checked:
+Background research behind Torrent v2. Every number is tagged with how far it was checked:
 **[V]** verified against a primary source, **[S]** secondary source, **[M]** from domain knowledge and still to be
 verified, **[C]** computed, **[I]** illustrative assumption. Treat [M] and [I] values as placeholders until checked.
 

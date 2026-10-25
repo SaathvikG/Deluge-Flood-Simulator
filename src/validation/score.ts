@@ -200,7 +200,7 @@ export interface BfeRow {
 }
 
 /**
- * The 1 % PROFILE: Deluge's water surface at each FEMA Base Flood Elevation line that crosses a forced river, against
+ * The 1 % PROFILE: Torrent's water surface at each FEMA Base Flood Elevation line that crosses a forced river, against
  * the line's elevation. A stage ladder sets one level at one gauge; FEMA's 1 % surface slopes along the river, so this
  * says how well the modelled surface follows the official profile away from the gauge. A line counts when it crosses
  * the scenario's initial river water; its modelled WSE is the median over the line's wetted cells.

@@ -11,8 +11,8 @@
  * Tolerances cover a different GPU (Float32 rounding and CFL readback timing change the substep sequence): ±0.10 m on
  * water levels, ±3 points on shares and skill scores, ±0.05 on frequency bias, ±1 on counts of dry points.
  *
- * Runtime is a few minutes (ten scenario runs of 30–180 simulated minutes at 1024²). DELUGE_VALIDATION=pittsburgh,ftmyers
- * limits it to some presets; DELUGE_VALIDATION=0 skips it.
+ * Runtime is a few minutes (ten scenario runs of 30–180 simulated minutes at 1024²). TORRENT_VALIDATION=pittsburgh,ftmyers
+ * limits it to some presets; TORRENT_VALIDATION=0 skips it.
  */
 import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -28,7 +28,7 @@ after(finishGpuTests);
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const summary = JSON.parse(fs.readFileSync(path.join(ROOT, 'public/validation/summary.json'), 'utf8')) as ValidationSummary;
-const env = process.env.DELUGE_VALIDATION;
+const env = process.env.TORRENT_VALIDATION;
 const selected = env && env !== '1' ? new Set(env.split(',').map((s) => s.trim())) : null;
 
 export function tolerance(key: string): number {
@@ -40,7 +40,7 @@ export function tolerance(key: string): number {
 
 for (const [id, plan] of Object.entries(PLANS)) {
   const pinned = summary.presets[id];
-  const skip = env === '0' ? 'DELUGE_VALIDATION=0' : selected && !selected.has(id) ? `not in DELUGE_VALIDATION` : false;
+  const skip = env === '0' ? 'TORRENT_VALIDATION=0' : selected && !selected.has(id) ? `not in TORRENT_VALIDATION` : false;
   test(`validation against the real flood: ${id}`, { skip, timeout: 20 * 60_000 }, async () => {
     assert.ok(pinned, `${id} has no entry in public/validation/summary.json — run npx tsx scripts/validate.ts`);
     const obs = JSON.parse(fs.readFileSync(path.join(ROOT, 'public/validation', id, 'observed.json'), 'utf8')) as ObservedFile;

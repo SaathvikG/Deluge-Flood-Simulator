@@ -1,6 +1,6 @@
 /**
  * "Dam-breach inundation" — a view of the Use cases dialog (src/ui/useCases.ts): find a dam in the National Inventory
- * of Dams (by name or NID id, or near the map on screen), pick a breach scenario, and Deluge loads the valley below it
+ * of Dams (by name or NID id, or near the map on screen), pick a breach scenario, and Torrent loads the valley below it
  * as a live area and sends the breach hydrograph in at the dam's toe (src/dams). Afterwards the same view reads the
  * arrival time and peak depth along the flow path from the solver's hazard fields.
  *
@@ -100,7 +100,7 @@ export function createDamView(ctx: UIContext, deps: { panel: Pick<Panel, 'reveal
     h(
       'p',
       { class: 'dl-uc-lede' },
-      'Every U.S. dam in the National Inventory of Dams that holds at least 1,000 acre-ft, or stands 6 m high over at least 50 acre-ft — about 55,000 of them, from a copy served with the app. Pick one: Deluge loads the valley below it (USGS 3DEP elevation, imagery and roads — this needs internet), breaches it and runs the wave down the valley.',
+      'Every U.S. dam in the National Inventory of Dams that holds at least 1,000 acre-ft, or stands 6 m high over at least 50 acre-ft — about 55,000 of them, from a copy served with the app. Pick one: Torrent loads the valley below it (USGS 3DEP elevation, imagery and roads — this needs internet), breaches it and runs the wave down the valley.',
     ),
     h('div', { class: 'dl-row dl-dam-search' }, form, nearBtn),
     status,

@@ -1,5 +1,5 @@
 /**
- * The Deluge project file, `<name>.deluge.json` — format "deluge-project", version 1.
+ * The Torrent project file, `<name>.torrent.json` — format "torrent-project", version 1.
  *
  * A project is everything needed to put a piece of work back on screen: the scene, the user's changes to its scenario,
  * the walls / levees and terrain edits, the Site check sites and settings, the ensemble settings, the camera and the
@@ -8,7 +8,7 @@
  * uploaded; there is no server.
  *
  * ─── Top level ─────────────────────────────────────────────────────────────────────────────────────────────────────
- *   format     "deluge-project"                 required, exact
+ *   format     "torrent-project"                 required, exact
  *   version    1                                required; a newer major version is refused (never half-read)
  *   name       string ≤ 60                      project name (cleaned like every user string)
  *   savedAt    ISO-8601 string                  informational only
@@ -57,9 +57,9 @@ import type { ClimateSelection } from '../climate/scenarios';
 import type { MitigationType } from '../loss/eal';
 import type { SiteOccupancy } from '../loss/site';
 
-export const PROJECT_FORMAT = 'deluge-project';
+export const PROJECT_FORMAT = 'torrent-project';
 export const PROJECT_VERSION = 1;
-export const PROJECT_EXTENSION = '.deluge.json';
+export const PROJECT_EXTENSION = '.torrent.json';
 export const PROJECT_MIME = 'application/json';
 
 /** Every bound the reader enforces. */

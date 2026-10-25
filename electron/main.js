@@ -1,7 +1,7 @@
 /**
- * Deluge — Electron wrapper, main process.
+ * Torrent — Electron wrapper, main process.
  *
- * One BrowserWindow showing the existing static build over a privileged `app://deluge/` scheme. No preload,
+ * One BrowserWindow showing the existing static build over a privileged `app://torrent/` scheme. No preload,
  * no IPC, no Node in the renderer, no listening TCP port. Every rule here traces back to a requirement in
  * artifacts/security-report/ELECTRON_REQUIREMENTS.md (R1…R14); the tag is on the line that implements it.
  *
@@ -15,7 +15,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { CSP, EXTERNAL_LINKS, isAllowedDataUrl } from './endpoints.js';
 
-const APP_ORIGIN = 'app://deluge';
+const APP_ORIGIN = 'app://torrent';
 const APP_URL = `${APP_ORIGIN}/`;
 /**
  * A page the window can always reach, answered from the constant below rather than from `dist/` (no build
@@ -26,10 +26,10 @@ const RECOVERY_PATH = '/recovery.html';
 /* ------------------------------------------- R12 + R10: a packaged build refuses to disarm itself from argv */
 
 /**
- * A packaged Deluge will not start if its command line asks it to give up a defence this file enforces.
+ * A packaged Torrent will not start if its command line asks it to give up a defence this file enforces.
  *
  * The debugging half is defence in depth (the R11 fuses already refuse `--inspect`). The rest is not: without it,
- * `Deluge.app --ignore-certificate-errors` makes the R10 TLS posture optional, and a hostile endpoint standing in
+ * `Torrent.app --ignore-certificate-errors` makes the R10 TLS posture optional, and a hostile endpoint standing in
  * for `tigerweb.geo.census.gov` with a self-signed certificate is trusted — verified end to end in the Electron
  * penetration test before this guard existed. `--disable-web-security`, `--no-sandbox`, `--load-extension` and
  * friends are refused for the same reason: each one is a rule below, switched off from outside.
@@ -47,7 +47,7 @@ const REFUSED_SWITCHES = [
   'enable-blink-features', 'enable-experimental-web-platform-features',
   // NOT listed: `allow-file-access-from-files`, which Electron appends to its own command line by default — a
   // packaged build refusing it would refuse to start at all (measured: it does). file:// is closed off by other
-  // means anyway: the R11 GrantFileProtocolExtraPrivileges fuse is off, the window only ever loads app://deluge/,
+  // means anyway: the R11 GrantFileProtocolExtraPrivileges fuse is off, the window only ever loads app://torrent/,
   // and the R7 navigation handler blocks file:// documents, frames and links.
   // Also not listed: `host-resolver-rules` — see below.
   // Where the app's traffic goes (R10 covers the request URL; a proxy would move it wholesale).
@@ -56,13 +56,13 @@ const REFUSED_SWITCHES = [
 if (app.isPackaged) {
   const refused = REFUSED_SWITCHES.filter((s) => app.commandLine.hasSwitch(s));
   if (refused.length) {
-    console.error(`[deluge] refusing to start: ${refused.join(', ')} on a packaged build`);
+    console.error(`[torrent] refusing to start: ${refused.join(', ')} on a packaged build`);
     app.exit(1);
   }
   // `--host-resolver-rules` is *not* refused: the §V checklist uses it to make every data host unreachable, and on
   // its own it cannot defeat TLS (the certificate must still validate for the real hostname). Logged, not fatal.
   if (app.commandLine.hasSwitch('host-resolver-rules')) {
-    console.warn('[deluge] note: --host-resolver-rules is set; TLS validation still applies');
+    console.warn('[torrent] note: --host-resolver-rules is set; TLS validation still applies');
   }
 }
 
@@ -117,14 +117,14 @@ const MIME = Object.freeze({
  */
 const ROOT = app.isPackaged
   ? path.join(import.meta.dirname, 'dist')
-  : path.resolve(import.meta.dirname, '..', process.env.DELUGE_DIST || 'dist');
+  : path.resolve(import.meta.dirname, '..', process.env.TORRENT_DIST || 'dist');
 
 /**
  * Static, script-free, self-contained. `style-src` allows an inline <style> (the built index.html needs one);
  * nothing here needs script, and `<a href="/">` is an in-origin navigation the R7 handler allows.
  */
 const RECOVERY_HTML = `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>Deluge — the view stopped</title><style>
+<html lang="en"><head><meta charset="utf-8"><title>Torrent — the view stopped</title><style>
  html,body{margin:0;height:100%;background:#05070d;color:#e8eef7;
    font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
  main{max-width:34rem;margin:0 auto;padding:18vh 24px 0}
@@ -135,12 +135,12 @@ const RECOVERY_HTML = `<!doctype html>
  ul{color:#aab8cc;padding-left:1.2rem}
 </style></head><body><main>
  <h1>The view stopped and could not restart</h1>
- <p>The graphics view crashed more than once in a row, so Deluge stopped reloading it instead of flickering.
+ <p>The graphics view crashed more than once in a row, so Torrent stopped reloading it instead of flickering.
     Nothing was lost — the simulation runs entirely on this machine and saves nothing.</p>
- <a href="/">Restart Deluge</a>
+ <a href="/">Restart Torrent</a>
  <ul>
   <li>If it stops again, the four built-in scenes need no network: restart and stay off “Pick a location”.</li>
-  <li>Quitting and reopening Deluge from the Dock gives the GPU a completely fresh start.</li>
+  <li>Quitting and reopening Torrent from the Dock gives the GPU a completely fresh start.</li>
  </ul>
 </main></body></html>
 `;
@@ -162,7 +162,7 @@ async function serveApp(request) {
   } catch {
     return notFound();
   }
-  if (url.protocol !== 'app:' || url.host !== 'deluge') return notFound();
+  if (url.protocol !== 'app:' || url.host !== 'torrent') return notFound();
   if (rel === '/') rel = '/index.html';
 
   // The URL parser already dropped literal dot segments; %2e%2e and ..%2f only appear after decoding.
@@ -204,7 +204,7 @@ function openExternalSafe(raw) {
     void shell.openExternal(u.href);
     return;
   }
-  console.warn('[deluge] blocked external open:', u.protocol, u.host);
+  console.warn('[torrent] blocked external open:', u.protocol, u.host);
 }
 
 /* ----------------------------------------------------------- R7: navigation, new windows, webviews, R8 BT */
@@ -221,7 +221,7 @@ app.on('web-contents-created', (_event, contents) => {
   const blockNav = (event, url) => {
     const target = url ?? event?.url;
     if (!isAppUrl(target)) {
-      console.warn('[deluge] blocked navigation:', target);
+      console.warn('[torrent] blocked navigation:', target);
       event.preventDefault();
     }
   };
@@ -239,7 +239,7 @@ app.on('web-contents-created', (_event, contents) => {
 
 // Registered for logging only: no preventDefault, no callback(true), so Chromium's rejection stands.
 app.on('certificate-error', (_event, _wc, url, error) => {
-  console.error('[deluge] certificate rejected:', error, new URL(url).origin);
+  console.error('[torrent] certificate rejected:', error, new URL(url).origin);
 });
 // Never auto-select a client certificate.
 app.on('select-client-certificate', (event, _wc, _url, _list, callback) => {
@@ -249,7 +249,7 @@ app.on('select-client-certificate', (event, _wc, _url, _list, callback) => {
 // The `login` event is deliberately unhandled: HTTP/proxy auth prompts are cancelled by default.
 
 // GPU-process crashes are logged; Chromium restarts the GPU process itself.
-app.on('child-process-gone', (_event, details) => console.error('[deluge] child process gone:', JSON.stringify(details)));
+app.on('child-process-gone', (_event, details) => console.error('[torrent] child process gone:', JSON.stringify(details)));
 
 /* ------------------------------------------------------ R13: single instance, no deep links, no argv URLs */
 
@@ -281,7 +281,7 @@ function buildMenu(getWindow) {
   };
   const template = [
     ...(process.platform === 'darwin'
-      ? [{ label: 'Deluge', submenu: [{ role: 'about' }, { type: 'separator' }, { role: 'hide' }, { role: 'hideOthers' }, { role: 'unhide' }, { type: 'separator' }, { role: 'quit' }] }]
+      ? [{ label: 'Torrent', submenu: [{ role: 'about' }, { type: 'separator' }, { role: 'hide' }, { role: 'hideOthers' }, { role: 'unhide' }, { type: 'separator' }, { role: 'quit' }] }]
       : []),
     // Kept so Cmd+C/V/A work in the location picker's search field. These are OS edit roles, not the
     // async clipboard API — navigator.clipboard stays denied by the R8 permission handlers.
@@ -298,18 +298,18 @@ function buildMenu(getWindow) {
 /**
  * The §V checklist needs a packaged, fused build to report on itself (nothing can drive one from outside — that
  * is items 9 and 10). That hook lives in `electron/smoke.js`, which `electron/package.mjs` stages **only** for
- * the `npm run app:verify` bundle: the shipped `release/Deluge.app` asar does not contain the file, so the
+ * the `npm run app:verify` bundle: the shipped `release/Torrent.app` asar does not contain the file, so the
  * import below fails and there is no arbitrary-JavaScript channel in the app a judge launches. The penetration
  * test used exactly that channel as its harness, which is why it is now a build-time absence and not a
  * runtime name check.
  */
 async function installSmokeReport(win, consoleLog) {
-  if (!process.env.DELUGE_SMOKE_OUT) return;
+  if (!process.env.TORRENT_SMOKE_OUT) return;
   let smoke;
   try {
     smoke = await import('./smoke.js');
   } catch {
-    console.warn('[deluge] DELUGE_SMOKE_OUT ignored: this bundle has no verification hook');
+    console.warn('[torrent] TORRENT_SMOKE_OUT ignored: this bundle has no verification hook');
     return;
   }
   // smoke.js re-checks the product name itself, so a bundle that stages the file by mistake still refuses.
@@ -335,7 +335,7 @@ function createWindow(ses) {
     center: true,
     show: false,
     backgroundColor: '#05070d',
-    title: 'Deluge',
+    title: 'Torrent',
     webPreferences: {
       session: ses, // R14: the dedicated session that carries the R4/R8/R10 configuration
       contextIsolation: true, // R2
@@ -370,7 +370,7 @@ function createWindow(ses) {
     consoleLog.push(entry);
     if (entry.level === 'error' || entry.level === 'warning') console.log(`[renderer:${entry.level}] ${entry.message}`);
   });
-  win.webContents.on('did-fail-load', (_e, code, desc, url) => console.error('[deluge] load failed', code, desc, url));
+  win.webContents.on('did-fail-load', (_e, code, desc, url) => console.error('[torrent] load failed', code, desc, url));
 
   /**
    * R2: a renderer crash (e.g. a hostile upstream body, SEC-03) recovers into the offline presets.
@@ -386,18 +386,18 @@ function createWindow(ses) {
   let lastCrash = 0;
   let recovering = false;
   win.webContents.on('render-process-gone', (_e, details) => {
-    console.error('[deluge] render process gone:', JSON.stringify(details));
+    console.error('[torrent] render process gone:', JSON.stringify(details));
     if (win.isDestroyed()) return;
     const now = Date.now();
     if (now - lastCrash > CRASH_WINDOW_MS) crashReloads = 0;
     lastCrash = now;
     // The recovery page is static HTML with no script and no GPU work: if even that died, reloading it is futile.
     if (recovering) {
-      console.error('[deluge] the recovery page itself crashed; leaving the window alone');
+      console.error('[torrent] the recovery page itself crashed; leaving the window alone');
       return;
     }
     if (crashReloads >= MAX_CRASH_RELOADS) {
-      console.error(`[deluge] renderer crashed ${crashReloads + 1} times in a minute; showing the recovery page`);
+      console.error(`[torrent] renderer crashed ${crashReloads + 1} times in a minute; showing the recovery page`);
       recovering = true;
       win.loadURL(`${APP_ORIGIN}${RECOVERY_PATH}`);
       return;
@@ -416,7 +416,7 @@ function createWindow(ses) {
     if (win.isDestroyed() || win.webContents.getURL().includes(RECOVERY_PATH)) return;
     recovering = false;
   });
-  win.webContents.on('unresponsive', () => console.error('[deluge] renderer unresponsive'));
+  win.webContents.on('unresponsive', () => console.error('[torrent] renderer unresponsive'));
 
   // F11 as a second full-screen key (the menu item owns Control+Command+F on macOS).
   win.webContents.on('before-input-event', (event, input) => {
@@ -439,7 +439,7 @@ function createWindow(ses) {
   buildMenu(() => (win.isDestroyed() ? null : win));
   void installSmokeReport(win, consoleLog);
 
-  // R2: exactly app://deluge/, never file:// and never http://localhost:* in a packaged build.
+  // R2: exactly app://torrent/, never file:// and never http://localhost:* in a packaged build.
   win.loadURL(APP_URL);
   return win;
 }
@@ -447,7 +447,7 @@ function createWindow(ses) {
 app.whenReady().then(async () => {
   // R14: a dedicated session. Every protocol, permission and network rule below applies to *this* session,
   // which is also the one the window uses; defaultSession is left alone.
-  const ses = session.fromPartition('persist:deluge');
+  const ses = session.fromPartition('persist:torrent');
 
   /**
    * A previous visitor's state never carries over. `filesystem` is the one that matters and the one that was
@@ -459,7 +459,7 @@ app.whenReady().then(async () => {
    * Asking Electron to clear cookies opens the cookie store, and with the R11 `EnableCookieEncryption` fuse on
    * that makes it create a `"<AppName> Safe Storage"` item in the login keychain. The bundle is ad-hoc signed
    * and re-signed by every `npm run app:build`, so the next launch no longer matches that item's ACL and macOS
-   * puts a **"Deluge wants to use your confidential information … enter the login keychain password"** dialog
+   * puts a **"Torrent wants to use your confidential information … enter the login keychain password"** dialog
    * on screen — in front of the judge, over the app. Measured both ways on this machine with two identically
    * built bundles: with `cookies` in the list the keychain item is created on first launch; without it, it
    * never is, and no dialog can follow. The app sets no cookies (no accounts, no backend, no state-changing
@@ -474,14 +474,14 @@ app.whenReady().then(async () => {
    */
   await ses
     .clearStorageData({ storages: ['filesystem', 'indexdb', 'localstorage', 'serviceworkers', 'cachestorage', 'websql'] })
-    .catch((e) => console.warn('[deluge] clearStorageData', e));
+    .catch((e) => console.warn('[torrent] clearStorageData', e));
 
   // R4/R5
   ses.protocol.handle('app', serveApp);
 
   // R8: deny every permission-gated API. The app uses none.
   ses.setPermissionRequestHandler((_wc, permission, callback) => {
-    console.warn('[deluge] denied permission request:', permission);
+    console.warn('[torrent] denied permission request:', permission);
     callback(false);
   });
   ses.setPermissionCheckHandler(() => false);
@@ -499,7 +499,7 @@ app.whenReady().then(async () => {
     callback('');
   });
   ses.on('will-download', (event) => {
-    console.warn('[deluge] blocked download');
+    console.warn('[torrent] blocked download');
     event.preventDefault();
   });
   // No setDisplayMediaRequestHandler: screen capture stays unavailable.
@@ -522,7 +522,7 @@ app.whenReady().then(async () => {
   // Nominatim's usage policy asks for an identifying agent; an app:// page sends no usable Referer.
   ses.webRequest.onBeforeSendHeaders({ urls: ['https://nominatim.openstreetmap.org/*'] }, (details, callback) => {
     callback({
-      requestHeaders: { ...details.requestHeaders, 'User-Agent': `Deluge/${app.getVersion()} (+${EXTERNAL_LINKS[0]})` },
+      requestHeaders: { ...details.requestHeaders, 'User-Agent': `Torrent/${app.getVersion()} (+${EXTERNAL_LINKS[0]})` },
     });
   });
 

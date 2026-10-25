@@ -1,5 +1,5 @@
 /**
- * Fetch the OBSERVED floods Deluge's scenarios are validated against, and derive the compact files the harness reads.
+ * Fetch the OBSERVED floods Torrent's scenarios are validated against, and derive the compact files the harness reads.
  *
  *   npx tsx scripts/validation/fetch.ts                 # fetch what is not cached yet, derive every preset
  *   npx tsx scripts/validation/fetch.ts --refresh       # re-download everything

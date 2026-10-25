@@ -38,7 +38,7 @@ const gpkg = path.join(cache, 'nation.gpkg');
 async function download(): Promise<void> {
   fs.mkdirSync(cache, { recursive: true });
   console.log(`[nid] downloading ${SOURCE} …`);
-  const res = await fetch(SOURCE, { redirect: 'follow', headers: { 'user-agent': 'deluge-bake (public NID export)' } });
+  const res = await fetch(SOURCE, { redirect: 'follow', headers: { 'user-agent': 'torrent-bake (public NID export)' } });
   if (!res.ok) throw new Error(`NID export: HTTP ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer());
   if (buf.subarray(0, 15).toString('latin1') !== 'SQLite format 3') throw new Error('NID export: not a GeoPackage');

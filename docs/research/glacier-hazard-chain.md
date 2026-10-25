@@ -1,4 +1,4 @@
-# Deluge — Glacier Hazard Chain: implementation-ready technical spec
+# Torrent — Glacier Hazard Chain: implementation-ready technical spec
 
 Method: web and literature review. Scope: sections A–I of the brief.
 
@@ -9,7 +9,7 @@ How to read the evidence tags used throughout:
 * **[M]** = from memory of the literature / standard textbook result, NOT re-verified this session — check before shipping a number to the screen.
 * **[C]** = computed for this spec (`docs/research/breach-check.mjs` and inline node runs), reproducible.
 
-Deluge context assumed (read from the repo): 2-D local-inertial solver (Bates 2010 / de Almeida 2012) with upwind
+Torrent context assumed (read from the repo): 2-D local-inertial solver (Bates 2010 / de Almeida 2012) with upwind
 advection, staggered `rgba32float` state `(h, qx, qy, z−z0)`, semi-implicit Manning friction with ONE global `n²`
 uniform (`src/sim/shaders/momentum.ts`, `momentum()`), safety caps `|q| ≤ hf·min(uMax=15 m/s, 8·√(g·hf))`,
 inflow sources = constant-Q discs with optional `stopAfter` (`WaterSource` in `src/contracts.ts`), up to 16 sources,
@@ -80,7 +80,7 @@ Also [V]: Khadka et al. 2026 found the empirical mean of nine relations within �
 lake but −64 % for the upper lake; Das & Ramsankaran 2025 report ±36–1736 % discrepancies on four Himalayan lakes [S].
 Cook & Quincey 2015: for a given area, mean depth (and hence V) varies by up to an order of magnitude; D–A r² = 0.38.
 
-### A.3 Recommendation for Deluge
+### A.3 Recommendation for Torrent
 
 * `volumeFromArea(A, damType)` returns `{median, lo, hi}`:
   * moraine / bedrock / ice-dammed: median = geometric mean of {#1, #6, #8}; band = ×/÷ 2 (covers the 68 % spread seen above).
@@ -222,7 +222,7 @@ amplitude a, not the height H — see §G.9 for what the engine does with that.
 
 Impact velocity from energy line: v_s ≈ √(2 g (H_fall − μ_eff L_path)), μ_eff ≈ H/L from C.1, cap at 60 m/s.
 
-Use in Deluge: wave height at the dam H(x_dam) vs freeboard f:
+Use in Torrent: wave height at the dam H(x_dam) vs freeboard f:
 * H < f → no overtopping; trigger fails (show "lake survived" — a valid outcome).
 * H ≥ f → overtopping volume V_ot ≈ (H − f)·A_lake·c_ot with c_ot ≈ 0.3 [heuristic, flag], released as a short
   pulse (Q = V_ot / 60 s), AND start the B.3 breach with z_b0 = d − (H − f) and k = 100 m/h (erosive surge).
@@ -275,7 +275,7 @@ Two branches, selectable per scenario:
 
 ---------------------------------------------------------------------------------------------------------------------
 
-## D. Debris-flow rheology in Deluge's local-inertial momentum update
+## D. Debris-flow rheology in Torrent's local-inertial momentum update
 
 ### D.1 Friction laws (S_f is the friction slope; the momentum equation for unit discharge q = u·h carries −g·h·S_f)
 
@@ -318,14 +318,14 @@ What these give ([C]; ρ_m from Cv; S_y at h = 2 m):
 | Aspen Pit 1 (stiff) | τ_y 40 Pa, η 2.7 Pa·s | 528 Pa, 25 Pa·s, S_y 0.016 | 6.9 kPa, 227 Pa·s, **S_y 0.19 (stops below ~11°)** |
 | Glenwood 1 (fluid) | 1.4 Pa, 0.28 Pa·s | 11 Pa, 2.8 Pa·s | 80 Pa, 28 Pa·s, S_y 0.002 |
 
-→ Rheology only changes Deluge's answer materially for Cv ≥ 0.4 with a stiff material. For GLOFs/debris *floods*
+→ Rheology only changes Torrent's answer materially for Cv ≥ 0.4 with a stiff material. For GLOFs/debris *floods*
 (Cv 0.1–0.35) the dominant effect is the dispersive Manning n_td and the density of the mixture, not yield.
 
 Voellmy parameters (RAMMS::DEBRISFLOW) — no universal default; calibrated ranges [S/V]:
 * Review range μ ≈ 0.05–0.45, ξ ≈ 15–1,000 m/s² (Cesca & D'Agostino 2008 Dolomites: μ 0.18–0.45) [S].
 * GLOF routing (Gongbatongsha): **μ = 0.08, ξ = 500 m/s²**, ρ = 1,550 kg/m³; trigger debris flow μ 0.2, ξ 500
   (Sattar 2022) [V]. Himalayan debris flows: μ 0.10 / ξ 400; μ 0.01 / ξ 100 [S].
-* Recommended Deluge presets: "debris flood" μ = 0.05, ξ = 500; "debris flow" μ = 0.15, ξ = 300; "stiff" μ = 0.25, ξ = 200.
+* Recommended Torrent presets: "debris flood" μ = 0.05, ξ = 500; "debris flow" μ = 0.15, ξ = 300; "stiff" μ = 0.25, ξ = 200.
 * Cross-check with Manning: the ξ-term equals Manning when ξ = h^{1/3}/n² → n = 0.05 ≙ ξ ≈ 400–680 for h = 1–5 m;
   n = 0.1 ≙ ξ ≈ 100–170 [C]. So "Voellmy with μ = 0" ≈ Manning with a depth-independent roughness — a good sanity test.
 
@@ -476,7 +476,7 @@ Parameters:
 Sizing example ([C]): 100 km² of glacier, DDF 7 mm °C⁻¹ d⁻¹, +3 °C heatwave anomaly → 21 mm d⁻¹ → 2.1×10⁶ m³ d⁻¹ ≈ 24
 m³/s extra. Langtang-scale catchments: tens of m³/s.
 
-### F.2 What melt is for in Deluge (be honest on screen)
+### F.2 What melt is for in Torrent (be honest on screen)
 
 Heatwave melt is a **slow** forcing (tens of m³/s over days), not a flash flood. It enters the chain in three ways:
 1. **Baseflow** in the 1-D routing and the river at the domain edge (river stage before the surge).
@@ -928,7 +928,7 @@ default hydrograph — so the browser never fetches the inventories.
 
 ---------------------------------------------------------------------------------------------------------------------
 
-## I. Recommended design for Deluge
+## I. Recommended design for Torrent
 
 ### I.1 Data model (TypeScript sketch; additions to `src/contracts.ts`)
 

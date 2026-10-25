@@ -51,15 +51,15 @@ export type ReadResult = { ok: true; project: ProjectFile; warnings: string[] } 
 
 /** Fixed sentences only. */
 export const PROJECT_ERRORS = {
-  tooLarge: 'The file is too large to be a Deluge project.',
-  notJson: 'The file is not valid JSON, so it is not a Deluge project.',
-  tooDeep: 'The file is nested too deeply to be a Deluge project.',
-  tooMany: 'The file holds too many values to be a Deluge project.',
+  tooLarge: 'The file is too large to be a Torrent project.',
+  notJson: 'The file is not valid JSON, so it is not a Torrent project.',
+  tooDeep: 'The file is nested too deeply to be a Torrent project.',
+  tooMany: 'The file holds too many values to be a Torrent project.',
   forbiddenKey: 'The file contains a reserved key (__proto__, constructor or prototype) and was refused.',
-  notProject: 'The file is not a Deluge project (its "format" is missing or different).',
-  newer: 'The project was saved by a newer version of Deluge (a later format version) and cannot be read here.',
+  notProject: 'The file is not a Torrent project (its "format" is missing or different).',
+  newer: 'The project was saved by a newer version of Torrent (a later format version) and cannot be read here.',
   invalid: 'The project file is damaged or was edited by hand: a required part did not pass the checks.',
-  tooHeavy: 'The project’s walls and terrain edits cover more of the map than Deluge replays when opening a project (a link carries far less than a file), so it was refused.',
+  tooHeavy: 'The project’s walls and terrain edits cover more of the map than Torrent replays when opening a project (a link carries far less than a file), so it was refused.',
 } as const;
 
 const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
@@ -504,7 +504,7 @@ function readDesigns(v: unknown, opts: ReadOptions, bounds: EditBounds, warnings
       out.push({ id: did, name: name || `Design ${did}`, edits: readEdits(own(o, 'edits') ?? [], bounds), cost: readCost(own(o, 'cost')) });
     } catch (err) {
       if (!(err instanceof Invalid)) throw err;
-      warnings.push(err.message === PROJECT_ERRORS.tooHeavy ? 'A design in the project edits more of the map than Deluge replays when opening a project and was skipped.' : 'A design in the project could not be read and was skipped.');
+      warnings.push(err.message === PROJECT_ERRORS.tooHeavy ? 'A design in the project edits more of the map than Torrent replays when opening a project and was skipped.' : 'A design in the project could not be read and was skipped.');
     }
   }
   return out;

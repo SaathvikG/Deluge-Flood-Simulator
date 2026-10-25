@@ -1,5 +1,5 @@
 /**
- * Deluge — shared contracts between modules.
+ * Torrent — shared contracts between modules.
  *
  * THIS FILE IS THE INTEGRATION CONTRACT. Every module (sim, render, data, routing, ui, app)
  * codes against these types. Do not change a signature here without updating every consumer.
@@ -683,7 +683,7 @@ export type WaterViewMode =
   /**
    * Extension: ensemble flood probability — the share of an ensemble's members (src/loss/ensemble.ts) whose max depth
    * exceeded RenderSettings.probabilityThreshold (0.15 m by default), drawn on the deepest water any member reached.
-   * Needs an ensemble layer (DelugeRendererAPI.setEnsembleLayer); with none, nothing is coloured.
+   * Needs an ensemble layer (TorrentRendererAPI.setEnsembleLayer); with none, nothing is coloured.
    */
   | 'probability';
 
@@ -747,7 +747,7 @@ export interface FloodRenderer {
    * Bind a terrain + solver. Call again whenever a new terrain is loaded. Also captures the "normally wet" mask
    * (rivers and lakes before the flood, used by the depth / max-depth hazard maps) from solver.stateTexture, so call
    * it right after solver.setInitialWater (as src/app/scene.ts does). If the initial water is replaced later, call
-   * the extension captureNormalWater() on DelugeRendererAPI.
+   * the extension captureNormalWater() on TorrentRendererAPI.
    */
   setScene(terrain: TerrainData, solver: FloodSolver): void;
   /** Camera state (mutable). The renderer owns an OrbitController attached to the canvas. */
@@ -895,10 +895,10 @@ export interface EvacuationRouter {
 }
 
 // ────────────────────────────────────────────────────────────────────────────────────────────
-// Automation hook (used by e2e tests and demos). Installed by src/main.ts as window.__deluge.
+// Automation hook (used by e2e tests and demos). Installed by src/main.ts as window.__torrent.
 // ────────────────────────────────────────────────────────────────────────────────────────────
 
-export interface DelugeDebugAPI {
+export interface TorrentDebugAPI {
   /** Resolves once the first frame with terrain + water has rendered. */
   ready: Promise<void>;
   loadPreset(id: string): Promise<void>;
@@ -937,7 +937,7 @@ export interface DelugeDebugAPI {
 //  src/render/index.ts:
 //    export function createRenderer(device: GPUDevice, canvas: HTMLCanvasElement,
 //                                   format: GPUTextureFormat, options?: RendererOptions): Promise<FloodRenderer>;
-//    (options.quality 'auto'|'high'|'balanced'|'low'; the concrete DelugeRendererAPI adds setQuality(), stats and
+//    (options.quality 'auto'|'high'|'balanced'|'low'; the concrete TorrentRendererAPI adds setQuality(), stats and
 //     captureNormalWater() — re-capture the normally-wet mask after replacing the initial water.)
 //  src/routing/index.ts:
 //    export function createRouter(): EvacuationRouter;
@@ -951,7 +951,7 @@ export interface DelugeDebugAPI {
 //  src/ui/index.ts:
 //    export function mountUI(root: HTMLElement, store: Store, actions: AppActions): void;
 //    export function createToolController(canvas: HTMLCanvasElement, deps: ToolControllerDeps): ToolController;
-//  src/gpu.ts: export function createDelugeDevice(gpu: GPU): Promise<DelugeGPU>;
+//  src/gpu.ts: export function createTorrentDevice(gpu: GPU): Promise<TorrentGPU>;
 //  src/app/store.ts: export function createStore(initial: AppState): Store;
 
 export type SolverTerrainInput = Pick<TerrainData, 'nx' | 'ny' | 'cellSize' | 'elevation'>;

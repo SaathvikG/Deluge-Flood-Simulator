@@ -101,7 +101,7 @@ export function createInfraSection(ctx: UIContext): InfraSection {
     getCamera: () => bridge.scene?.getCamera?.() ?? null,
     getTerrain,
     getExaggeration: () => store.get().render.verticalExaggeration,
-    getCanvas: () => (typeof document !== 'undefined' ? (document.getElementById('deluge-canvas') as HTMLCanvasElement | null) : null),
+    getCanvas: () => (typeof document !== 'undefined' ? (document.getElementById('torrent-canvas') as HTMLCanvasElement | null) : null),
   });
   ctx.own(() => overlay.destroy());
 

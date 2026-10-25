@@ -47,7 +47,7 @@ export type { RouteDiagnosis, RouteReason };
  * the numbers itself instead of parsing the sentence. `message` stays the complete stand-alone status line
  * (debug API, screen readers, the routing harness).
  */
-export interface DelugeRouteResult extends RouteResult {
+export interface TorrentRouteResult extends RouteResult {
   /** null for 'ok'; otherwise why there is no route. */
   reason: RouteReason | null;
   /** 'ok': the streets carrying most of the route, in travel order (at most two; [] if unnamed). [] otherwise. */
@@ -70,7 +70,7 @@ export interface DelugeRouteResult extends RouteResult {
 }
 
 /** The router returned by createRouter(): the contract plus a few optional extras for the app/debugging. */
-export interface DelugeRouter extends EvacuationRouter {
+export interface TorrentRouter extends EvacuationRouter {
   /**
    * Rebuild the graph. `grid` (optional, beyond the contract) declares the terrain grid the network's
    * coordinates refer to; otherwise it is taken from the first updateFlood call.
@@ -92,7 +92,7 @@ export interface DelugeRouter extends EvacuationRouter {
   getRoadStatus(): RoadStatusArray | null;
   /** Graph size information for diagnostics. */
   getGraphInfo(): { nodes: number; edges: number; samples: number; activeSamples: number } | null;
-  route(start: { gx: number; gy: number } | null, shelters: Shelter[]): DelugeRouteResult;
+  route(start: { gx: number; gy: number } | null, shelters: Shelter[]): TorrentRouteResult;
 }
 
 export const NONE_NO_ROADS = 'No road data for this area — evacuation routing is unavailable.';
@@ -107,11 +107,11 @@ export const ADVICE_SHELTERS_FLOODED = `Every shelter is flooded. ${SHELTER_IN_P
 
 const SHELTER_NONE = -1;
 
-export function createRouter(): DelugeRouter {
+export function createRouter(): TorrentRouter {
   return new Router();
 }
 
-class Router implements DelugeRouter {
+class Router implements TorrentRouter {
   private g: RoadGraph | null = null;
 
   // ── Grid mapping ──
@@ -467,7 +467,7 @@ class Router implements DelugeRouter {
   // Routing
   // ────────────────────────────────────────────────────────────────────────────────────────
 
-  route(start: { gx: number; gy: number } | null, shelters: Shelter[]): DelugeRouteResult {
+  route(start: { gx: number; gy: number } | null, shelters: Shelter[]): TorrentRouteResult {
     const g = this.g;
     if (!g || g.edgeCount === 0) return none('no-roads', NONE_NO_ROADS);
     if (!start || !Number.isFinite(start.gx) || !Number.isFinite(start.gy)) return none('no-start', NONE_NO_START);
@@ -552,7 +552,7 @@ class Router implements DelugeRouter {
    * network: a gap in the road data, not a flood. All of it comes from work this path already does, so a route that
    * is fine measures nothing.
    */
-  private blocked(start: { gx: number; gy: number }, shelters: Shelter[], reason: RouteReason, advice: string): DelugeRouteResult {
+  private blocked(start: { gx: number; gy: number }, shelters: Shelter[], reason: RouteReason, advice: string): TorrentRouteResult {
     const message = reason === 'start-flooded' ? advice : `No safe route — ${advice[0].toLowerCase()}${advice.slice(1)}`;
     const startDepth = this.depthAt(start.gx, start.gy);
     let dryShelters = 0;
@@ -969,7 +969,7 @@ function isValidShelter(s: Shelter | null | undefined): boolean {
 }
 
 /** A 'none' result: its message says how to get a route, so it doubles as the advice. */
-function none(reason: RouteReason, message: string): DelugeRouteResult {
+function none(reason: RouteReason, message: string): TorrentRouteResult {
   return { state: 'none', polyline: null, lengthMeters: 0, etaSeconds: 0, shelter: null, message, reason, via: [], wetMeters: 0, advice: message, diagnosis: null };
 }
 

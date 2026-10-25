@@ -48,7 +48,7 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
 }
 `;
 
-/** What the renderer needs to draw the probability view (DelugeRendererAPI.setEnsembleLayer). */
+/** What the renderer needs to draw the probability view (TorrentRendererAPI.setEnsembleLayer). */
 export interface EnsembleLayer {
   /** nx·ny vec4f, see the header. */
   buffer: GPUBuffer;

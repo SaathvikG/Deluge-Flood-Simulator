@@ -10,7 +10,7 @@ const TOAST_INTERVAL_MS = 1500;
 /**
  * Collects every runtime error the app can observe — WebGPU uncaptured errors, device loss, uncaught
  * exceptions, unhandled promise rejections and errors thrown inside the frame loop — into one list
- * (exposed as `__deluge.errors`), logs them, and surfaces them to the user as a toast.
+ * (exposed as `__torrent.errors`), logs them, and surfaces them to the user as a toast.
  */
 export class ErrorReporter {
   /** Public, append-only list (the same array instance is exposed through the debug API). */
@@ -82,9 +82,9 @@ export class ErrorReporter {
     this.counts.set(text, n);
     if (n === 1 && this.errors.length < MAX_ERRORS) this.errors.push(text);
     if (n <= MAX_CONSOLE_REPEATS) {
-      if (cause !== undefined && cause !== null && typeof cause === 'object') console.error(`[deluge]${text}`, cause);
-      else console.error(`[deluge]${text}`);
-      if (n === MAX_CONSOLE_REPEATS) console.error(`[deluge] (further repeats of this error are suppressed)`);
+      if (cause !== undefined && cause !== null && typeof cause === 'object') console.error(`[torrent]${text}`, cause);
+      else console.error(`[torrent]${text}`);
+      if (n === MAX_CONSOLE_REPEATS) console.error(`[torrent] (further repeats of this error are suppressed)`);
     }
     if (opts.toast !== false) this.toast(message);
     return text;
@@ -98,7 +98,7 @@ export class ErrorReporter {
     const text = `[${source}] ${message}`;
     const n = (this.counts.get(text) ?? 0) + 1;
     this.counts.set(text, n);
-    if (n <= MAX_CONSOLE_REPEATS) console.warn(`[deluge]${text}`);
+    if (n <= MAX_CONSOLE_REPEATS) console.warn(`[torrent]${text}`);
     if (opts.toast !== false) this.toast(message);
     return text;
   }

@@ -1,17 +1,17 @@
 /**
- * Deluge — the §V verification smoke hook. THIS FILE IS NOT PART OF THE SHIPPED APP.
+ * Torrent — the §V verification smoke hook. THIS FILE IS NOT PART OF THE SHIPPED APP.
  *
- * A packaged, fused Deluge cannot be driven from outside: Playwright's `_electron.launch` starts Electron with
+ * A packaged, fused Torrent cannot be driven from outside: Playwright's `_electron.launch` starts Electron with
  * `--inspect=0` / `--remote-debugging-pipe`, and the R11 fuses plus the R12 guard refuse both, by design. So the
- * packaged app reports on itself instead: with DELUGE_SMOKE_OUT set it writes a screenshot, the GPU it got, every
+ * packaged app reports on itself instead: with TORRENT_SMOKE_OUT set it writes a screenshot, the GPU it got, every
  * console message and (optionally) the result of one on-disk script, then quits. It opens no port, grants the
  * renderer nothing and changes no security setting.
  *
- * `DELUGE_SMOKE_SCRIPT` runs arbitrary JavaScript in the renderer, so this module must never reach a bundle a
+ * `TORRENT_SMOKE_SCRIPT` runs arbitrary JavaScript in the renderer, so this module must never reach a bundle a
  * judge (or anyone else) launches. Two independent gates enforce that:
  *
  *   1. `electron/package.mjs` stages this file **only** for a bundle named `VERIFY_APP_NAME` (`npm run
- *      app:verify`). The shipped `release/Deluge.app` asar does not contain it at all, so there is no code to
+ *      app:verify`). The shipped `release/Torrent.app` asar does not contain it at all, so there is no code to
  *      call — `electron/main.js` finds the dynamic import missing and logs that it was ignored.
  *   2. Belt and braces, in case a future build ever stages it by accident: `installSmokeReport` refuses to arm
  *      on any packaged build whose product name is not `VERIFY_APP_NAME`.
@@ -21,10 +21,10 @@
  */
 
 /** The only product name that may answer the smoke hook. `package.mjs` imports this to decide what to stage. */
-export const VERIFY_APP_NAME = 'Deluge Verify';
+export const VERIFY_APP_NAME = 'Torrent Verify';
 
 /**
- * Arm the smoke report on `win`. Called by electron/main.js only when DELUGE_SMOKE_OUT is set.
+ * Arm the smoke report on `win`. Called by electron/main.js only when TORRENT_SMOKE_OUT is set.
  *
  * @param {object} ctx
  * @param {import('electron').App} ctx.app
@@ -37,13 +37,13 @@ export const VERIFY_APP_NAME = 'Deluge Verify';
  * @returns {boolean} whether the hook armed
  */
 export function installSmokeReport({ app, Menu, powerSaveBlocker, screen, win, consoleLog, getBlockerId }) {
-  const outDir = process.env.DELUGE_SMOKE_OUT;
+  const outDir = process.env.TORRENT_SMOKE_OUT;
   if (!outDir) return false;
   if (app.isPackaged && app.getName() !== VERIFY_APP_NAME) {
-    console.warn('[deluge] DELUGE_SMOKE_OUT ignored: not a verification build');
+    console.warn('[torrent] TORRENT_SMOKE_OUT ignored: not a verification build');
     return false;
   }
-  const waitMs = Number(process.env.DELUGE_SMOKE_WAIT_MS || 25000);
+  const waitMs = Number(process.env.TORRENT_SMOKE_WAIT_MS || 25000);
   setTimeout(async () => {
     const { readFile, writeFile, mkdir } = await import('node:fs/promises');
     const path = (await import('node:path')).default;
@@ -68,12 +68,12 @@ export function installSmokeReport({ app, Menu, powerSaveBlocker, screen, win, c
         devToolsOpened: win.webContents.isDevToolsOpened(),
         devToolsRequested: !app.isPackaged, // what webPreferences.devTools was set to for this window
         menu: Menu.getApplicationMenu()?.items.map((i) => ({ label: i.label, items: i.submenu?.items.map((x) => x.role ?? x.label) ?? [] })) ?? null,
-        isDefaultProtocolClient: app.isDefaultProtocolClient('deluge'),
+        isDefaultProtocolClient: app.isDefaultProtocolClient('torrent'),
         displaySleepBlocked: blockerId !== null && powerSaveBlocker.isStarted(blockerId),
         contentSize: win.getContentSize(),
         scaleFactor: screen.getPrimaryDisplay().scaleFactor,
       };
-      const scriptPath = process.env.DELUGE_SMOKE_SCRIPT;
+      const scriptPath = process.env.TORRENT_SMOKE_SCRIPT;
       if (scriptPath) {
         // A fixed file on disk, never renderer input and never interpolated (R12). Verification builds only.
         const source = await readFile(scriptPath, 'utf8');
@@ -83,14 +83,14 @@ export function installSmokeReport({ app, Menu, powerSaveBlocker, screen, win, c
       await mkdir(outDir, { recursive: true });
       await writeFile(path.join(outDir, 'smoke.png'), image.toPNG());
       await writeFile(path.join(outDir, 'smoke.json'), JSON.stringify(report, null, 2));
-      console.log('[deluge] smoke report written to', outDir);
+      console.log('[torrent] smoke report written to', outDir);
     } catch (err) {
       report.error = String(err?.stack || err);
       try {
         await mkdir(outDir, { recursive: true });
         await writeFile(path.join(outDir, 'smoke.json'), JSON.stringify(report, null, 2));
       } catch {}
-      console.error('[deluge] smoke report failed', err);
+      console.error('[torrent] smoke report failed', err);
     }
     app.exit(0);
   }, waitMs);

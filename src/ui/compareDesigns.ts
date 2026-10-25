@@ -783,8 +783,8 @@ export function createCompareSection(ctx: UIContext): CompareSection {
   function exportHtml() {
     const el = report();
     if (!el) return;
-    const name = safeFilename(`deluge-design-comparison-${store.get().presetId ?? 'area'}`);
-    downloadText(reportHtmlDocument(el, `Deluge design comparison — ${outcome?.terrainName ?? store.get().terrainName}`, COMPARE_REPORT_CSS), `${name}.html`, 'text/html');
+    const name = safeFilename(`torrent-design-comparison-${store.get().presetId ?? 'area'}`);
+    downloadText(reportHtmlDocument(el, `Torrent design comparison — ${outcome?.terrainName ?? store.get().terrainName}`, COMPARE_REPORT_CSS), `${name}.html`, 'text/html');
   }
 
   // ─── Wiring ─────────────────────────────────────────────────────────────────────────────────────────────────

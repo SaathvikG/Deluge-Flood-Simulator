@@ -242,7 +242,7 @@ export function femaBcaSection(c: ComparisonResult, i: { ladderLabel: string; bc
       rows.length
         ? simpleTable(['Recurrence interval', 'Event', 'Damages before mitigation', 'Damages after mitigation', 'Return period from'], rows.map((r) => [`${fmtNum(r.T)} yr`, r.label, formatMoney(r.before), formatMoney(r.after), r.rpFrom === 'source' ? 'published' : r.rpFrom === 'user' ? 'your input' : '—']))
         : h('p', { class: 'dl-rep-note' }, 'No level has a return period and a loss: nothing to transcribe.'),
-      h('p', { class: 'dl-rep-note' }, `For checking the Toolkit's answer: Deluge's own ΔEAL ${d.bca ? formatMoney(d.bca.central.deltaEal) : '—'}/yr and BCR ${d.bca ? `${bcrText(d.bca.central.bcr)} (range ${bcrRangeText(d.bca.range.bcr[0], d.bca.range.bcr[1])})` : '—'}. The Toolkit integrates damages its own way (its treatment of events beyond the rarest one differs), so expect close, not equal, numbers.`),
+      h('p', { class: 'dl-rep-note' }, `For checking the Toolkit's answer: Torrent's own ΔEAL ${d.bca ? formatMoney(d.bca.central.deltaEal) : '—'}/yr and BCR ${d.bca ? `${bcrText(d.bca.central.bcr)} (range ${bcrRangeText(d.bca.range.bcr[0], d.bca.range.bcr[1])})` : '—'}. The Toolkit integrates damages its own way (its treatment of events beyond the rarest one differs), so expect close, not equal, numbers.`),
     );
   });
   return h(
@@ -288,7 +288,7 @@ export function buildCompareReport(i: CompareReportInput): HTMLElement {
     h(
       'header',
       { class: 'dl-rep-head' },
-      h('div', { class: 'dl-rep-kicker' }, 'Deluge — mitigation design comparison'),
+      h('div', { class: 'dl-rep-kicker' }, 'Torrent — mitigation design comparison'),
       h('h1', null, i.terrainName || 'Scenario'),
       h('p', { class: 'dl-rep-meta' }, `${c.designs.length} design${c.designs.length === 1 ? '' : 's'} against ${c.levels.length} level${c.levels.length === 1 ? '' : 's'} (${i.ladderLabel}), ${fmtNum(i.durationS / 60)} simulated min each · generated ${i.generatedAt.toISOString().slice(0, 16).replace('T', ' ')} UTC`),
       h('p', { class: 'dl-rep-warn' }, 'Screening estimates from a bare-earth 2-D simulation: not a flood study, a design or a FEMA benefit–cost analysis. Return periods marked “your input” are the user’s. Every BCR is shown with its range, and the benefit–cost section says which uncertainties that range includes; the real uncertainty is wider still.'),

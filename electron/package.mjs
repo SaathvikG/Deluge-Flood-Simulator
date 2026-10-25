@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Build `release/Deluge.app` — the demo-laptop bundle.
+ * Build `release/Torrent.app` — the demo-laptop bundle.
  *
  * Runs after `vite build`, and does four things in the order that asar integrity requires:
  *
@@ -16,11 +16,11 @@
  *   4. Read the fuse wire back and verify the signature, so a broken build fails here and not at the venue.
  *
  * Flags (all optional):
- *   --name=<Name>   bundle name              (default "Deluge")
+ *   --name=<Name>   bundle name              (default "Torrent")
  *   --dist=<dir>    built web app to embed   (default "dist")
  *   --out=<dir>     output directory         (default "release")
  *
- * `npm run app:verify` uses them to build "Deluge Verify.app": the identical pipeline with a different name,
+ * `npm run app:verify` uses them to build "Torrent Verify.app": the identical pipeline with a different name,
  * and the only bundle that gets `electron/smoke.js` staged into it (the §V self-report hook — see step 1).
  */
 import { packager } from '@electron/packager';
@@ -39,7 +39,7 @@ const flag = (name, fallback) => {
   return hit ? hit.slice(name.length + 3) : fallback;
 };
 
-const APP_NAME = flag('name', 'Deluge');
+const APP_NAME = flag('name', 'Torrent');
 const DIST = path.resolve(REPO, flag('dist', 'dist'));
 const OUT = path.resolve(REPO, flag('out', 'release'));
 const STAGE = path.join(OUT, `.stage-${APP_NAME.replace(/\s+/g, '-')}`);
@@ -90,7 +90,7 @@ const [built] = await packager({
   derefSymlinks: true,
   appVersion: pkg.version,
   buildVersion: pkg.version,
-  appBundleId: 'io.github.saathvikg.deluge',
+  appBundleId: 'io.github.saathvikg.torrent',
   appCategoryType: 'public.app-category.education',
   darwinDarkModeSupport: true,
   // Built by `npm run app:icon` from the favicon in index.html. Packager also probes for macOS 26's newer
@@ -156,7 +156,7 @@ if (bad || sig.status !== 0 || integrity.status !== 0) {
 
 // R12: prove the claim rather than trusting the staging step — the hook must be absent from a shipping asar.
 const asarText = (await readFile(path.join(APP_PATH, 'Contents/Resources/app.asar'))).toString('latin1');
-const hookInAsar = asarText.includes('DELUGE_SMOKE_SCRIPT');
+const hookInAsar = asarText.includes('TORRENT_SMOKE_SCRIPT');
 if (hookInAsar !== withSmoke) {
   console.error(`\nFAIL the §V smoke hook is ${hookInAsar ? 'present in' : 'missing from'} ${APP_NAME}.app's asar (expected ${withSmoke ? 'present' : 'absent'}).`);
   process.exit(1);

@@ -53,12 +53,12 @@
  * instance). `webgpu` ships prebuilt Dawn for linux-x64 and runs headless on the NVIDIA Vulkan ICD. Only the DEM and
  * the scenario are needed, so the upload is ~4 MB:
  *
- *   ssh brev … 'mkdir -p deluge/public/presets/pittsburgh'
- *   rsync -a package.json package-lock.json tsconfig.json src scripts tests/helpers brev:deluge/
- *   rsync -a public/presets/pittsburgh/{meta.json,elevation.f32} brev:deluge/public/presets/pittsburgh/
- *   ssh brev 'cd deluge && npm ci --omit=optional &&  *             npx tsx scripts/reference-run.ts --grids=8192 --cases=crest,rain --minutes=30'
+ *   ssh brev … 'mkdir -p torrent/public/presets/pittsburgh'
+ *   rsync -a package.json package-lock.json tsconfig.json src scripts tests/helpers brev:torrent/
+ *   rsync -a public/presets/pittsburgh/{meta.json,elevation.f32} brev:torrent/public/presets/pittsburgh/
+ *   ssh brev 'cd torrent && npm ci --omit=optional &&  *             npx tsx scripts/reference-run.ts --grids=8192 --cases=crest,rain --minutes=30'
  *   # copy back the run records and the two fields per case (67 MB each at 8192²… 268 MB total)
- *   rsync -a brev:deluge/artifacts/reference-run/{runs,fields} artifacts/reference-run/
+ *   rsync -a brev:torrent/artifacts/reference-run/{runs,fields} artifacts/reference-run/
  *   npx tsx scripts/reference-run.ts --compare-only --grids=1024,2048,4096,8192
  *
  * Expect roughly 25–60 min per case on an A100 (extrapolating 40 substeps/s at 4096² on an M4 by cells × 1/dt);
@@ -74,7 +74,7 @@ import zlib from 'node:zlib';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { create, globals } from 'webgpu';
-import { createDelugeDevice } from '../src/gpu';
+import { createTorrentDevice } from '../src/gpu';
 import { createSolver, type GpuFloodSolver } from '../src/sim';
 import { WET_DEPTH } from '../src/sim/constants';
 import { channelBaseSurface } from '../src/app/crest';
@@ -1180,7 +1180,7 @@ const mins = (s: number) => `${(s / 60).toFixed(0)} min`;
 function markdown(runs: RunResult[], comps: Comparison[], p: Preset): string {
   const L: string[] = [];
   const first = runs[0];
-  L.push('# Deluge — grid-convergence reference runs');
+  L.push('# Torrent — grid-convergence reference runs');
   L.push('');
   L.push(`Pittsburgh preset (8 km square, baked at ${p.meta.nx}² / ${p.meta.cellSize.toFixed(4)} m), same \`src/sim\` solver on every grid.`);
   L.push(`Generated ${new Date().toISOString()} · ${first?.gpu ?? '?'} · ${first?.host ?? '?'}`);
@@ -1544,7 +1544,7 @@ async function main(): Promise<void> {
     Object.assign(globalThis, globals);
     // The Dawn instance must stay referenced for the life of the process (see tests/helpers/gpu.ts).
     const instance = create([]);
-    const { device, description } = await createDelugeDevice(instance);
+    const { device, description } = await createTorrentDevice(instance);
     const uncaptured: string[] = [];
     device.onuncapturederror = (ev) => {
       const msg = (ev as GPUUncapturedErrorEvent).error?.message ?? String(ev);

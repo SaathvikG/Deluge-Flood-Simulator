@@ -1,5 +1,5 @@
 /**
- * `deluge dam` — a dam breach's outflow without a map: the published relations' peaks as a low / central / high band,
+ * `torrent dam` — a dam breach's outflow without a map: the published relations' peaks as a low / central / high band,
  * the hydrograph the app would send to the map, and the assumptions; `--history` scores the relations on documented
  * failures. Pure arithmetic (src/dams): no GPU, no network — the NID index is the app's own baked file.
  */
@@ -113,7 +113,7 @@ export async function damCommand(env: DamEnv, o: ParsedOptions): Promise<number>
     title,
     '',
     `Peak outflow, ${result.relations.length} published relations: ${q(b.low.peak)} (${relationById(b.low.id).label}) – ${q(b.high.peak)} (${relationById(b.high.id).label})`,
-    `  central ${q(b.central.peak)} (${relationById(b.central.id).label}; best on ${HISTORICAL_FAILURES.length} past failures — deluge dam --history)`,
+    `  central ${q(b.central.peak)} (${relationById(b.central.id).label}; best on ${HISTORICAL_FAILURES.length} past failures — torrent dam --history)`,
     '',
     ...[...result.relations].sort((a, c) => a.peak - c.peak).map((x) => `  ${x.label.padEnd(40)} ${q(x.peak).padStart(14)}   ${x.cite}`),
     '',

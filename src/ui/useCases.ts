@@ -8,7 +8,7 @@
  *   portfolio  Houston + the bundled fictional portfolio CSV (public/demo/) loaded into Impact & loss, updating as the
  *              rain falls.
  *
- * and a second view, "What Deluge answers for your business": a one-page brief of the questions, the numbers the app
+ * and a second view, "What Torrent answers for your business": a one-page brief of the questions, the numbers the app
  * computes for each, and their limits (useCaseDefs.ts BRIEF), printable through the same print path as the reports.
  *
  * Everything here is constant text written with h(); nothing from the URL reaches the page (the `?usecase=` value is
@@ -122,8 +122,8 @@ function briefReport(): HTMLElement {
     h(
       'header',
       { class: 'dl-rep-head' },
-      h('div', { class: 'dl-rep-kicker' }, 'Deluge — flood screening for sites, portfolios and infrastructure'),
-      h('h1', null, 'What Deluge answers for your business'),
+      h('div', { class: 'dl-rep-kicker' }, 'Torrent — flood screening for sites, portfolios and infrastructure'),
+      h('h1', null, 'What Torrent answers for your business'),
       h('p', { class: 'dl-rep-meta' }, `Printed ${new Date().toISOString().slice(0, 10)}. Every number below is computed in the browser from public terrain, imagery, roads and building data; nothing is uploaded.`),
     ),
     ...briefContent(true),
@@ -165,7 +165,7 @@ export function createUseCases(ctx: UIContext, deps: { panel: Pick<Panel, 'revea
   const briefView = h(
     'div',
     { class: 'dl-uc-view dl-uc-brief', 'data-uc-view': 'brief', hidden: true },
-    h('p', { class: 'dl-uc-lede' }, 'The questions a site, a portfolio or a plant brings, the numbers Deluge computes for each, and where those numbers stop.'),
+    h('p', { class: 'dl-uc-lede' }, 'The questions a site, a portfolio or a plant brings, the numbers Torrent computes for each, and where those numbers stop.'),
     ...briefContent(false),
   );
 
@@ -190,7 +190,7 @@ export function createUseCases(ctx: UIContext, deps: { panel: Pick<Panel, 'revea
     h(
       'p',
       { class: 'dl-uc-lede' },
-      `Type a US address. Deluge loads ${ADDRESS_AREA_M / 1000} km of elevation (USGS 3DEP), imagery and roads around it — this needs internet — drops a site on the point and opens Site check on NOAA Atlas 14 rain return periods. What you type goes to the OpenStreetMap geocoder only; links carry the coordinates, never the address.`,
+      `Type a US address. Torrent loads ${ADDRESS_AREA_M / 1000} km of elevation (USGS 3DEP), imagery and roads around it — this needs internet — drops a site on the point and opens Site check on NOAA Atlas 14 rain return periods. What you type goes to the OpenStreetMap geocoder only; links carry the coordinates, never the address.`,
     ),
     addrForm,
     addrStatus,
@@ -273,7 +273,7 @@ export function createUseCases(ctx: UIContext, deps: { panel: Pick<Panel, 'revea
   const modal = createModal({
     id: 'usecases',
     title: 'Use cases',
-    subtitle: 'Deluge for site due diligence, portfolios and infrastructure',
+    subtitle: 'Torrent for site due diligence, portfolios and infrastructure',
     icon: 'briefcase',
     className: 'dl-uc',
     onRequestClose: () => ctx.setPanel('useCases', false),
@@ -289,7 +289,7 @@ export function createUseCases(ctx: UIContext, deps: { panel: Pick<Panel, 'revea
     damView.el.hidden = v !== 'dam';
     surgeView.el.hidden = v !== 'surge';
     printBtn.hidden = v !== 'brief';
-    setText(toggleBtn, v === 'cards' ? 'What Deluge answers for your business' : 'Back to use cases');
+    setText(toggleBtn, v === 'cards' ? 'What Torrent answers for your business' : 'Back to use cases');
     toggleClass(modal.dialog, 'dl-uc-brief-open', v === 'brief');
     modal.body.scrollTop = 0;
   }

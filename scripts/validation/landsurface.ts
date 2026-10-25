@@ -18,7 +18,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { create, globals } from 'webgpu';
-import { createDelugeDevice } from '../../src/gpu';
+import { createTorrentDevice } from '../../src/gpu';
 import { buildLandSurface, type LandSurfaceFlags } from '../../src/app/landSurface';
 import { type CompactBuildings, decodeBuildings, rasterizeBuildingHeights } from '../../src/data/buildings';
 import { decodeLandCover } from '../../src/data/landcover';
@@ -111,7 +111,7 @@ export function fillBlocked(maxDepth: Float32Array, ground: Float32Array, blocke
 async function main() {
   Object.assign(globalThis, globals);
   const gpu = create([]);
-  const { device, description } = await createDelugeDevice(gpu);
+  const { device, description } = await createTorrentDevice(gpu);
   const only = arg('preset', Object.keys(SCENES).join(',')).split(',');
   const onlyVariants = arg('variants', '');
   // Sensitivity only (not the validation protocol): every run's minutes × this, to see what the fixed hold costs a layer.

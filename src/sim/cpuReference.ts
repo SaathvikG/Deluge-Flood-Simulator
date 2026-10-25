@@ -1,5 +1,5 @@
 /**
- * CPU (Float64) reference implementation of the Deluge shallow-water scheme.
+ * CPU (Float64) reference implementation of the Torrent shallow-water scheme.
  *
  * This is a deliberately straightforward, serial, line-by-line transcription of the GPU passes in
  * shaders/momentum.ts and shaders/continuity.ts. It exists so tests can cross-check the GPU solver

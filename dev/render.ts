@@ -27,8 +27,8 @@ import type {
   WaterSource,
   WaterViewMode,
 } from '../src/contracts';
-import { createDelugeDevice } from '../src/gpu';
-import { createRenderer, type DelugeRendererAPI, type RendererQuality } from '../src/render';
+import { createTorrentDevice } from '../src/gpu';
+import { createRenderer, type TorrentRendererAPI, type RendererQuality } from '../src/render';
 import { createMockScene } from './render.mockSolver';
 
 const q = new URLSearchParams(location.search);
@@ -55,7 +55,7 @@ declare global {
     __perf: (ms: number) => Promise<PerfResult>;
     __bench: (frames: number) => Promise<{ frames: number; msPerFrame: number; fps: number; gpu: unknown }>;
     __pick: (x: number, y: number) => unknown;
-    __renderer: DelugeRendererAPI;
+    __renderer: TorrentRendererAPI;
     __errors: string[];
     /** Change harness settings without reloading (automation). */
     __set: (o: {
@@ -93,7 +93,7 @@ interface HarnessScene {
 async function main() {
   const canvas = document.getElementById('c') as HTMLCanvasElement;
   if (!navigator.gpu) throw new Error('WebGPU not available');
-  const gpu = await createDelugeDevice(navigator.gpu);
+  const gpu = await createTorrentDevice(navigator.gpu);
   const device = gpu.device;
   device.onuncapturederror = (e) => {
     window.__errors.push(e.error.message);

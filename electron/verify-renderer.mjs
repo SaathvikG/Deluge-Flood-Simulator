@@ -11,7 +11,7 @@
  * re-run below against the exact production `dist/` that ships.
  *
  * Three launches, so one launch's deliberate failures cannot pollute another's console:
- *   A  debug build (DELUGE_DEBUG_API=1) — items 1-7, 15, plus the pitch flows.
+ *   A  debug build (TORRENT_DEBUG_API=1) — items 1-7, 15, plus the pitch flows.
  *   B  same build behind `--host-resolver-rules`, pointed at a local self-signed TLS server — item 8.
  *   C  the shipping production build — item 14, and "no console errors" on what judges actually see.
  *
@@ -51,11 +51,11 @@ const section = (s) => console.log(`\n${s}`);
 
 function buildDebugDist() {
   if (existsSync(path.join(REPO, DEBUG_DIST, 'index.html')) && !process.argv.includes('--rebuild')) return;
-  section(`building ${DEBUG_DIST} (DELUGE_DEBUG_API=1)`);
+  section(`building ${DEBUG_DIST} (TORRENT_DEBUG_API=1)`);
   const r = spawnSync('npx', ['vite', 'build', '--outDir', DEBUG_DIST, '--emptyOutDir'], {
     cwd: REPO,
     encoding: 'utf8',
-    env: { ...process.env, DELUGE_DEBUG_API: '1' },
+    env: { ...process.env, TORRENT_DEBUG_API: '1' },
   });
   if (r.status !== 0) {
     console.error(r.stdout, r.stderr);
@@ -101,7 +101,7 @@ async function launch({ dist, args = [] }) {
     executablePath: electronPath,
     args: [MAIN, ...args],
     cwd: REPO,
-    env: cleanEnv({ DELUGE_DIST: dist }),
+    env: cleanEnv({ TORRENT_DIST: dist }),
   });
   app.process().stdout?.on('data', (b) => mainLog.push(String(b)));
   app.process().stderr?.on('data', (b) => mainLog.push(String(b)));
@@ -121,7 +121,7 @@ async function launch({ dist, args = [] }) {
 }
 
 const waitReady = (page) =>
-  page.waitForFunction(() => Boolean(window.__deluge) || Boolean(document.getElementById('deluge-fatal')), null, { timeout: 60_000 }).then(() => page.evaluate(() => window.__deluge?.ready));
+  page.waitForFunction(() => Boolean(window.__torrent) || Boolean(document.getElementById('torrent-fatal')), null, { timeout: 60_000 }).then(() => page.evaluate(() => window.__torrent?.ready));
 
 /* ------------------------------------------------------------------------------- A: the main launch */
 
@@ -158,20 +158,20 @@ await waitReady(A.page);
       adapter: adapter ? { vendor: adapter.info?.vendor ?? null, architecture: adapter.info?.architecture ?? null, description: adapter.info?.description ?? null } : null,
     };
   });
-  record(2, 'R4', 'origin is app://deluge and the context is secure', env.origin === 'app://deluge' && env.secure === true, `${env.origin}, isSecureContext=${env.secure}`);
+  record(2, 'R4', 'origin is app://torrent and the context is secure', env.origin === 'app://torrent' && env.secure === true, `${env.origin}, isSecureContext=${env.secure}`);
   record('2b', 'R4', 'WebGPU adapter with no extra switches', Boolean(env.adapter), JSON.stringify(env.adapter));
 }
 
 /* V2 presets */
 {
-  const ids = await A.page.evaluate(() => window.__deluge.listPresets());
+  const ids = await A.page.evaluate(() => window.__torrent.listPresets());
   const loaded = [];
   for (const id of ids) {
     try {
-      await withTimeout(A.page.evaluate((p) => window.__deluge.loadPreset(p), id), PRESET_TIMEOUT, `loadPreset(${id})`);
+      await withTimeout(A.page.evaluate((p) => window.__torrent.loadPreset(p), id), PRESET_TIMEOUT, `loadPreset(${id})`);
       const st = await A.page.evaluate(() => {
-        const s = window.__deluge.getSolver();
-        return { preset: window.__deluge.getState().presetId, cells: s ? s.nx * s.ny : 0 };
+        const s = window.__torrent.getSolver();
+        return { preset: window.__torrent.getState().presetId, cells: s ? s.nx * s.ny : 0 };
       });
       loaded.push(`${id}:${st.preset === id && st.cells > 0 ? 'ok' : 'wrong'}`);
     } catch (err) {
@@ -186,19 +186,19 @@ await waitReady(A.page);
   let detail = '';
   let ok = false;
   try {
-    await withTimeout(A.page.evaluate(() => window.__deluge.loadPreset('pittsburgh')), PRESET_TIMEOUT, 'loadPreset(pittsburgh)');
+    await withTimeout(A.page.evaluate(() => window.__torrent.loadPreset('pittsburgh')), PRESET_TIMEOUT, 'loadPreset(pittsburgh)');
     const prot = await withTimeout(A.page.evaluate(async () => {
-      const g = window.__deluge.getSolver();
+      const g = window.__torrent.getSolver();
       const cx = Math.floor(g.nx / 2);
       const cy = Math.floor(g.ny / 2);
-      window.__deluge.selectTool('wall');
-      window.__deluge.drawWall([{ gx: cx - 40, gy: cy }, { gx: cx, gy: cy + 30 }, { gx: cx + 40, gy: cy }], 4);
+      window.__torrent.selectTool('wall');
+      window.__torrent.drawWall([{ gx: cx - 40, gy: cy }, { gx: cx, gy: cy + 30 }, { gx: cx + 40, gy: cy }], 4);
       for (let i = 0; i < 200; i++) {
-        const p = window.__deluge.getProtection();
+        const p = window.__torrent.getProtection();
         if (p && p.wallCells > 0) return p;
-        await window.__deluge.waitFrames(2);
+        await window.__torrent.waitFrames(2);
       }
-      return window.__deluge.getProtection();
+      return window.__torrent.getProtection();
     }), 60_000, 'protection');
     ok = Boolean(prot && prot.wallCells > 0);
     detail = JSON.stringify(prot);
@@ -209,11 +209,11 @@ await waitReady(A.page);
 }
 {
   const sim = await withTimeout(A.page.evaluate(async () => {
-    window.__deluge.setRain(100);
-    window.__deluge.setPaused(false);
-    await window.__deluge.runFor(60);
-    const perf = window.__deluge.getPerf();
-    return { volume: window.__deluge.getStats()?.volume ?? 0, fps: perf.fps, frames: perf.frames };
+    window.__torrent.setRain(100);
+    window.__torrent.setPaused(false);
+    await window.__torrent.runFor(60);
+    const perf = window.__torrent.getPerf();
+    return { volume: window.__torrent.getStats()?.volume ?? 0, fps: perf.fps, frames: perf.frames };
   }), 120_000, 'runFor(60)');
   record('2e', 'R4', 'the solver runs under the wrapper', sim.volume > 0, `volume=${sim.volume.toFixed(0)} m³, fps=${sim.fps.toFixed(1)}`);
 }
@@ -230,9 +230,9 @@ await waitReady(A.page);
       const r = await withTimeout(
         A.page.evaluate(async () => {
           // A small area over the Point, loaded exactly as the picker does it (liveWorker + the seven hosts).
-          const outcome = await window.__deluge.actions.loadLiveArea({ center: { lat: 40.4425, lon: -79.9959 }, sizeMeters: 4000, resolution: 512, name: 'Verify' });
-          const s = window.__deluge.getSolver();
-          return { outcome: outcome ?? 'ok', cells: s ? s.nx * s.ny : 0, name: window.__deluge.getState().terrainName ?? null };
+          const outcome = await window.__torrent.actions.loadLiveArea({ center: { lat: 40.4425, lon: -79.9959 }, sizeMeters: 4000, resolution: 512, name: 'Verify' });
+          const s = window.__torrent.getSolver();
+          return { outcome: outcome ?? 'ok', cells: s ? s.nx * s.ny : 0, name: window.__torrent.getState().terrainName ?? null };
         }),
         180_000,
         'loadLiveArea',
@@ -256,7 +256,7 @@ record('A-console', 'R2', 'the app runs with a clean console under the wrapper',
 /* V3 CSP */
 {
   const hdr = await A.page.evaluate(async (asset) => {
-    const r = await fetch(`app://deluge/assets/${asset}`);
+    const r = await fetch(`app://torrent/assets/${asset}`);
     return { status: r.status, csp: r.headers.get('content-security-policy'), type: r.headers.get('content-type'), referrer: r.headers.get('referrer-policy'), nosniff: r.headers.get('x-content-type-options') };
   }, WORKER_ASSET);
   const ok = hdr.status === 200 && typeof hdr.csp === 'string' && hdr.csp.includes("frame-ancestors 'none'") && hdr.csp.includes("script-src 'self'") && !/unsafe-eval/.test(hdr.csp);
@@ -276,19 +276,19 @@ record('A-console', 'R2', 'the app runs with a clean console under the wrapper',
 /* V4 traversal — from the renderer, and straight at the handler through the session (CSP-independent) */
 {
   const TRAVERSAL = [
-    'app://deluge/..%2f..%2fpackage.json',
-    'app://deluge/%2e%2e/%2e%2e/etc/passwd',
-    'app://deluge/assets/..%5c..%5cmain.js',
-    'app://deluge/index.html%00.js',
-    'app://deluge/presets/',
-    'app://deluge/assets/x.map',
-    'app://deluge/main.js',
-    'app://deluge/../main.js',
-    'app://deluge/%2e%2e%2fmain.js',
+    'app://torrent/..%2f..%2fpackage.json',
+    'app://torrent/%2e%2e/%2e%2e/etc/passwd',
+    'app://torrent/assets/..%5c..%5cmain.js',
+    'app://torrent/index.html%00.js',
+    'app://torrent/presets/',
+    'app://torrent/assets/x.map',
+    'app://torrent/main.js',
+    'app://torrent/../main.js',
+    'app://torrent/%2e%2e%2fmain.js',
     'app://other/index.html',
   ];
   const viaSession = await A.app.evaluate(async ({ session }, urls) => {
-    const ses = session.fromPartition('persist:deluge');
+    const ses = session.fromPartition('persist:torrent');
     const out = {};
     for (const u of urls) {
       try {
@@ -304,10 +304,10 @@ record('A-console', 'R2', 'the app runs with a clean console under the wrapper',
   record(4, 'R5', 'every traversal and out-of-tree path is refused', served.length === 0, served.length ? `SERVED: ${JSON.stringify(served)}` : Object.values(viaSession).join(','));
 
   const good = await A.app.evaluate(async ({ session }) => {
-    const ses = session.fromPartition('persist:deluge');
-    const a = await ses.fetch('app://deluge/');
-    const b = await ses.fetch('app://deluge/presets/index.json').catch(() => ({ status: 'err' }));
-    const post = await ses.fetch('app://deluge/index.html', { method: 'POST' }).catch((e) => ({ status: `throw:${String(e).slice(0, 30)}` }));
+    const ses = session.fromPartition('persist:torrent');
+    const a = await ses.fetch('app://torrent/');
+    const b = await ses.fetch('app://torrent/presets/index.json').catch(() => ({ status: 'err' }));
+    const post = await ses.fetch('app://torrent/index.html', { method: 'POST' }).catch((e) => ({ status: `throw:${String(e).slice(0, 30)}` }));
     return { root: a.status, rootType: a.headers.get('content-type'), presets: b.status, post: post.status };
   });
   record('4b', 'R5', 'legitimate paths still serve, and POST does not', good.root === 200 && good.post !== 200, JSON.stringify(good));
@@ -323,9 +323,9 @@ record('A-console', 'R2', 'the app runs with a clean console under the wrapper',
     await new Promise((r) => setTimeout(r, 600));
     return { openedNull: opened === null, before, after: location.href };
   });
-  const ok = nav.openedNull && nav.after === nav.before && nav.after.startsWith('app://deluge/');
-  record(5, 'R7', 'no new windows and no navigation off app://deluge', ok, JSON.stringify(nav));
-  record('5b', 'R7,R9', 'main process logged the blocks', /blocked navigation|blocked external open/.test(A.mainText()), A.mainText().match(/\[deluge\] blocked[^\n]*/g)?.slice(0, 2).join(' | ') ?? 'no log line');
+  const ok = nav.openedNull && nav.after === nav.before && nav.after.startsWith('app://torrent/');
+  record(5, 'R7', 'no new windows and no navigation off app://torrent', ok, JSON.stringify(nav));
+  record('5b', 'R7,R9', 'main process logged the blocks', /blocked navigation|blocked external open/.test(A.mainText()), A.mainText().match(/\[torrent\] blocked[^\n]*/g)?.slice(0, 2).join(' | ') ?? 'no log line');
 }
 
 /* V6 network allowlist */
@@ -377,7 +377,7 @@ record('A-console', 'R2', 'the app runs with a clean console under the wrapper',
 /* V15 launch surface */
 {
   const surface = await A.app.evaluate(({ app }) => ({
-    deepLink: app.isDefaultProtocolClient('deluge'),
+    deepLink: app.isDefaultProtocolClient('torrent'),
     appLink: app.isDefaultProtocolClient('app'),
     packaged: app.isPackaged,
     version: app.getVersion(),
@@ -395,7 +395,7 @@ section('launch B — TLS rejection');
   try {
     server = await tlsFixture();
     const B = await launch({ dist: DEBUG_DIST, args: [`--host-resolver-rules=MAP elevation.nationalmap.gov 127.0.0.1:${TLS_PORT}`] });
-    await B.page.waitForFunction(() => Boolean(window.__deluge) || Boolean(document.getElementById('deluge-fatal')), null, { timeout: 60_000 });
+    await B.page.waitForFunction(() => Boolean(window.__torrent) || Boolean(document.getElementById('torrent-fatal')), null, { timeout: 60_000 });
     const res = await B.page.evaluate(async () => {
       try {
         const r = await fetch('https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer?f=json', { cache: 'no-store' });
@@ -408,11 +408,11 @@ section('launch B — TLS rejection');
     const logged = /certificate rejected/.test(B.mainText());
     record(8, 'R10', 'a self-signed data host is rejected, nothing is trusted', res.reached === false, `${JSON.stringify(res)}; main logged certificate-error: ${logged}`);
     // The app must survive it: presets still load with the DEM host poisoned.
-    await B.page.evaluate(() => window.__deluge.ready);
+    await B.page.evaluate(() => window.__torrent.ready);
     const still = await withTimeout(
       B.page.evaluate(async () => {
-        await window.__deluge.loadPreset('pittsburgh');
-        const s = window.__deluge.getSolver();
+        await window.__torrent.loadPreset('pittsburgh');
+        const s = window.__torrent.getSolver();
         return s ? s.nx * s.ny : 0;
       }),
       PRESET_TIMEOUT,
@@ -435,16 +435,16 @@ section('launch C — production build');
     record(14, 'R12', 'production build has no debug API', false, 'no dist/ — run npm run app:build first');
   } else {
     const C = await launch({ dist: 'dist' });
-    await C.page.waitForFunction(() => document.querySelectorAll('canvas').length > 0 || Boolean(document.getElementById('deluge-fatal')), null, { timeout: 60_000 });
+    await C.page.waitForFunction(() => document.querySelectorAll('canvas').length > 0 || Boolean(document.getElementById('torrent-fatal')), null, { timeout: 60_000 });
     await new Promise((r) => setTimeout(r, 12_000));
     const dbg = await C.page.evaluate(() => ({
-      deluge: typeof window.__deluge,
-      ui: typeof document.getElementById('ui-root')?.__delugeUI,
+      torrent: typeof window.__torrent,
+      ui: typeof document.getElementById('ui-root')?.__torrentUI,
       canvas: document.querySelectorAll('canvas').length,
-      fatal: Boolean(document.getElementById('deluge-fatal')),
+      fatal: Boolean(document.getElementById('torrent-fatal')),
       violations: window.__violations.length,
     }));
-    record(14, 'R12,SEC-07', 'the shipping renderer has no debug API', dbg.deluge === 'undefined' && dbg.ui === 'undefined', JSON.stringify(dbg));
+    record(14, 'R12,SEC-07', 'the shipping renderer has no debug API', dbg.torrent === 'undefined' && dbg.ui === 'undefined', JSON.stringify(dbg));
     record('3c', 'R6', 'zero CSP violations on the shipping build', dbg.violations === 0, `${dbg.violations} violations`);
     record('C-console', 'R2', 'shipping build produced no renderer errors', C.pageErrors.length === 0, C.pageErrors.slice(0, 4).join(' | ') || 'clean');
     await C.app.close();
