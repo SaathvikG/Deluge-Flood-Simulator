@@ -367,7 +367,7 @@ Precomputed UPV [V arithmetic]:
 
 - FEMA BCA defaults: project useful life is ~50 yr for floodwalls/levees and 100 yr for acquisitions [M; check the BCA Reference Guide]. BCR ≥ 1.0 is required.
 - Show BCR at **both** 7% and 3.1%, plus an optional climate-trend uplift (ΔEAL grows g %/yr; replace UPV with Σ (1+g)^t/(1+r)^t).
-- Benchmarks: NIBS *Mitigation Saves 2019* puts riverine-flood federal grants (buyouts) at **7:1**, adopting flood code requirements at **6:1** and building 5 ft above code at **~5:1** [S, https://www.nibs.org/files/pdfs/ms_v3_grants_flood.pdf ; https://www.NIBS.org/files/pdfs/ms_v3_adopts_flood.pdf].
+- Benchmarks: NIBS *Mitigation Saves 2019* puts riverine-flood federal grants (buyouts) at **7:1**, adopting flood code requirements at **6:1** and building 5 ft above code at **~5:1** [S, https://www.nibs.org/mitigationsaves].
 
 **Mitigation unit costs**
 
@@ -407,7 +407,7 @@ contents share: ground floor gets 1/floors by default; warehouses (single storey
 ```
 A storey that is fully submerged reaches f(d_i ≥ storey_h). This keeps a 30-storey tower with 1 m of water from showing a 50% loss.
 
-Sources: footprints from OSM, Microsoft Global ML Building Footprints (1.4 B footprints, heights for a subset, refreshed 2026-08 [S, https://github.com/microsoft/globalmlbuildingfootprints]) and Overture. **GFZ OpenBuildingMap** already infers occupancy and storeys from OSM land use and POIs on top of the Microsoft footprints [S, https://datapub.gfz.de/download/10.5880.GFZ.LKUT.2025.002-Caweb/2025-002_Oostwegel-et-al_OpenBuildingMap_data-description.pdf], so it is a candidate data source for non-US presets.
+Sources: footprints from OSM, Microsoft Global ML Building Footprints (1.4 B footprints, heights for a subset, refreshed 2026-08 [S, https://github.com/microsoft/globalmlbuildingfootprints]) and Overture. **GFZ OpenBuildingMap** already infers occupancy and storeys from OSM land use and POIs on top of the Microsoft footprints [S, https://doi.org/10.5880/GFZ.LKUT.2025.002], so it is a candidate data source for non-US presets.
 
 ### D.2 Occupancy from OSM tags (priority order) [M; OSM wiki Key:building / Key:amenity]
 
@@ -579,7 +579,7 @@ Anchors: ICEYE from €34k/yr, Climate X $31.5k/yr [S]. Keep enterprise under th
 - dv collapse thresholds (secondary): https://repository.tudelft.nl/file/File_2fae8e61-de65-4d41-9166-da81ae93504f ; https://hub.docker.com/r/gfzriesgos/flooddamage
 - FEMA BCA discount rate: https://www.floods.org/?p=306755 ; https://iem.com/?p=39773
 - BRIC: https://www.everycrsreport.com/files/2026-03-10_IN12609_78ea9dfb9eb809875111eb861d2febebe5da2eee.html
-- NIBS Mitigation Saves: https://www.nibs.org/files/pdfs/ms_v3_grants_flood.pdf
+- NIBS Mitigation Saves: https://www.nibs.org/mitigationsaves
 - Levee/floodwall costs: https://download.fargond.gov/0/1_3_17_cc_presentation.pdf ; https://documents.dnrec.delaware.gov/I-ADAPT/AdaptationStrategies/Floodwall.pdf ; Jonkman 2013 via https://media.springernature.com/original/springer-static/esm/art%3A10.1038%2Fs43247-024-01753-5/MediaObjects/43247_2024_1753_MOESM2_ESM.pdf ; Nepal: https://dialogue.earth/en/2018/08/16/embankments-enter-nepal/
 - Regulations: https://www.whitecase.com/insight-alert/california-climate-disclosure-laws-ninth-circuit-temporarily-halts-sb-261-and-carb ; https://www.foley.com/insights/publications/2026/01/ninth-circuit-hears-oral-argument-in-challenge-to-california-climate-disclosure-l/ ; https://www.mofo.com/resources/insights/251222-eu-sustainability-omnibus-i-detailed-omnibus ; https://www.spglobal.com/sustainable1/en/insights/research-reports/issb-q3-2026
 - Market: see the table in A.1.
