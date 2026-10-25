@@ -63,7 +63,7 @@ Why each one is defensible, if a judge asks:
 The full repo: solver, shaders, data pipeline, analyses, tests, desktop wrapper, and `ARCHITECTURE.md`.
 
 **Link 2 — run it**
-`https://deluge-flood-simulator.vercel.app/`
+`https://delugefloodsimulator.vercel.app/`
 `npm run build` emits a static site with relative URLs, so it runs from any static host (the repo also carries
 `.github/workflows/pages.yml` for GitHub Pages). **Deploy it before you paste this link, then open it once in Chrome to
 confirm.** A hosted copy needs a WebGPU browser (Chrome / Edge / Brave 113+, Safari 26+, Firefox 141+ on Windows or 147+
